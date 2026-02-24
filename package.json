@@ -1,0 +1,15 @@
+{
+  "name": "ingilizce-kelime-ogrenme",
+  "version": "1.0.0",
+  "description": "İngilizce kelime öğrenme uygulaması",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "dependencies": {
+    "firebase": "^12.9.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}

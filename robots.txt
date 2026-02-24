@@ -1,0 +1,21 @@
+# Kelime İngilizce - İngilizce Kelime Öğrenme Platformu robots.txt
+# https://kelimeingilizcee.com/
+
+User-agent: *
+Allow: /
+Disallow: /js/config.js
+Disallow: /*.json$
+
+# Özel sayfa erişim izinleri
+Allow: /index.html
+Allow: /css/
+Allow: /images/
+Allow: /js/app.js
+Allow: /js/learning.js
+Allow: /components/
+
+# Yavaş tarama
+Crawl-delay: 10
+
+# Sitemap konumu (ileride eklenebilir)
+Sitemap: https://kelimeingilizcee.com/sitemap.xml 

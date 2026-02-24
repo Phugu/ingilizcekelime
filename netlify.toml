@@ -1,0 +1,31 @@
+[functions]
+
+  [functions.emails]
+  included_files = [
+    "./emails/**"
+  ]
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+
+[context]
+
+  [context.production]
+
+    [context.production.functions]
+
+      [context.production.functions.emails]
+      included_files = [
+        "./emails/**"
+      ]
+
+  [context.master]
+
+    [context.master.functions]
+
+      [context.master.functions.emails]
+      included_files = [
+        "./emails/**"
+      ]

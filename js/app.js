@@ -1,0 +1,1590 @@
+// App.js - Ana uygulama dosyası
+import {
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    updateProfile,
+    signOut,
+    reauthenticateWithCredential,
+    EmailAuthProvider,
+    deleteUser as firebaseDeleteUser,
+    updatePassword
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    updateDoc,
+    deleteDoc,
+    collection,
+    query,
+    where,
+    getDocs,
+    orderBy,
+    limit,
+    Timestamp
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { WordLearning } from './learning.js';
+
+// Global değişkenler
+let currentUser = null;
+let wordLearningInstance = null;
+const db = getFirestore();
+const auth = window.firebaseAuth; // Already initialized in index.html
+
+// Tüm bölümleri gizle
+function hideAllSections() {
+    document.getElementById('auth-container').classList.add('hide');
+    document.getElementById('app-container').classList.add('hide');
+    document.getElementById('login-section').classList.add('hide');
+    document.getElementById('register-section').classList.add('hide');
+}
+
+// Tüm içerik bölümlerini gizle
+function hideAllContentSections() {
+    document.getElementById('dashboard-content').classList.add('hide');
+    document.getElementById('learn-content').classList.add('hide');
+    document.getElementById('words-content').classList.add('hide');
+    document.getElementById('quiz-content').classList.add('hide');
+    document.getElementById('profile-content').classList.add('hide');
+    document.getElementById('recent-words-content').classList.add('hide');
+}
+
+// Aktif navigasyon öğesini güncelle
+function updateActiveNav(clickedNav) {
+    document.querySelectorAll('.main-nav a').forEach(nav => {
+        nav.classList.remove('active');
+    });
+    clickedNav.classList.add('active');
+}
+
+// Ana navigasyon ve sayfa yönetimi
+function setupMainNavigation(userId) {
+    // Ana menü navigasyonu
+    document.getElementById('nav-dashboard').addEventListener('click', async function () {
+        hideAllContentSections();
+        document.getElementById('dashboard-content').classList.remove('hide');
+        updateActiveNav(this);
+
+        // Dashboard'ı başlat
+        const dashboard = new Dashboard('dashboard-content', userId);
+        await dashboard.init();
+    });
+
+    document.getElementById('nav-learn').addEventListener('click', function () {
+        hideAllContentSections();
+        const learnContent = document.getElementById('learn-content');
+        learnContent.classList.remove('hide');
+        updateActiveNav(this);
+
+        if (!wordLearningInstance) {
+            wordLearningInstance = new WordLearning('learn-content', userId);
+        }
+
+        // Eğer içerik boşsa veya sadece dashboard'dan geliniyorsa menüyü göster
+        if (learnContent.innerHTML === "") {
+            wordLearningInstance.showLevelSelection();
+        }
+    });
+
+    document.getElementById('nav-quiz').addEventListener('click', function () {
+        hideAllContentSections();
+        const quizContent = document.getElementById('quiz-content');
+        quizContent.classList.remove('hide');
+        updateActiveNav(this);
+
+        // Eğer içerik zaten varsa (yani bir quiz menüsü veya devam eden bir quiz varsa) tekrar render etme
+        if (quizContent.innerHTML !== "") return;
+
+        // Quiz türlerini yükle
+        quizContent.innerHTML = `
+            <div class="quiz-container">
+                <div class="quiz-description">
+                    <h2>İngilizce Kelime Quizleri</h2>
+                    <p>Öğrendiğiniz kelimeleri test edin ve bilginizi pekiştirin.</p>
+                </div>
+                <div class="quiz-types">
+                    <div class="quiz-type" id="a1-quiz">
+                        <h4>A1 Seviyesi</h4>
+                        <p>Temel seviyede kelime bilgisi testi</p>
+                    </div>
+                    <div class="quiz-type" id="a2-quiz">
+                        <h4>A2 Seviyesi</h4>
+                        <p>Temel seviyede kelime bilgisi testi</p>
+                    </div>
+                    <div class="quiz-type" id="b1-quiz">
+                        <h4>B1 Seviyesi</h4>
+                        <p>Orta seviyede kelime bilgisi testi</p>
+                    </div>
+                    <div class="quiz-type" id="b2-quiz">
+                        <h4>B2 Seviyesi</h4>
+                        <p>İleri seviyede kelime bilgisi testi</p>
+                    </div>
+                    <div class="quiz-type" id="c1-quiz">
+                        <h4>C1 Seviyesi</h4>
+                        <p>Profesyonel seviyede kelime bilgisi testi</p>
+                    </div>
+                </div>
+                <div id="quiz-list-container" class="hide"></div>
+                <div id="quiz-question-container" class="hide"></div>
+                <div id="quiz-results-container" class="hide"></div>
+            </div>
+        `;
+
+        // Quiz türlerine tıklama olaylarını ekle
+        ['a1', 'a2', 'b1', 'b2', 'c1'].forEach(level => {
+            const quizElement = document.getElementById(`${level}-quiz`);
+            if (quizElement) {
+                quizElement.addEventListener('click', function () {
+                    showQuizList(level);
+                });
+            }
+        });
+    });
+
+    document.getElementById('nav-words').addEventListener('click', function (e) {
+        e.preventDefault();
+        updateActiveNav(this);
+        hideAllContentSections();
+        const wordsContent = document.getElementById('words-content');
+        wordsContent.classList.remove('hide');
+
+        if (wordsContent.innerHTML !== "") return;
+
+        if (!wordLearningInstance) {
+            wordLearningInstance = new WordLearning('learn-content', userId);
+        }
+        const wordListInstance = new WordLearning('words-content', userId);
+        wordListInstance.showWordList();
+    });
+
+    document.getElementById('nav-recent').addEventListener('click', async function () {
+        updateActiveNav(this);
+        hideAllContentSections();
+        const recentContent = document.getElementById('recent-words-content');
+        recentContent.classList.remove('hide');
+
+        // Eğer içerik boşsa yükle, doluysa beklet (veya arka planda güncelle)
+        if (recentContent.innerHTML === "") {
+            await loadRecentWords(userId, 'all');
+        } else {
+            // Arka planda sessizce güncelle (kullanıcı bekletilmez)
+            loadRecentWords(userId, document.getElementById('recent-level-filter')?.value || 'all');
+        }
+    });
+
+    document.getElementById('nav-profile').addEventListener('click', function () {
+        hideAllContentSections();
+        document.getElementById('profile-content').classList.remove('hide');
+        updateActiveNav(this);
+        loadProfileContent();
+    });
+}
+
+// Giriş sayfasını göster
+function showLoginPage() {
+    document.getElementById('auth-container').classList.remove('hide');
+    document.getElementById('app-container').classList.add('hide');
+    document.getElementById('login-section').classList.remove('hide');
+    document.getElementById('register-section').classList.add('hide');
+}
+
+// Form olaylarını ayarla
+function setupForms() {
+    // Login form submit
+    document.getElementById('login-form')?.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            console.log('Giriş başarılı:', userCredential.user.email);
+
+            // Başarılı giriş - sayfayı yenile (onAuthStateChanged handles the rest)
+            window.location.reload();
+
+        } catch (err) {
+            console.error('Giriş hatası:', err);
+            const loginError = document.getElementById('login-error');
+            if (loginError) {
+                let message = 'Giriş yapılamadı: ';
+                if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+                    message += 'Hatalı e-posta veya şifre.';
+                } else {
+                    message += err.message;
+                }
+                loginError.textContent = message;
+                loginError.classList.remove('hide');
+            }
+        }
+    });
+
+    // Register form submit
+    document.getElementById('register-form')?.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+        const name = document.getElementById('register-name').value;
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Profil ismini güncelle
+            await updateProfile(user, {
+                displayName: name
+            });
+
+            // Firestore'da kullanıcı dökümanı oluştur
+            await setDoc(doc(db, "users", user.uid), {
+                name: name,
+                email: email,
+                createdAt: Timestamp.now(),
+                xp: 0,
+                level: 1,
+                total_xp: 0
+            });
+
+            console.log('Kayıt başarılı:', user.email);
+
+            // Başarılı kayıt - giriş formuna yönlendir
+            document.getElementById('register-section').classList.add('hide');
+            document.getElementById('login-section').classList.remove('hide');
+
+            // Başarı mesajı göster
+            const loginMessage = document.getElementById('login-message');
+            if (loginMessage) {
+                loginMessage.textContent = 'Kaydınız başarıyla oluşturuldu. Lütfen giriş yapın.';
+                loginMessage.classList.remove('hide');
+            }
+
+        } catch (err) {
+            console.error('Kayıt hatası:', err);
+            const registerError = document.getElementById('register-error');
+            if (registerError) {
+                let message = 'Kayıt oluşturulamadı: ';
+                if (err.code === 'auth/email-already-in-use') {
+                    message += 'Bu e-posta adresi zaten kullanımda.';
+                } else if (err.code === 'auth/weak-password') {
+                    message += 'Şifre en az 6 karakter olmalıdır.';
+                } else {
+                    message += err.message;
+                }
+                registerError.textContent = message;
+                registerError.classList.remove('hide');
+            }
+        }
+    });
+}
+
+// Uygulama başlatma fonksiyonu
+async function initApp() {
+    console.log('Uygulama başlatılıyor...');
+
+    try {
+        // Tüm bölümleri gizle
+        hideAllSections();
+
+        // Aktif oturumu kontrol et
+        const user = auth.currentUser;
+        console.log('Session kontrolü:', user ? 'Aktif oturum var' : 'Oturum yok');
+
+        if (!user) {
+            console.log('Aktif oturum bulunamadı, giriş sayfası gösteriliyor');
+            showLoginPage();
+            return;
+        }
+
+        // Global currentUser'ı ayarla
+        currentUser = user;
+        const userId = currentUser.uid;
+        console.log('Aktif kullanıcı kimliği:', userId);
+
+        // Kullanıcı adını göster
+        const userNameText = currentUser.displayName || currentUser.email;
+        document.getElementById('user-name').textContent = userNameText;
+
+        // Kullanıcı İstatistiklerini (XP, Seviye, Streak) yükle ve göster
+        await loadUserStats(userId);
+
+        // Çıkış yap butonunu ayarla
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.onclick = async function () {
+                try {
+                    await signOut(auth);
+                    localStorage.removeItem('isLoggedIn');
+                    window.location.reload();
+                } catch (err) {
+                    console.error('Çıkış yaparken hata:', err);
+                    alert('Çıkış yapılırken bir hata oluştu: ' + err.message);
+                }
+            };
+        }
+
+        // Uygulama konteynerini göster
+        document.getElementById('auth-container').classList.add('hide');
+        document.getElementById('app-container').classList.remove('hide');
+
+        // Ana navigasyonu ayarla
+        setupMainNavigation(userId);
+
+        // Dashboard'ı başlat
+        const dashboard = new Dashboard('dashboard-content', userId);
+        await dashboard.init();
+
+        // Dashboard'ı varsayılan olarak göster
+        document.getElementById('dashboard-content').classList.remove('hide');
+        document.getElementById('nav-dashboard').classList.add('active');
+
+        // Çerez uyarısını göster
+        setTimeout(() => {
+            initCookieConsent();
+        }, 1000);
+
+    } catch (error) {
+        console.error('Uygulama başlatma hatası:', error);
+        showLoginPage();
+    }
+}
+
+// Kullanıcı istatistiklerini (XP ve Seri) yükle
+async function loadUserStats(userId) {
+    try {
+        let userDoc = await getDoc(doc(db, "users", userId));
+
+        // Eğer döküman yoksa (eski kullanıcı), oluştur
+        if (!userDoc.exists()) {
+            console.log('Kullanıcı dökümanı bulunamadı, yeni oluşturuluyor...');
+            const defaultData = {
+                xp: 0,
+                level: 1,
+                total_xp: 0,
+                streak: 0,
+                createdAt: Timestamp.now()
+            };
+            await setDoc(doc(db, "users", userId), defaultData);
+            // Tekrar çek veya defaultData kullan
+            userDoc = { exists: () => true, data: () => defaultData };
+        }
+
+        const userData = userDoc.data();
+
+        // XP ve Level güncelle
+        const xp = userData.xp || 0;
+        const level = userData.level || 1;
+        updateXPUI(xp, level);
+
+        // Streak (Seri) güncelle - study_streak ismine de bak (geriye dönük uyum)
+        let streak = userData.streak || userData.study_streak || 0;
+        const lastActivity = userData.last_activity_date?.toDate() || null;
+
+        if (lastActivity && !isToday(lastActivity) && !isYesterday(lastActivity)) {
+            streak = 0;
+        }
+
+        updateStreakUI(streak, lastActivity);
+    } catch (error) {
+        console.error('İstatistikler yüklenirken hata:', error);
+    }
+}
+
+// Tarih yardımcı fonksiyonları
+function isToday(date) {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear();
+}
+
+function isYesterday(date) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return date.getDate() === yesterday.getDate() &&
+        date.getMonth() === yesterday.getMonth() &&
+        date.getFullYear() === yesterday.getFullYear();
+}
+
+// Seri UI'ını güncelle
+function updateStreakUI(streak, lastActivity) {
+    const streakCount = document.getElementById('streak-count');
+    const streakBadge = document.getElementById('user-streak');
+
+    if (streakCount) streakCount.textContent = streak;
+
+    if (streakBadge) {
+        if (streak > 0 && lastActivity && isToday(lastActivity)) {
+            streakBadge.classList.add('active');
+        } else {
+            streakBadge.classList.remove('active');
+        }
+    }
+}
+
+// XP UI'ını güncelle
+function updateXPUI(xp, level) {
+    const nextLevelXP = level * 200; // Her seviye için gereken XP formülü (basit tutuldu)
+    const xpPercent = (xp / nextLevelXP) * 100;
+
+    const levelBadge = document.getElementById('user-level-badge');
+    const xpText = document.getElementById('xp-text');
+    const xpBarFill = document.getElementById('xp-bar-fill');
+
+    if (levelBadge) levelBadge.textContent = `Seviye ${level}`;
+    if (xpText) xpText.textContent = `${xp} / ${nextLevelXP} XP`;
+    if (xpBarFill) xpBarFill.style.width = `${xpPercent}%`;
+}
+
+// XP Kazandırma Fonksiyonu
+async function giveXP(amount, reason = "Tebrikler!") {
+    console.log(`giveXP çağrıldı: ${amount} XP, Sebep: ${reason}`);
+
+    // currentUser yerine doğrudan auth.currentUser kullan (daha güvenli)
+    const activeUser = auth.currentUser;
+
+    if (!activeUser) {
+        console.warn('giveXP başarısız: Aktif kullanıcı (auth.currentUser) bulunamadı.');
+        return;
+    }
+
+    try {
+        const userRef = doc(db, "users", activeUser.uid);
+        let userDoc = await getDoc(userRef);
+
+        let userData;
+        if (!userDoc.exists()) {
+            userData = { xp: 0, level: 1, total_xp: 0, streak: 0 };
+            await setDoc(userRef, { ...userData, createdAt: Timestamp.now() });
+        } else {
+            userData = userDoc.data();
+        }
+
+        let { xp, level, total_xp, streak, last_activity_date } = userData;
+        xp = xp || 0;
+        level = level || 1;
+        total_xp = total_xp || 0;
+        streak = streak || 0;
+
+        const lastDate = last_activity_date?.toDate() || null;
+        let streakBonus = 0;
+
+        // Günlük Seri (Streak) Kontrolü
+        if (!lastDate || !isToday(lastDate)) {
+            if (lastDate && isYesterday(lastDate)) {
+                streak++;
+            } else {
+                streak = 1;
+            }
+
+            // Günlük İlk Giriş Bonusu
+            streakBonus = 20;
+            xp += streakBonus;
+            total_xp += streakBonus;
+            last_activity_date = Timestamp.now();
+
+            showXPNotification(streakBonus, "Günlük Seri Bonusu! 🔥", false);
+        }
+
+        xp += amount;
+        total_xp += amount;
+
+        let nextLevelXP = level * 200;
+        let leveledUp = false;
+
+        // Level atlama kontrolü
+        while (xp >= nextLevelXP) {
+            xp -= nextLevelXP;
+            level++;
+            nextLevelXP = level * 200;
+            leveledUp = true;
+        }
+
+        await updateDoc(userRef, {
+            xp: xp,
+            level: level,
+            total_xp: total_xp,
+            streak: streak,
+            last_activity_date: last_activity_date || Timestamp.now()
+        });
+
+        updateXPUI(xp, level);
+        updateStreakUI(streak, new Date()); // Şu an aktif oldu
+
+        // XP Bildirimi Göster
+        showXPNotification(amount, reason, leveledUp);
+    } catch (error) {
+        console.error('XP güncellenirken hata:', error);
+    }
+}
+
+// XP Bildirimi (Popup)
+function showXPNotification(amount, reason, leveledUp) {
+    const notification = document.createElement('div');
+    notification.className = 'xp-notification';
+    notification.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--primary-color);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        animation: slideInDown 0.5s ease-out, fadeOut 0.5s ease-in 2.5s forwards;
+    `;
+
+    notification.innerHTML = `
+        <span style="font-weight: bold; font-size: 18px;">+${amount} XP</span>
+        <span style="font-size: 14px;">${reason}</span>
+        ${leveledUp ? '<span style="color: #f1c40f; font-weight: bold; margin-top: 5px; font-size: 16px;">🎉 SEVİYE ATLADIN! 🎉</span>' : ''}
+    `;
+
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+// Global scope'a ekle
+window.initApp = initApp;
+window.giveXP = giveXP;
+
+// Çerez uyarısını başlat
+function initCookieConsent() {
+    const cookieConsent = document.querySelector('.cookie-consent');
+    if (!cookieConsent) return;
+
+    // Check if user already accepted cookies
+    if (!localStorage.getItem('cookiesAccepted')) {
+        // Show the cookie consent after a short delay
+        setTimeout(() => {
+            cookieConsent.classList.add('active');
+        }, 1000);
+    }
+
+    // Accept button
+    const acceptBtn = document.querySelector('.cookie-accept');
+    if (acceptBtn) {
+        acceptBtn.addEventListener('click', () => {
+            localStorage.setItem('cookiesAccepted', 'true');
+            cookieConsent.classList.remove('active');
+        });
+    }
+
+    // Decline button
+    const declineBtn = document.querySelector('.cookie-decline');
+    if (declineBtn) {
+        declineBtn.addEventListener('click', () => {
+            localStorage.setItem('cookiesDeclined', 'true');
+            cookieConsent.classList.remove('active');
+
+            // Disable Google Analytics or other tracking scripts
+            window['ga-disable-UA-XXXXXXXX-X'] = true;
+        });
+    }
+}
+
+// Profil sayfasını yükle
+async function loadProfileContent() {
+    try {
+        hideAllContentSections();
+
+        const profileContent = document.getElementById('profile-content');
+        if (!profileContent) return;
+        profileContent.classList.remove('hide');
+
+        const user = auth.currentUser;
+        if (!user) {
+            console.error('Kullanıcı oturumu bulunamadı.');
+            profileContent.innerHTML = `<div class="error-message"><p>Profil bilgileri yüklenemedi: Kullanıcı oturumu bulunamadı.</p></div>`;
+            return;
+        }
+
+        console.log('Kullanıcı bilgileri:', user);
+
+        // Kullanıcı XP ve Level bilgisini al
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const userData = userDoc.exists() ? userDoc.data() : { xp: 0, level: 1, total_xp: 0 };
+        const xp = userData.xp || 0;
+        const level = userData.level || 1;
+        const totalXp = userData.total_xp || 0;
+        const nextLevelXp = level * 200;
+
+        let html = `
+            <div class="profile-container">
+                <h2>Profil Bilgileriniz</h2>
+                
+                <div class="profile-section user-details">
+                    <h3>Kullanıcı Bilgileri</h3>
+                    <div class="profile-info">
+                        <div class="info-item">
+                            <span class="label">İsim:</span>
+                            <span class="value">${user.displayName || 'Belirtilmemiş'}</span>
+                            <button class="btn btn-small" id="change-name-btn">Değiştir</button>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">E-posta:</span>
+                            <span class="value">${user.email}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Üyelik Tarihi:</span>
+                            <span class="value">${user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('tr-TR') : 'Belirtilmemiş'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section gamification-details">
+                    <h3>Gelişim</h3>
+                    <div class="profile-info">
+                        <div class="info-item">
+                            <span class="label">Seviye:</span>
+                            <span class="value">Seviye ${level}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Mevcut XP:</span>
+                            <span class="value">${xp} / ${nextLevelXp} XP</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Toplam XP:</span>
+                            <span class="value">${totalXp} XP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section security">
+                    <h3>Güvenlik</h3>
+                    <div class="security-actions">
+                        <button id="change-password-btn" class="btn btn-primary">Şifre Değiştir</button>
+                        <button id="delete-account-btn" class="btn btn-danger">Hesabı Sil</button>
+                    </div>
+                </div>
+
+                <!-- İsim Değiştirme Modal -->
+                <div id="name-modal" class="modal hide">
+                    <div class="modal-content">
+                        <h3>İsim Değiştir</h3>
+                        <form id="name-change-form">
+                            <div class="form-group">
+                                <label for="new-name">Yeni İsim:</label>
+                                <input type="text" id="new-name" required>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Kaydet</button>
+                                <button type="button" class="btn" onclick="document.getElementById('name-modal').classList.add('hide')">İptal</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Şifre Değiştirme Modal -->
+                <div id="password-modal" class="modal hide">
+                    <div class="modal-content">
+                        <h3>Şifre Değiştir</h3>
+                        <form id="password-change-form">
+                            <div class="form-group">
+                                <label for="current-password">Mevcut Şifre:</label>
+                                <input type="password" id="current-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="new-password">Yeni Şifre:</label>
+                                <input type="password" id="new-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="confirm-password">Yeni Şifre (Tekrar):</label>
+                                <input type="password" id="confirm-password" required>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Değiştir</button>
+                                <button type="button" class="btn" onclick="document.getElementById('password-modal').classList.add('hide')">İptal</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Hesap Silme Modal -->
+                <div id="delete-modal" class="modal hide">
+                    <div class="modal-content">
+                        <h3>Hesabı Sil</h3>
+                        <p class="warning-text">Bu işlem geri alınamaz! Hesabınız ve tüm verileriniz kalıcı olarak silinecektir.</p>
+                        <form id="delete-account-form">
+                            <div class="form-group">
+                                <label for="delete-confirm">Onaylamak için şifrenizi girin:</label>
+                                <input type="password" id="delete-confirm" required>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-danger">Hesabı Sil</button>
+                                <button type="button" class="btn" onclick="document.getElementById('delete-modal').classList.add('hide')">İptal</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+        `;
+
+        // Quiz sonuçları bölümü
+        try {
+            const q = query(
+                collection(db, "quiz_results"),
+                where("user_id", "==", user.uid),
+                orderBy("created_at", "desc"),
+                limit(5)
+            );
+            const querySnapshot = await getDocs(q);
+            const quizResults = querySnapshot.docs.map(doc => doc.data());
+
+            if (quizResults.length > 0) {
+                html += `
+                <div class="profile-section recent-quizzes">
+                        <h3>Quiz Sonuçları</h3>
+                        <table class="quiz-history-table">
+                        <thead>
+                            <tr>
+                                <th>Seviye</th>
+                                <th>Doğru</th>
+                                <th>Toplam</th>
+                                <th>Başarı</th>
+                                <th>Tarih</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                                ${quizResults.map(result => {
+                    const date = result.created_at?.toDate() ? result.created_at.toDate().toLocaleDateString('tr-TR') : 'Belirtilmemiş';
+                    const successRate = Math.round((result.correct_count / result.total_questions) * 100);
+                    return `
+                                        <tr>
+                                            <td>${result.level.toUpperCase()}</td>
+                                            <td>${result.correct_count}</td>
+                                            <td>${result.total_questions}</td>
+                                            <td>%${successRate}</td>
+                                            <td>${date}</td>
+                            </tr>
+                                    `;
+                }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            } else {
+                html += `
+                <div class="profile-section notification">
+                    <h3>Quiz Geçmişi</h3>
+                    <p class="info-message">Henüz hiç quiz çözmediniz. Quiz çözmek için "Quiz" sekmesine geçebilirsiniz.</p>
+                </div>
+            `;
+            }
+        } catch (error) {
+            console.error('Quiz sonuçları yüklenirken hata:', error);
+        }
+
+        // Çıkış yapma butonu
+        html += `
+            <div class="profile-section logout-section">
+                <button id="profile-logout-btn" class="btn btn-danger">Çıkış Yap</button>
+            </div>
+        `;
+
+        profileContent.innerHTML = html + '</div>';
+
+        // Event Listeners
+        document.getElementById('change-name-btn').onclick = () => {
+            document.getElementById('name-modal').classList.remove('hide');
+        };
+
+        document.getElementById('change-password-btn').onclick = () => {
+            document.getElementById('password-modal').classList.remove('hide');
+        };
+
+        document.getElementById('delete-account-btn').onclick = () => {
+            document.getElementById('delete-modal').classList.remove('hide');
+        };
+
+        // İsim değiştirme formu
+        document.getElementById('name-change-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const newName = document.getElementById('new-name').value;
+            try {
+                await updateProfile(auth.currentUser, { displayName: newName });
+                await updateDoc(doc(db, "users", auth.currentUser.uid), { name: newName });
+
+                document.getElementById('name-modal').classList.add('hide');
+                window.location.reload();
+            } catch (err) {
+                alert('İsim değiştirme başarısız: ' + err.message);
+            }
+        };
+
+        // Şifre değiştirme formu
+        document.getElementById('password-change-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (newPassword !== confirmPassword) {
+                alert('Yeni şifreler eşleşmiyor!');
+                return;
+            }
+
+            try {
+                const credential = EmailAuthProvider.credential(user.email, currentPassword);
+                await reauthenticateWithCredential(auth.currentUser, credential);
+
+                await updatePassword(auth.currentUser, newPassword);
+
+                document.getElementById('password-modal').classList.add('hide');
+                alert('Şifreniz başarıyla değiştirildi. Lütfen tekrar giriş yapın.');
+                await signOut(auth);
+                window.location.reload();
+            } catch (err) {
+                alert('Şifre değiştirme başarısız: ' + err.message);
+            }
+        };
+
+        // Hesap silme formu
+        document.getElementById('delete-account-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const confirmPassword = document.getElementById('delete-confirm').value;
+
+            if (confirm('Hesabınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
+                try {
+                    const credential = EmailAuthProvider.credential(user.email, confirmPassword);
+                    await reauthenticateWithCredential(auth.currentUser, credential);
+
+                    // Verileri temizle
+                    const learnedWordsDocs = await getDocs(query(collection(db, "learned_words"), where("user_id", "==", user.uid)));
+                    for (const docRef of learnedWordsDocs.docs) {
+                        await deleteDoc(docRef.ref);
+                    }
+
+                    const quizResultsDocs = await getDocs(query(collection(db, "quiz_results"), where("user_id", "==", user.uid)));
+                    for (const docRef of quizResultsDocs.docs) {
+                        await deleteDoc(docRef.ref);
+                    }
+
+                    await deleteDoc(doc(db, "users", user.uid));
+                    await deleteDoc(doc(db, "user_progress", user.uid));
+
+                    // Hesabı sil
+                    await firebaseDeleteUser(auth.currentUser);
+
+                    alert('Hesabınız başarıyla silindi.');
+                    window.location.href = '/';
+                } catch (err) {
+                    alert('Hesap silme başarısız: ' + err.message);
+                }
+            }
+        };
+
+        // Çıkış butonu
+        document.getElementById('profile-logout-btn').onclick = async function () {
+            try {
+                await signOut(auth);
+                window.location.reload();
+            } catch (err) {
+                console.error('Çıkış yaparken hata:', err);
+                alert('Çıkış yapılırken bir hata oluştu: ' + err.message);
+            }
+        };
+
+    } catch (error) {
+        console.error('Profil sayfası yüklenirken hata:', error);
+        const profileContent = document.getElementById('profile-content');
+        if (profileContent) {
+            profileContent.innerHTML = `
+                <div class="error-message">
+                    <p>Profil bilgileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
+                </div>
+            `;
+        }
+    }
+}
+
+// Global scope'a ekle
+window.loadProfileContent = loadProfileContent;
+
+// Quiz geçmişini yükle
+async function loadQuizHistory() {
+    try {
+        if (!currentUser) {
+            console.error('Kullanıcı oturumu bulunamadı');
+            return;
+        }
+
+        const q = query(
+            collection(db, "quiz_results"),
+            where("user_id", "==", currentUser.uid),
+            orderBy("created_at", "desc"),
+            limit(5)
+        );
+        const querySnapshot = await getDocs(q);
+        const quizResults = querySnapshot.docs.map(doc => doc.data());
+
+        const historyContent = document.getElementById('quiz-history-content');
+        if (!historyContent) return;
+
+        if (!quizResults || quizResults.length === 0) {
+            historyContent.innerHTML = 'Henüz hiç quiz çözmediniz. Bilginizi test etmek için yukarıdaki quizlerden birini seçin.';
+            return;
+        }
+
+        let html = `
+            <table class="quiz-history-table">
+                <thead>
+                    <tr>
+                        <th>Seviye</th>
+                        <th>Doğru</th>
+                        <th>Toplam</th>
+                        <th>Başarı</th>
+                        <th>Tarih</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        quizResults.forEach(result => {
+            const date = result.created_at?.toDate() ? result.created_at.toDate().toLocaleDateString('tr-TR') : 'Belirtilmemiş';
+            const successRate = Math.round((result.correct_count / result.total_questions) * 100);
+
+            html += `
+                <tr>
+                    <td>${result.level.toUpperCase()}</td>
+                    <td>${result.correct_count}</td>
+                    <td>${result.total_questions}</td>
+                    <td>%${successRate}</td>
+                    <td>${date}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                </tbody>
+            </table>
+        `;
+
+        historyContent.innerHTML = html;
+
+    } catch (error) {
+        console.error('Quiz geçmişi yüklenirken hata:', error);
+        const historyContent = document.getElementById('quiz-history-content');
+        if (historyContent) {
+            historyContent.innerHTML = `Hata: Quiz geçmişi yüklenemedi. ${error.message}`;
+        }
+    }
+}
+
+// Global scope'a ekle
+window.loadQuizHistory = loadQuizHistory;
+
+// Öğrenilen kelimeleri yükle ve listele
+async function loadWordsList() {
+    try {
+        const wordsContent = document.getElementById('words-content');
+        if (!wordsContent) return;
+
+        wordsContent.innerHTML = '<h2>Kelime Listeniz</h2><p>Kelimeleriniz yükleniyor...</p>';
+
+        const q = query(
+            collection(db, "learned_words"),
+            where("user_id", "==", currentUser.uid),
+            orderBy("level", "asc")
+        );
+        const querySnapshot = await getDocs(q);
+        const words = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        if (!words || words.length === 0) {
+            wordsContent.innerHTML = `
+                <h2>Kelime Listeniz</h2>
+                <p class="no-data-message">Henüz öğrendiğiniz bir kelime bulunmuyor. Kelime öğrenmeye başlamak için <a href="#" id="go-to-learn">Kelime Öğren</a> bölümüne geçebilirsiniz.</p>
+            `;
+
+            document.getElementById('go-to-learn').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('nav-learn').click();
+            });
+
+            return;
+        }
+
+        let html = `
+            <div class="words-list-container">
+                <h2>Kelime Listeniz</h2>
+                
+                <div class="filter-controls">
+                    <div class="search-box">
+                        <input type="text" id="word-search" placeholder="Kelime ara...">
+                        <button id="search-btn">Ara</button>
+                    </div>
+                    
+                    <div class="filter-options">
+                        <label>Seviye Filtrele:</label>
+                        <select id="level-filter">
+                            <option value="all">Tümü</option>
+                            <option value="A1">A1</option>
+                            <option value="A2">A2</option>
+                            <option value="B1">B1</option>
+                            <option value="B2">B2</option>
+                            <option value="C1">C1</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="word-list-stats">
+                    <p>Toplam <strong>${words.length}</strong> kelime öğrendiniz.</p>
+                </div>
+                
+                <div class="word-list" id="word-list">
+                    <table class="words-table">
+                        <thead>
+                            <tr>
+                                <th>İngilizce</th>
+                                <th>Türkçe</th>
+                                <th>Seviye</th>
+                                <th>Son Çalışma</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                             ${words.map(word => {
+            const lastReviewedRaw = word.last_reviewed_at?.toDate ? word.last_reviewed_at.toDate() : (word.last_reviewed_at ? new Date(word.last_reviewed_at) : null);
+            const lastReviewed = lastReviewedRaw ? lastReviewedRaw.toLocaleDateString('tr-TR') : 'Henüz tekrar edilmedi';
+            return `
+                <tr data-level="${word.level}">
+                    <td>${word.word_english}</td>
+                    <td>${word.word_turkish}</td>
+                    <td>${word.level}</td>
+                    <td>${lastReviewed}</td>
+                    <td>
+                        <button class="action-btn review-btn" data-word-id="${word.id}">Tekrar Et</button>
+                    </td>
+                </tr>
+            `;
+        }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        wordsContent.innerHTML = html;
+
+        // Arama ve filtreleme olaylarını ekle
+        const searchInput = document.getElementById('word-search');
+        const levelFilter = document.getElementById('level-filter');
+
+        if (searchInput && levelFilter) {
+            searchInput.addEventListener('input', filterWords);
+            levelFilter.addEventListener('change', filterWords);
+        }
+
+    } catch (error) {
+        console.error('Kelime listesi yüklenirken hata:', error);
+        const wordsContent = document.getElementById('words-content');
+        if (wordsContent) {
+            wordsContent.innerHTML = `
+                <div class="error-message">
+                    <p>Kelime listesi yüklenirken bir hata oluştu: ${error.message}</p>
+                </div>
+            `;
+        }
+    }
+}
+
+// Global scope'a ekle
+window.loadWordsList = loadWordsList;
+
+// Dashboard sınıfı
+class Dashboard {
+    constructor(containerId, userId) {
+        this.containerId = containerId;
+        this.userId = userId;
+    }
+
+    async init() {
+        try {
+            // Kullanıcı verilerini al
+            const stats = await this.getUserStats();
+            this.render(stats);
+        } catch (error) {
+            console.error('Dashboard yüklenirken hata:', error);
+            this.renderError(error);
+        }
+    }
+
+    async getUserStats() {
+        try {
+            // Öğrenilen kelime sayısını al
+            const learnedWordsQuery = query(
+                collection(db, "learned_words"),
+                where("user_id", "==", this.userId)
+            );
+            const learnedWordsSnapshot = await getDocs(learnedWordsQuery);
+            const learnedWordsCount = learnedWordsSnapshot.size;
+
+            // Quiz sonuçlarını al
+            const quizResultsQuery = query(
+                collection(db, "quiz_results"),
+                where("user_id", "==", this.userId)
+            );
+            const quizResultsSnapshot = await getDocs(quizResultsQuery);
+            const quizResultsCount = quizResultsSnapshot.size;
+
+            // Kullanıcı verilerini al (XP ve Seviye için)
+            const userDoc = await getDoc(doc(db, "users", this.userId));
+            const userData = userDoc.exists() ? userDoc.data() : { xp: 0, level: 1, total_xp: 0, streak: 0 };
+
+            return {
+                totalWords: learnedWordsCount,
+                totalQuizzes: quizResultsCount,
+                studyStreak: userData.streak || 0,
+                level: userData.level || 1,
+                xp: userData.xp || 0,
+                totalXP: userData.total_xp || 0
+            };
+        } catch (error) {
+            console.error('Dashboard yüklenirken hata:', error);
+            throw error;
+        }
+    }
+
+    render(stats) {
+        const container = document.getElementById(this.containerId);
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="dashboard-container">
+                <h2>Hoş Geldiniz!</h2>
+                
+                <div class="stats-overview">
+                    <div class="stat-card">
+                        <h3>Mevcut Seviye</h3>
+                        <div class="stat-number">${stats.level}</div>
+                        <div class="stat-label">${stats.xp} / ${stats.level * 200} XP</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <h3>Toplam XP</h3>
+                        <div class="stat-number">${stats.totalXP}</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <h3>Öğrenilen Kelime</h3>
+                        <div class="stat-number">${stats.totalWords}</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h3>Tamamlanan Quiz</h3>
+                        <div class="stat-number">${stats.totalQuizzes}</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h3>Günlük Seri</h3>
+                        <div class="stat-number">${stats.studyStreak}</div>
+                        <div class="stat-label">🔥 Gün</div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button onclick="document.getElementById('nav-learn').click()" class="action-btn">
+                        Kelime Öğrenmeye Başla
+                    </button>
+                    <button onclick="document.getElementById('nav-quiz').click()" class="action-btn">
+                        Quiz Çöz
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    renderError(error) {
+        const container = document.getElementById(this.containerId);
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="dashboard-container">
+                <div class="error-message">
+                    <h2>Hata</h2>
+                    <p>Dashboard yüklenirken bir hata oluştu: ${error.message}</p>
+                    <button onclick="window.location.reload()" class="action-btn">Sayfayı Yenile</button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Dashboard güncelleme fonksiyonu
+window.updateDashboard = async function () {
+    if (currentUser) {
+        const dashboard = new Dashboard('dashboard-content', currentUser.uid);
+        await dashboard.init();
+    }
+};
+
+// Dashboard sınıfını global scope'a ekle
+window.Dashboard = Dashboard;
+
+async function loadRecentWords(userId, levelFilter = 'all') {
+    try {
+        const recentContent = document.getElementById('recent-words-content');
+        if (!recentContent) return;
+
+        let q;
+        if (levelFilter !== 'all') {
+            q = query(
+                collection(db, "learned_words"),
+                where("level", "==", levelFilter.toUpperCase()),
+                where("user_id", "==", userId),
+                orderBy("learned_at", "desc"),
+                limit(20)
+            );
+        } else {
+            q = query(
+                collection(db, "learned_words"),
+                where("user_id", "==", userId),
+                orderBy("learned_at", "desc"),
+                limit(20)
+            );
+        }
+
+        const querySnapshot = await getDocs(q);
+        const words = querySnapshot.docs.map(doc => doc.data());
+
+        const levels = ['all', 'a1', 'a2', 'b1', 'b2', 'c1'];
+
+        let html = `
+            <div class="dashboard-container">
+                <h2 class="section-title">Son Öğrenilen Kelimeler</h2>
+                
+                <div class="filter-controls" style="justify-content: center; margin-bottom: 30px;">
+                    <div class="filter-options">
+                        <label>Seviye Seçin:</label>
+                        <select id="recent-level-filter" onchange="loadRecentWords('${userId}', this.value)">
+                            ${levels.map(l => `<option value="${l}" ${levelFilter === l ? 'selected' : ''}>${l.toUpperCase() === 'ALL' ? 'Tümü' : l.toUpperCase()}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="words-list" style="display: flex; flex-direction: column; gap: 15px; max-width: 800px; margin: 0 auto;">
+                    ${words.length > 0 ? words.map(word => `
+                        <div class="level-card" style="display: flex; align-items: center; justify-content: space-between; max-width: 100%; width: 100%; margin: 0; padding: 15px 25px; text-align: left;">
+                            <div style="flex: 1;">
+                                <h3 style="margin-bottom: 5px; font-size: 20px;">${word.word_english}</h3>
+                                <p style="margin-bottom: 0; color: #4CAF50; font-weight: 500;">${word.word_turkish}</p>
+                            </div>
+                            <div style="text-align: right; min-width: 120px;">
+                                <div class="small-info" style="margin-bottom: 5px; font-size: 13px; color: #888;">
+                                    <i class="fas fa-calendar"></i>
+                                    ${word.learned_at?.toDate() ? word.learned_at.toDate().toLocaleDateString('tr-TR') : 'Belirtilmemiş'}
+                                </div>
+                                <span class="badge" style="position: static; display: inline-block;">${word.level.toUpperCase()}</span>
+                            </div>
+                        </div>
+                    `).join('') : `
+                        <div class="no-data-message">
+                            <p>Bu seviyede henüz öğrenilmiş kelime bulunmuyor.</p>
+                        </div>
+                    `}
+                </div>
+            </div>
+        `;
+
+        recentContent.innerHTML = html;
+    } catch (error) {
+        console.error('Son öğrenilen kelimeler yüklenirken hata:', error);
+        const recentContent = document.getElementById('recent-words-content');
+        if (recentContent) {
+            recentContent.innerHTML = `
+                <div class="error-message">
+                    <p>Son öğrenilen kelimeler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
+                </div>
+            `;
+        }
+    }
+}
+
+// Global scope'a ekle
+window.loadRecentWords = loadRecentWords;
+
+// Quiz listesini göster
+function showQuizList(level) {
+    const quizListContainer = document.getElementById('quiz-list-container');
+    const quizTypes = document.querySelector('.quiz-types');
+    const quizContent = document.getElementById('quiz-content');
+
+    // Quiz türlerini gizle
+    if (quizTypes) quizTypes.classList.add('hide');
+
+    // Quiz listesini göster
+    if (quizListContainer) quizListContainer.classList.remove('hide');
+
+    // Quiz içeriğini güncelle
+    quizContent.innerHTML = `
+        <div class="quiz-container">
+            <div class="quiz-description">
+                <h2>İngilizce Kelime Quizleri</h2>
+                <p>Öğrendiğiniz kelimeleri test edin ve bilginizi pekiştirin.</p>
+            </div>
+            <div class="level-cards">
+                <div class="level-card quiz-card" onclick="startQuiz('${level}', 1)">
+                    <div class="card-header">
+                        <h3>Test 1</h3>
+                        <span class="badge">${level.toUpperCase()}</span>
+                    </div>
+                    <div class="card-content">
+                        <p>Temel kelimeler ve kullanımları</p>
+                        <ul>
+                            <li>10 soru</li>
+                            <li>Çoktan seçmeli</li>
+                            <li>Süre sınırı yok</li>
+                        </ul>
+                    </div>
+                    <div class="card-footer">
+                        <button class="action-btn">Testi Başlat</button>
+                    </div>
+                </div>
+
+                <div class="level-card quiz-card" onclick="startQuiz('${level}', 2)">
+                    <div class="card-header">
+                        <h3>Test 2</h3>
+                        <span class="badge">${level.toUpperCase()}</span>
+                    </div>
+                    <div class="card-content">
+                        <p>Günlük konuşma kelimeleri</p>
+                        <ul>
+                            <li>15 soru</li>
+                            <li>Çoktan seçmeli</li>
+                            <li>Süre sınırı yok</li>
+                        </ul>
+                    </div>
+                    <div class="card-footer">
+                        <button class="action-btn">Testi Başlat</button>
+                    </div>
+                </div>
+
+                <div class="level-card quiz-card" onclick="startQuiz('${level}', 3)">
+                    <div class="card-header">
+                        <h3>Test 3</h3>
+                        <span class="badge">${level.toUpperCase()}</span>
+                    </div>
+                    <div class="card-content">
+                        <p>Karışık kelimeler testi</p>
+                        <ul>
+                            <li>20 soru</li>
+                            <li>Çoktan seçmeli</li>
+                            <li>Süre sınırı yok</li>
+                        </ul>
+                    </div>
+                    <div class="card-footer">
+                        <button class="action-btn">Testi Başlat</button>
+                    </div>
+                </div>
+            </div>
+            <div class="quiz-navigation">
+                <button class="action-btn" onclick="showQuizTypes()">
+                    <i class="fas fa-arrow-left"></i> Diğer Seviyelere Dön
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Global scope'a ekle
+window.showQuizList = showQuizList;
+
+// Quiz türlerini tekrar göster
+function showQuizTypes() {
+    const quizContent = document.getElementById('quiz-content');
+
+    quizContent.innerHTML = `
+        <div class="quiz-container">
+            <div class="quiz-description">
+                <h2>İngilizce Kelime Quizleri</h2>
+                <p>Öğrendiğiniz kelimeleri test edin ve bilginizi pekiştirin.</p>
+            </div>
+            <div class="quiz-types">
+                <div class="quiz-type" id="a1-quiz">
+                    <h4>A1 Seviyesi</h4>
+                    <p>Temel seviyede kelime bilgisi testi</p>
+                </div>
+                <div class="quiz-type" id="a2-quiz">
+                    <h4>A2 Seviyesi</h4>
+                    <p>Temel seviyede kelime bilgisi testi</p>
+                </div>
+                <div class="quiz-type" id="b1-quiz">
+                    <h4>B1 Seviyesi</h4>
+                    <p>Orta seviyede kelime bilgisi testi</p>
+                </div>
+                <div class="quiz-type" id="b2-quiz">
+                    <h4>B2 Seviyesi</h4>
+                    <p>İleri seviyede kelime bilgisi testi</p>
+                </div>
+                <div class="quiz-type" id="c1-quiz">
+                    <h4>C1 Seviyesi</h4>
+                    <p>Profesyonel seviyede kelime bilgisi testi</p>
+                </div>
+            </div>
+            <div id="quiz-list-container" class="hide"></div>
+            <div id="quiz-question-container" class="hide"></div>
+            <div id="quiz-results-container" class="hide"></div>
+        </div>
+    `;
+
+    // Quiz türlerine tıklama olaylarını ekle
+    ['a1', 'a2', 'b1', 'b2', 'c1'].forEach(level => {
+        const quizElement = document.getElementById(`${level}-quiz`);
+        if (quizElement) {
+            quizElement.addEventListener('click', function () {
+                showQuizList(level);
+            });
+        }
+    });
+}
+
+// Global scope'a ekle
+window.showQuizTypes = showQuizTypes;
+
+// Quiz'i başlat
+function startQuiz(level, testNumber) {
+    const wordLearning = new WordLearning('quiz-content', currentUser.uid);
+    wordLearning.startSpecificTest(level, testNumber);
+}
+
+// Global scope'a ekle
+window.startQuiz = startQuiz;
+
+async function deleteAccount() {
+    const confirmDialog = document.createElement('div');
+    confirmDialog.className = 'confirm-dialog';
+    confirmDialog.innerHTML = `
+        <div class="confirm-dialog-content">
+            <h3>Hesap Silme Onayı</h3>
+            <p>Hesabınız kalıcı olarak silinecektir. Bu işlem geri alınamaz.</p>
+            <p>Devam etmek istediğinize emin misiniz?</p>
+            <div class="confirm-dialog-buttons">
+                <button class="action-btn cancel-btn" onclick="closeConfirmDialog()">İptal</button>
+                <button class="action-btn delete-btn" onclick="confirmDeleteAccount()">Hesabı Sil</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(confirmDialog);
+}
+
+// Global scope'a ekle
+window.deleteAccount = deleteAccount;
+
+function closeConfirmDialog() {
+    const dialog = document.querySelector('.confirm-dialog');
+    if (dialog) {
+        dialog.remove();
+    }
+}
+
+// Global scope'a ekle
+window.closeConfirmDialog = closeConfirmDialog;
+
+async function confirmDeleteAccount() {
+    try {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        // Verileri temizle
+        const learnedWordsQuery = query(collection(db, "learned_words"), where("user_id", "==", user.uid));
+        const learnedWordsSnapshot = await getDocs(learnedWordsQuery);
+        for (const docRef of learnedWordsSnapshot.docs) {
+            await deleteDoc(docRef.ref);
+        }
+
+        const quizResultsQuery = query(collection(db, "quiz_results"), where("user_id", "==", user.uid));
+        const quizResultsSnapshot = await getDocs(quizResultsQuery);
+        for (const docRef of quizResultsSnapshot.docs) {
+            await deleteDoc(docRef.ref);
+        }
+
+        await deleteDoc(doc(db, "user_progress", user.uid));
+        await deleteDoc(doc(db, "users", user.uid));
+
+        // Hesabı sil
+        await firebaseDeleteUser(user);
+
+        console.log('Hesap başarıyla silindi.');
+        window.location.href = '/';
+    } catch (error) {
+        console.error('Hesap silme hatası:', error.message);
+        alert('Hesap silme başarısız: ' + error.message);
+    }
+    closeConfirmDialog();
+}
+
+// Global scope'a ekle
+window.confirmDeleteAccount = confirmDeleteAccount;
+
+function filterWords() {
+    const searchTerm = document.getElementById('word-search').value.toLowerCase();
+    const selectedLevel = document.getElementById('level-filter').value;
+    const wordRows = document.querySelectorAll('.words-table tbody tr');
+
+    wordRows.forEach(row => {
+        const english = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+        const turkish = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+        const level = row.getAttribute('data-level');
+
+        const matchesSearch = english.includes(searchTerm) || turkish.includes(searchTerm);
+        const matchesLevel = selectedLevel === 'all' || level === selectedLevel;
+
+        if (matchesSearch && matchesLevel) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Sayfa yüklendiğinde form olaylarını ayarla
+setupForms();
+
+// Giriş/Kayıt form geçişleri
+document.getElementById('go-to-register')?.addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('login-section').classList.add('hide');
+    document.getElementById('register-section').classList.remove('hide');
+});
+
+document.getElementById('go-to-login')?.addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('register-section').classList.add('hide');
+    document.getElementById('login-section').classList.remove('hide');
+});
+
+// Dashboard istatistiklerini güncelle
+async function updateDashboard() {
+    if (currentUser) {
+        const dashboard = new Dashboard('dashboard-content', currentUser.uid);
+        await dashboard.init();
+    }
+}
+
+// Tema değiştirme fonksiyonu
+function toggleTheme() {
+    const isDark = document.documentElement.classList.toggle('dark-theme');
+    document.body.classList.toggle('dark-theme');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    console.log('Tema değiştirildi:', isDark ? 'Karanlık' : 'Aydınlık');
+}
+
+// Olay dinleyicilerini sayfa her yenilendiğinde (özellikle app-container açıldığında) tekrar kontrol et
+function setupThemeToggle() {
+    document.getElementById('theme-toggle-auth')?.addEventListener('click', toggleTheme);
+    document.getElementById('theme-toggle-app')?.addEventListener('click', toggleTheme);
+}
+
+// İlk kurulum
+setupThemeToggle();
+
+// Global scope'a ekle
+window.filterWords = filterWords;
+window.updateDashboard = updateDashboard;
+window.toggleTheme = toggleTheme;
+

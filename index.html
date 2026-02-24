@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İngilizce Kelime Öğrenme | Ücretsiz İngilizce Kelime Eğitimi</title>
+
+    <!-- SEO Meta Etiketleri -->
+    <meta name="description"
+        content="İngilizce kelime öğrenmek için ücretsiz platform. A1, A2, B1, B2, C1 seviyelerinde kelimeler, quizler ve kelime tekrar sistemi ile İngilizcenizi geliştirin.">
+    <meta name="keywords"
+        content="ingilizce, kelime, öğrenme, eğitim, dil, ingilizce kelime, vocabulary, a1, a2, b1, b2, c1, quiz, test, dil öğrenme, ücretsiz">
+    <meta name="author" content="Kelime İngilizce">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Turkish">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kelimeingilizcee.com/">
+    <meta property="og:title" content="İngilizce Kelime Öğrenme | Ücretsiz İngilizce Kelime Eğitimi">
+    <meta property="og:description"
+        content="İngilizce kelime öğrenmek için ücretsiz platform. A1, A2, B1, B2, C1 seviyelerinde kelimeler, quizler ve kelime tekrar sistemi ile İngilizcenizi geliştirin.">
+    <meta property="og:image" content="images/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://kelimeingilizcee.com/">
+    <meta property="twitter:title" content="İngilizce Kelime Öğrenme | Ücretsiz İngilizce Kelime Eğitimi">
+    <meta property="twitter:description"
+        content="İngilizce kelime öğrenmek için ücretsiz platform. A1, A2, B1, B2, C1 seviyelerinde kelimeler, quizler ve kelime tekrar sistemi ile İngilizcenizi geliştirin.">
+    <meta property="twitter:image" content="images/og-image.jpg">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://kelimeingilizcee.com/">
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L999D4076P"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-L999D4076P');
+    </script>
+    <script>
+        // Sayfa yüklenmeden önce temayı saniyeler içinde uygula (parlamayı önlemek için)
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-theme');
+                document.body?.classList.add('dark-theme');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHvLXfKTznSXhRBZyJ_YUV-v8r3nUv7DY",
+            authDomain: "ingilizcekelime-cbeb6.firebaseapp.com",
+            projectId: "ingilizcekelime-cbeb6",
+            storageBucket: "ingilizcekelime-cbeb6.firebasestorage.app",
+            messagingSenderId: "413582571236",
+            appId: "1:413582571236:web:7b908f683bc5e39f52def1",
+            measurementId: "G-XR9GMJY8JF"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+
+        // Expose Firebase services to window for compatibility with existing scripts
+        window.firebaseApp = app;
+        window.firebaseAuth = getAuth(app);
+        window.firestore = getFirestore(app);
+
+        console.log("Firebase initialized successfully");
+
+        // Wait for DOM and then check session
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof window.checkSession === 'function') {
+                window.checkSession();
+            }
+        });
+    </script>
+    <script src="js/config.js"></script>
+
+    <!-- Yapısal Veri İşaretlemesi -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "EducationalApplication",
+      "name": "İngilizce Kelime Öğrenme",
+      "description": "İngilizce kelime öğrenmek için ücretsiz platform. A1, A2, B1, B2, C1 seviyelerinde kelimeler, quizler ve kelime tekrar sistemi ile İngilizcenizi geliştirin.",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "TRY"
+      }
+    }
+    </script>
+</head>
+
+<body>
+    <!-- Başlangıç Yükleme Ekranı -->
+    <div id="initial-loader" class="initial-loader">
+        <div class="loader-content">
+            <div class="spinner"></div>
+            <h1>İngilizce Kelime Öğrenme</h1>
+            <p>Uygulama hazırlanıyor...</p>
+        </div>
+    </div>
+
+    <div class="auth-container hide" id="auth-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 style="margin: 0; font-size: 24px;">Kelime İngilizce</h1>
+            <button class="theme-toggle" id="theme-toggle-auth" title="Temayı Değiştir">
+                <span class="dark-icon">🌙</span>
+                <span class="light-icon">☀️</span>
+            </button>
+        </div>
+
+        <!-- Sayfa ilk yüklendiğinde ufak bir bekleme süresince login görünmesin -->
+        <script>
+            if (localStorage.getItem('isLoggedIn') === 'true') {
+                document.getElementById('auth-container').classList.add('hide');
+            }
+        </script>
+
+        <div class="form-container" id="login-section">
+            <h2>Giriş Yap</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-email">E-posta</label>
+                    <input type="email" id="login-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Şifre</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <button type="submit" class="btn">Giriş Yap</button>
+            </form>
+            <p>Hesabınız yok mu? <a href="#" id="go-to-register">Kayıt olun</a></p>
+            <div id="login-error" class="error-message hide"></div>
+            <div id="login-message" class="info-message hide"></div>
+        </div>
+
+        <div class="form-container hide" id="register-section">
+            <h2>Kayıt Ol</h2>
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="register-name">Ad Soyad</label>
+                    <input type="text" id="register-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">E-posta</label>
+                    <input type="email" id="register-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Şifre</label>
+                    <input type="password" id="register-password" required>
+                </div>
+                <button type="submit" class="btn">Kayıt Ol</button>
+            </form>
+            <p>Zaten hesabınız var mı? <a href="#" id="go-to-login">Giriş yapın</a></p>
+            <div id="register-error" class="error-message hide"></div>
+        </div>
+    </div>
+
+    <div class="app-container hide" id="app-container">
+        <header class="header">
+            <h1>İngilizce Kelime Öğrenme</h1>
+
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="#" id="nav-dashboard">Ana Sayfa</a></li>
+                    <li><a href="#" id="nav-learn">Kelime Öğren</a></li>
+                    <li><a href="#" id="nav-quiz">Quiz</a></li>
+                    <li><a href="#" id="nav-words">Kelime Listesi</a></li>
+                    <li><a href="#" id="nav-recent">Son Öğrenilen</a></li>
+                    <li><a href="#" id="nav-leaderboard">Liderlik Tablosu</a></li>
+                    <li><a href="#" id="nav-profile">Profil</a></li>
+                </ul>
+            </nav>
+
+            <div class="user-info">
+                <div class="user-stats-header">
+                    <div class="streak-badge" id="user-streak" title="Günlük Seri">
+                        <span class="streak-icon">🔥</span>
+                        <span class="streak-count" id="streak-count">0</span>
+                    </div>
+                    <span class="level-badge" id="user-level-badge">Seviye 1</span>
+                    <div class="xp-container">
+                        <div class="xp-text" id="xp-text">0 / 100 XP</div>
+                        <div class="xp-bar-outer">
+                            <div class="xp-bar-inner" id="xp-bar-fill"></div>
+                        </div>
+                    </div>
+                </div>
+                <button class="theme-toggle" id="theme-toggle-app" title="Temayı Değiştir">
+                    <span class="dark-icon">🌙</span>
+                    <span class="light-icon">☀️</span>
+                </button>
+                <span id="user-name" style="margin-left: 10px;">Kullanıcı</span>
+                <button id="logout-btn" class="btn">Çıkış Yap</button>
+            </div>
+        </header>
+
+        <div class="content">
+            <div id="dashboard-content" class="hide"></div>
+            <div id="learn-content" class="hide"></div>
+            <div id="quiz-content" class="hide"></div>
+            <div id="words-content" class="hide"></div>
+            <div id="recent-words-content" class="hide"></div>
+            <div id="profile-content" class="hide"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // Oturum kontrolü
+        window.checkSession = async function () {
+            onAuthStateChanged(window.firebaseAuth, (user) => {
+                const loader = document.getElementById('initial-loader');
+
+                if (user) {
+                    console.log('Aktif kullanıcı:', user.email);
+                    localStorage.setItem('isLoggedIn', 'true');
+                    window.showDashboard(user);
+                } else {
+                    console.log('Aktif oturum yok, giriş sayfası gösteriliyor');
+                    localStorage.setItem('isLoggedIn', 'false');
+                    document.getElementById('auth-container').classList.remove('hide');
+                    document.getElementById('app-container').classList.add('hide');
+                }
+
+                // Her durumda yükleme ekranını gizle (biraz gecikmeli ki akıcı olsun)
+                if (loader) {
+                    setTimeout(() => {
+                        loader.classList.add('fade-out');
+                        setTimeout(() => {
+                            loader.style.display = 'none';
+                        }, 500);
+                    }, 300);
+                }
+            });
+        };
+
+        // Dashboard'ı göster
+        window.showDashboard = function (user) {
+            if (!user) {
+                console.error('Geçersiz kullanıcı verisi');
+                return;
+            }
+
+            // Firebase uses displayName or we'll fetch from Firestore
+            const userName = user.displayName || user.email;
+            console.log('Kullanıcı adı ayarlanıyor:', userName);
+            document.getElementById('user-name').textContent = userName;
+
+            document.getElementById('auth-container').classList.add('hide');
+            document.getElementById('app-container').classList.remove('hide');
+
+            // Ana uygulamayı başlat
+            if (typeof initApp === 'function') {
+                console.log('initApp fonksiyonu çağrılıyor...');
+                initApp().catch(error => {
+                    console.error('initApp çalıştırılırken hata:', error);
+                });
+            } else {
+                console.error('initApp fonksiyonu bulunamadı');
+            }
+        };
+    </script>
+
+    <!-- Önce bağımlılıkları yükle -->
+    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/learning.js"></script>
+
+    <!-- Çerez Bildirimi -->
+    <div id="cookie-consent" class="cookie-consent">
+        <div class="cookie-text">
+            Bu web sitesi, deneyiminizi geliştirmek için çerezleri kullanmaktadır. Devam ederek,
+            <a href="gizlilik-politikasi.html" target="_blank">Gizlilik Politikamızı</a> ve
+            çerez kullanımını kabul etmiş olursunuz.
+        </div>
+        <div class="cookie-buttons">
+            <button id="accept-cookies" class="cookie-btn cookie-accept">Kabul Et</button>
+            <button id="decline-cookies" class="cookie-btn cookie-decline">Reddet</button>
+        </div>
+    </div>
+
+    <!-- Çerez Yönetimi Script -->
+    <script src="js/cookie-consent.js"></script>
+</body>
+
+</html>

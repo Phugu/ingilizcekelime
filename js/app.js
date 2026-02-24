@@ -1451,8 +1451,66 @@ window.showQuizTypes = showQuizTypes;
 
 // Quiz'i başlat
 function startQuiz(level, testNumber) {
+    console.log('🚀 startQuiz çağrıldı:', level, testNumber);
+
     const wordLearning = new WordLearning('quiz-content', currentUser.uid);
-    wordLearning.startSpecificTest(level, testNumber);
+
+    // Kelime havuzlarını direkt al
+    const pools = {
+        'a1': wordLearning.a1WordPools,
+        'a2': wordLearning.a2WordPools,
+        'b1': wordLearning.b1WordPools,
+        'b2': wordLearning.b2WordPools,
+        'c1': wordLearning.c1WordPools,
+    };
+
+    const levelKey = level.toLowerCase();
+    const levelPools = pools[levelKey];
+
+    if (!levelPools) {
+        console.error('Geçersiz seviye:', level);
+        return;
+    }
+
+    // Test numarasına göre kaynak kelime havuzunu belirle
+    let sourceWords = [];
+    if (testNumber === 1) {
+        sourceWords = levelPools.learning1 || [];
+    } else if (testNumber === 2) {
+        sourceWords = levelPools.learning2 || levelPools.learning1 || [];
+    } else if (testNumber === 3) {
+        // Tüm alt havuzları birleştir ve tekrarları kaldır
+        const allWords = Object.values(levelPools).flat();
+        const seen = new Set();
+        for (const w of allWords) {
+            if (!seen.has(w.english)) {
+                seen.add(w.english);
+                sourceWords.push(w);
+            }
+        }
+    }
+
+    if (sourceWords.length === 0) {
+        sourceWords = levelPools.learning1 || [];
+    }
+
+    // Karıştır ve soru sayısına göre kes
+    const questionCounts = { 1: 10, 2: 15, 3: 20 };
+    const count = Math.min(questionCounts[testNumber] || 10, sourceWords.length);
+    const shuffled = [...sourceWords].sort(() => Math.random() - 0.5);
+    const selectedWords = shuffled.slice(0, count);
+
+    console.log('✅ Seçilen kelimeler:', selectedWords.map(w => w.english));
+
+    // WordLearning instance'ını manual olarak ayarla
+    wordLearning.words = selectedWords;
+    wordLearning.currentLevel = levelKey.toUpperCase();
+    wordLearning.currentWordIndex = 0;
+    wordLearning.correctAnswers = 0;
+    wordLearning.userAnswers = [];
+
+    // Testi render et
+    wordLearning.renderWordTest();
 }
 
 // Global scope'a ekle

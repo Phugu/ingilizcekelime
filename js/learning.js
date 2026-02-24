@@ -1139,6 +1139,81 @@ export class WordLearning {
         }
     }
 
+    // Belirli seviye ve test numarası için quiz başlat
+    startSpecificTest(level, testNumber) {
+        try {
+            console.log('🎯 startSpecificTest çağrıldı:', level, testNumber);
+            const levelKey = level.toLowerCase();
+            let wordPool = [];
+
+            // Seviyeye göre kelime havuzunu seç
+            const poolMap = {
+                'a1': this.a1WordPools,
+                'a2': this.a2WordPools,
+                'b1': this.b1WordPools,
+                'b2': this.b2WordPools,
+                'c1': this.c1WordPools,
+            };
+
+            const pools = poolMap[levelKey];
+            if (!pools) {
+                console.error('Geçersiz seviye:', level);
+                return;
+            }
+
+            // Test numarasına göre kelime havuzu seç
+            if (testNumber === 1) {
+                wordPool = pools.learning1 || [];
+            } else if (testNumber === 2) {
+                wordPool = pools.learning2 || pools.learning1 || [];
+            } else if (testNumber === 3) {
+                // Tüm havuzları birleştir ve karıştır
+                const allWords = Object.values(pools).flat();
+                const unique = [];
+                const seen = new Set();
+                for (const w of allWords) {
+                    if (!seen.has(w.english)) {
+                        seen.add(w.english);
+                        unique.push(w);
+                    }
+                }
+                wordPool = this.shuffleArray(unique);
+            }
+
+            if (wordPool.length === 0) {
+                // Bu seviye için yeterli kelime yok, tüm havuzu kullan
+                wordPool = pools.learning1 || [];
+            }
+
+            // Kaç soru? Test 1=10, Test 2=15, Test 3=20 (varsa)
+            const questionCounts = { 1: 10, 2: 15, 3: 20 };
+            const count = Math.min(questionCounts[testNumber] || 10, wordPool.length);
+            const selectedWords = this.shuffleArray([...wordPool]).slice(0, count);
+
+            console.log('📚 Seçilen kelimeler:', selectedWords.map(w => w.english));
+
+            this.words = selectedWords;
+            this.currentWordIndex = 0;
+            this.correctAnswers = 0;
+            this.userAnswers = [];
+            this.currentLevel = levelKey.toUpperCase();
+
+            this.renderWordTest();
+        } catch (error) {
+            console.error('startSpecificTest hatası:', error);
+        }
+    }
+
+    // Dizi karıştırma (Fisher-Yates)
+    shuffleArray(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
     // Kelime testi görünümünü oluştur
     renderWordTest() {
         this.addAnimationStyles(); // Animasyon stillerini ekle
@@ -1191,7 +1266,14 @@ export class WordLearning {
         const backButton = document.createElement('button');
         backButton.className = 'btn btn-secondary back-to-tests-btn';
         backButton.textContent = 'Test Seçimine Dön';
-        backButton.addEventListener('click', () => this.showTestOptions());
+        backButton.addEventListener('click', () => {
+            const level = (this.currentLevel || 'a1').toLowerCase();
+            if (typeof window.showQuizList === 'function') {
+                window.showQuizList(level);
+            } else if (typeof window.showQuizTypes === 'function') {
+                window.showQuizTypes();
+            }
+        });
         testDiv.appendChild(backButton);
 
         container.appendChild(testDiv);
@@ -1289,16 +1371,27 @@ export class WordLearning {
         return newArray;
     }
 
-    // Tüm kelimeleri getir (seçenekler için)
+    // Tüm kelimeleri getir (seçenekler için) — mevcut seviyeden
     getAllWords() {
-        // Tüm kelime havuzlarını birleştir
-        const pools = this.a1WordPools;
+        const levelKey = (this.currentLevel || 'A1').toLowerCase();
+        const poolMap = {
+            'a1': this.a1WordPools,
+            'a2': this.a2WordPools,
+            'b1': this.b1WordPools,
+            'b2': this.b2WordPools,
+            'c1': this.c1WordPools,
+        };
+        const pools = poolMap[levelKey] || this.a1WordPools;
         let allWords = [];
-
         Object.values(pools).forEach(pool => {
             allWords = [...allWords, ...pool];
         });
-
+        // En az 4 kelime garantile (yanlış seçenekler için)
+        if (allWords.length < 4) {
+            Object.values(this.a1WordPools).forEach(pool => {
+                allWords = [...allWords, ...pool];
+            });
+        }
         return allWords;
     }
 

@@ -1576,7 +1576,6 @@ function toggleTheme() {
 
 // Olay dinleyicilerini sayfa her yenilendiğinde (özellikle app-container açıldığında) tekrar kontrol et
 function setupThemeToggle() {
-    document.getElementById('theme-toggle-auth')?.addEventListener('click', toggleTheme);
     document.getElementById('theme-toggle-app')?.addEventListener('click', toggleTheme);
 }
 

@@ -171,17 +171,23 @@
 
     <div class="app-container hide" id="app-container">
         <header class="header">
-            <h1>İngilizce Kelime Öğrenme</h1>
 
             <nav class="main-nav">
                 <ul>
-                    <li><a href="#" id="nav-dashboard">Ana Sayfa</a></li>
-                    <li><a href="#" id="nav-learn">Kelime Öğren</a></li>
-                    <li><a href="#" id="nav-quiz">Quiz</a></li>
-                    <li><a href="#" id="nav-words">Kelime Listesi</a></li>
-                    <li><a href="#" id="nav-recent">Son Öğrenilen</a></li>
-                    <li><a href="#" id="nav-leaderboard">Liderlik Tablosu</a></li>
-                    <li><a href="#" id="nav-profile">Profil</a></li>
+                    <li><a href="#" id="nav-dashboard"><span class="nav-icon">🏠</span><span class="nav-text">Ana
+                                Sayfa</span></a></li>
+                    <li><a href="#" id="nav-learn"><span class="nav-icon">📖</span><span class="nav-text">Kelime
+                                Öğren</span></a></li>
+                    <li><a href="#" id="nav-quiz"><span class="nav-icon">🎯</span><span class="nav-text">Quiz</span></a>
+                    </li>
+                    <li><a href="#" id="nav-words"><span class="nav-icon">📋</span><span class="nav-text">Kelime
+                                Listesi</span></a></li>
+                    <li><a href="#" id="nav-recent"><span class="nav-icon">⏰</span><span class="nav-text">Son
+                                Öğrenilen</span></a></li>
+                    <li><a href="#" id="nav-leaderboard"><span class="nav-icon">🏆</span><span
+                                class="nav-text">Liderlik</span></a></li>
+                    <li><a href="#" id="nav-profile"><span class="nav-icon">👤</span><span
+                                class="nav-text">Profil</span></a></li>
                 </ul>
             </nav>
 
@@ -203,8 +209,6 @@
                     <span class="dark-icon">🌙</span>
                     <span class="light-icon">☀️</span>
                 </button>
-                <span id="user-name" style="margin-left: 10px;">Kullanıcı</span>
-                <button id="logout-btn" class="btn">Çıkış Yap</button>
             </div>
         </header>
 
@@ -259,7 +263,8 @@
             // Firebase uses displayName or we'll fetch from Firestore
             const userName = user.displayName || user.email;
             console.log('Kullanıcı adı ayarlanıyor:', userName);
-            document.getElementById('user-name').textContent = userName;
+            const userNameEl = document.getElementById('user-name');
+            if (userNameEl) userNameEl.textContent = userName;
 
             document.getElementById('auth-container').classList.add('hide');
             document.getElementById('app-container').classList.remove('hide');

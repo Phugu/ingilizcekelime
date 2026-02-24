@@ -303,9 +303,12 @@ async function initApp() {
         const userId = currentUser.uid;
         console.log('Aktif kullanıcı kimliği:', userId);
 
-        // Kullanıcı adını göster
-        const userNameText = currentUser.displayName || currentUser.email;
-        document.getElementById('user-name').textContent = userNameText;
+        // Kullanıcı adını göster (header'dan kaldırıldı, sadece profil sayfasında gösteriliyor)
+        // Firebase uses displayName or we'll fetch from Firestore
+        const userName = user.displayName || user.email;
+        console.log('Kullanıcı adı ayarlanıyor:', userName);
+        const userNameEl = document.getElementById('user-name');
+        if (userNameEl) userNameEl.textContent = userName;
 
         // Kullanıcı İstatistiklerini (XP, Seviye, Streak) yükle ve göster
         await loadUserStats(userId);

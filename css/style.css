@@ -54,6 +54,17 @@
     border-color: var(--primary-color);
 }
 
+/* Tema butonu - sağ üst köşeye sabit */
+#theme-toggle-app {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    z-index: 9998;
+    background: var(--card-bg);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+
 .dark-icon,
 .light-icon {
     display: none;
@@ -571,35 +582,53 @@ a {
 /* Ana Menü ve Navigasyon */
 .main-nav {
     flex: 1;
-    margin: 0 30px;
+    margin: 0 10px 0 0;
 }
 
 .main-nav ul {
     display: flex;
     list-style: none;
-    justify-content: center;
-    gap: 25px;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
 }
 
 .main-nav a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     color: var(--text-secondary);
     text-decoration: none;
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 500;
-    padding: 8px 12px;
-    border-radius: 5px;
-    transition: all 0.2s ease;
+    padding: 7px 13px;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+    letter-spacing: 0.2px;
+}
+
+.nav-icon {
+    font-size: 14px;
+    line-height: 1;
 }
 
 .main-nav a:hover {
-    color: #3498db;
+    color: var(--primary-color);
     background-color: rgba(52, 152, 219, 0.1);
+    border-color: rgba(52, 152, 219, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(52, 152, 219, 0.15);
 }
 
 .main-nav a.active {
-    color: #3498db;
+    color: #ffffff;
     font-weight: 600;
-    background-color: rgba(52, 152, 219, 0.1);
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.35);
 }
 
 /* Kelime Öğrenme Alanı */

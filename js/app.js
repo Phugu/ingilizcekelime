@@ -1679,7 +1679,6 @@ async function updateDashboard() {
 // Tema değiştirme fonksiyonu
 function toggleTheme() {
     const isDark = document.documentElement.classList.toggle('dark-theme');
-    document.body.classList.toggle('dark-theme');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     console.log('Tema değiştirildi:', isDark ? 'Karanlık' : 'Aydınlık');
 }

@@ -70,11 +70,13 @@
     display: none;
 }
 
-.dark-theme .light-icon {
+/* Dark modda ☀️ göster */
+html.dark-theme .light-icon {
     display: block;
 }
 
-body:not(.dark-theme) .dark-icon {
+/* Light modda 🌙 göster */
+html:not(.dark-theme) .dark-icon {
     display: block;
 }
 

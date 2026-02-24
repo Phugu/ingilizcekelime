@@ -48,6 +48,7 @@ function hideAllContentSections() {
     document.getElementById('quiz-content').classList.add('hide');
     document.getElementById('profile-content').classList.add('hide');
     document.getElementById('recent-words-content').classList.add('hide');
+    document.getElementById('leaderboard-content')?.classList.add('hide');
 }
 
 // Aktif navigasyon öğesini güncelle
@@ -171,6 +172,14 @@ function setupMainNavigation(userId) {
             // Arka planda sessizce güncelle (kullanıcı bekletilmez)
             loadRecentWords(userId, document.getElementById('recent-level-filter')?.value || 'all');
         }
+    });
+
+    document.getElementById('nav-leaderboard').addEventListener('click', async function () {
+        hideAllContentSections();
+        const lbContent = document.getElementById('leaderboard-content');
+        lbContent.classList.remove('hide');
+        updateActiveNav(this);
+        await loadLeaderboard(lbContent);
     });
 
     document.getElementById('nav-profile').addEventListener('click', function () {
@@ -1448,6 +1457,46 @@ function showQuizTypes() {
 
 // Global scope'a ekle
 window.showQuizTypes = showQuizTypes;
+
+// Liderlik tablosunu yükle
+async function loadLeaderboard(container) {
+    container.innerHTML = `<div style="text-align:center;padding:40px;">⏳ Yükleniyor...</div>`;
+    try {
+        const q = query(
+            collection(db, 'users'),
+            orderBy('total_xp', 'desc'),
+            limit(10)
+        );
+        const snapshot = await getDocs(q);
+
+        const medals = ['🥇', '🥈', '🥉'];
+        const rows = snapshot.docs.map((docSnap, i) => {
+            const d = docSnap.data();
+            const name = d.name || d.email || 'Anonim';
+            const xp = d.total_xp || d.xp || 0;
+            const medal = medals[i] || `${i + 1}.`;
+            const isMe = docSnap.id === currentUser?.uid;
+            return `
+                <div class="leaderboard-row ${isMe ? 'leaderboard-me' : ''}">
+                    <span class="lb-rank">${medal}</span>
+                    <span class="lb-name">${name}${isMe ? ' (Sen)' : ''}</span>
+                    <span class="lb-xp">${xp} XP</span>
+                </div>`;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="leaderboard-container">
+                <h2>🏆 Liderlik Tablosu</h2>
+                <p>En yüksek XP'ye sahip kullanıcılar</p>
+                <div class="leaderboard-list">
+                    ${rows || '<p>Henüz veri yok.</p>'}
+                </div>
+            </div>`;
+    } catch (err) {
+        console.error('Liderlik tablosu yüklenemedi:', err);
+        container.innerHTML = `<div style="text-align:center;padding:40px;color:red;">Liderlik tablosu yüklenemedi.</div>`;
+    }
+}
 
 // Quiz'i başlat
 function startQuiz(level, testNumber) {

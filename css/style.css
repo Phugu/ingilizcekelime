@@ -3805,3 +3805,78 @@ a {
 .delete-btn:hover {
     background-color: #c82333;
 }
+
+/* Liderlik Tablosu */
+.leaderboard-container {
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.leaderboard-container h2 {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.leaderboard-container>p {
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+}
+
+.leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.leaderboard-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.leaderboard-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.leaderboard-row:nth-child(1) {
+    border-left: 4px solid #f59e0b;
+}
+
+.leaderboard-row:nth-child(2) {
+    border-left: 4px solid #94a3b8;
+}
+
+.leaderboard-row:nth-child(3) {
+    border-left: 4px solid #b45309;
+}
+
+.leaderboard-me {
+    background: rgba(52, 152, 219, 0.08);
+    border-color: rgba(52, 152, 219, 0.35) !important;
+}
+
+.lb-rank {
+    font-size: 22px;
+    min-width: 36px;
+    text-align: center;
+}
+
+.lb-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.lb-xp {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 15px;
+}

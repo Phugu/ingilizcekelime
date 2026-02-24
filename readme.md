@@ -92,8 +92,10 @@ ingilizcekelime/
 
 - [x] XP ve Seviye Sistemi
 - [x] Günlük Seri (Streak) Sistemi
-- [x] Liderlik Tablosu
+- [x] Liderlik Tablosu (top 10, altın/gümüş/bronz sıralama)
 - [x] Profil yönetimi
+- [x] Modern navigasyon (pill butonlar, emoji ikonlar)
+- [x] Quiz seviye filtreleme (A1-C1 her seviye kendi soruları)
 - [ ] Başarı Rozetleri (🎖️ 100 Kelime, 7 Günlük Seri vb.)
 - [ ] Aralıklı Tekrar Sistemi (SRS / Leitner)
 - [ ] Hata Havuzu (yanlış kelimelere özel pratik)

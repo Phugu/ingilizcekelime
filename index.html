@@ -21,7 +21,10 @@
     <meta property="og:title" content="İngilizce Kelime Öğrenme | Ücretsiz İngilizce Kelime Eğitimi">
     <meta property="og:description"
         content="İngilizce kelime öğrenmek için ücretsiz platform. A1, A2, B1, B2, C1 seviyelerinde kelimeler, quizler ve kelime tekrar sistemi ile İngilizcenizi geliştirin.">
-    <meta property="og:image" content="images/og-image.jpg">
+    <meta property="og:image" content="assets/images/logo.jpg">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpeg" href="assets/images/logo.jpg">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
@@ -29,7 +32,7 @@
     <meta property="twitter:title" content="İngilizce Kelime Öğrenme | Ücretsiz İngilizce Kelime Eğitimi">
     <meta property="twitter:description"
         content="İngilizce kelime öğrenmek için ücretsiz platform. A1, A2, B1, B2, C1 seviyelerinde kelimeler, quizler ve kelime tekrar sistemi ile İngilizcenizi geliştirin.">
-    <meta property="twitter:image" content="images/og-image.jpg">
+    <meta property="twitter:image" content="assets/images/logo.jpg">
 
     <!-- Canonical URL -->
     <link rel="canonical" href="https://kelimeingilizcee.com/">
@@ -112,13 +115,17 @@
     <!-- Başlangıç Yükleme Ekranı -->
     <div id="initial-loader" class="initial-loader">
         <div class="loader-content">
-            <div class="spinner"></div>
+            <img src="assets/images/logo.jpg" alt="Logo"
+                style="width: 80px; height: 80px; margin-bottom: 15px; border-radius: 12px; object-fit: contain;">
+            <div class="spinner" style="margin: 0 auto 20px auto;"></div>
             <h1>İngilizce Kelime Öğrenme</h1>
             <p>Uygulama hazırlanıyor...</p>
         </div>
     </div>
 
-    <div class="auth-container hide" id="auth-container">
+    <div class="auth-container hide" id="auth-container" style="text-align: center;">
+        <img src="assets/images/logo.jpg" alt="Kelime İngilizce Logo"
+            style="width: 80px; height: 80px; margin-bottom: 10px; border-radius: 12px; object-fit: contain; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <h1 style="margin-bottom: 20px; font-size: 24px; color: var(--primary-color);">Kelime İngilizce</h1>
 
         <!-- Sayfa ilk yüklendiğinde ufak bir bekleme süresince login görünmesin -->
@@ -141,7 +148,18 @@
                 </div>
                 <button type="submit" class="btn">Giriş Yap</button>
             </form>
-            <p>Hesabınız yok mu? <a href="#" id="go-to-register">Kayıt olun</a></p>
+
+            <div style="margin: 15px 0; text-align: center; position: relative;">
+                <hr style="border: none; border-top: 1px solid var(--border-color);">
+                <span
+                    style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--card-bg); padding: 0 10px; color: var(--text-muted); font-size: 14px;">veya</span>
+            </div>
+
+            <button id="guest-login-btn" class="btn"
+                style="background-color: var(--input-bg); color: var(--text-main); border: 2px solid var(--border-color);">Misafir
+                Olarak Devam Et</button>
+
+            <p style="margin-top: 15px;">Hesabınız yok mu? <a href="#" id="go-to-register">Kayıt olun</a></p>
             <div id="login-error" class="error-message hide"></div>
             <div id="login-message" class="info-message hide"></div>
         </div>
@@ -204,10 +222,6 @@
                         </div>
                     </div>
                 </div>
-                <button class="theme-toggle" id="theme-toggle-app" title="Temayı Değiştir">
-                    <span class="dark-icon">🌙</span>
-                    <span class="light-icon">☀️</span>
-                </button>
             </div>
         </header>
 
@@ -234,6 +248,15 @@
                     console.log('Aktif kullanıcı:', user.email);
                     localStorage.setItem('isLoggedIn', 'true');
                     window.showDashboard(user);
+                } else if (localStorage.getItem('isGuest') === 'true') {
+                    console.log('Misafir oturumu aktif');
+                    const guestUser = {
+                        uid: 'guest_user_12345',
+                        displayName: 'Misafir Kullanıcı',
+                        email: 'misafir@kelimeingilizce.com',
+                        isGuest: true
+                    };
+                    window.showDashboard(guestUser);
                 } else {
                     console.log('Aktif oturum yok, giriş sayfası gösteriliyor');
                     localStorage.setItem('isLoggedIn', 'false');

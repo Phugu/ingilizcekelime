@@ -22,14 +22,26 @@ Bu dosya, platformun eğitim ve oyunlaştırma (gamification) özelliklerinin ge
 - [x] **Kelime Kartı Tasarımı:** Kartlardaki seviye (A1/A2), kategori ve soru sayısı çakışmaları düzeltildi.
 - [x] **Badge Estetiği:** Kategori ve seviye rozetleri birbirinden farklı renklerle (Mavi/Yeşil) netleştirildi.
 
+### 🌓 Tema ve Görünüm (Onboarding)
+- [x] **Tema Seçim Ekranı:** İlk girişte kullanıcıya Aydınlık/Karanlık tema seçimi sunan karşılama ekranı.
+- [x] **Profil Entegrasyonu:** Tema değiştirme butonu header'dan kaldırılarak profil ayarları sayfasına taşındı.
+- [x] **Yerel Depolama (Local Storage):** Seçilen temanın cihazda hatırlanması (`themeSelected`).
+
+### 👤 Misafir Oturumu (Guest Mode)
+- [x] **Misafir Girişi:** Üye olmadan uygulamayı deneme imkânı sunan "Misafir Olarak Devam Et" butonu.
+- [x] **Gelişmiş Veri Koruması:** Misafir oturumunda veritabanına yazma (kelime öğrenme, quiz sonuçları, XP) işlemleri engellendi.
+- [x] **Misafir Uyarı Sistemi:** Puan kazanma animasyonları çalışırken ilerlemenin kaydedilmediğine dair Dashboard, Profil, Liderlik ve Kelime Listesi ekranlarında sarı uyarı mesajları.
+- [x] **Güvenlik Kısıtlamaları:** Profil sayfasındaki şifre değiştirme ve hesap silme gibi alanlar misafirlerden gizlendi.
+
 ---
 
 ## 🟡 Devam Eden / Sıradaki İşlemler
 
-### 📊 Liderlik Tablosu (Leaderboard)
+### 📊 Liderlik Tablosu (Leaderboard) - (Tamamlandı ✅)
 - [x] **En İyiler Listesi:** En çok XP kazanan ilk 10 kullanıcının listelenmesi.
 - [x] **Kullanıcı Sıralaması:** Kullanıcının kendi yerini ve puanını listede vurgulu bir şekilde görmesi.
 - [x] **Görsel Tasarım:** Premium avatar ve rütbe ikonları ile şık bir tablo görünümü.
+- [x] **Misafir Modu Uyumu:** Misafir kullanıcılarda tablonun yüklenmesini engelleyip giriş yapmaya teşvik eden uyarı mekanizması eklendi.
 
 ### 🎖️ Başarı Rozetleri (Badges)
 - [ ] "100 Kelime Öğrendin", "7 Günlük Seri", "İlk Mükemmel Quiz" gibi özel rozetlerin tasarımı ve kazanım mantığı.

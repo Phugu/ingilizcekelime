@@ -936,6 +936,23 @@ export class WordLearning {
                 word: word
             });
 
+            // Misafir kontrolü ekle
+            if (localStorage.getItem('isGuest') === 'true' || (window.currentUser && window.currentUser.isGuest)) {
+                console.log('Misafir oturumu: Kelime öğrenme veri tabanına kaydedilmeyecek.');
+
+                // XP Kazandır (sadece animasyon için)
+                if (typeof window.giveXP === 'function') {
+                    window.giveXP(10, "Yeni kelime öğrendin!");
+                }
+
+                // Dashboard'ı güncelle
+                if (typeof window.updateDashboard === 'function') {
+                    await window.updateDashboard();
+                }
+
+                return true;
+            }
+
             if (!this.userId) {
                 console.error('Kullanıcı ID bulunamadı!');
                 throw new Error('Kullanıcı oturumu bulunamadı');
@@ -1042,6 +1059,11 @@ export class WordLearning {
     // Kullanıcı ilerlemesini güncelle
     async updateUserProgress() {
         try {
+            if (localStorage.getItem('isGuest') === 'true' || (window.currentUser && window.currentUser.isGuest)) {
+                console.log('Misafir oturumu: İlerleme güncellenmiyor.');
+                return;
+            }
+
             if (!this.userId) {
                 console.error('Kullanıcı bulunamadı, ilerleme güncellenemedi');
                 return;
@@ -1447,6 +1469,11 @@ export class WordLearning {
     // Test sonuçlarını kaydet
     async saveTestResults() {
         try {
+            if (localStorage.getItem('isGuest') === 'true' || (window.currentUser && window.currentUser.isGuest)) {
+                console.log('Misafir oturumu: Quiz sonucu kaydedilmeyecek.');
+                return true;
+            }
+
             if (!this.userId) {
                 throw new Error('Kullanıcı oturumu bulunamadı');
             }
@@ -1495,17 +1522,23 @@ export class WordLearning {
                 resultClass = "needs-improvement";
             }
 
-            // Sonuçları kaydet
+            // Sonuçları kaydet (misafir kontrolü eklendi)
             try {
-                await addDoc(collection(db, "quiz_results"), {
-                    user_id: this.userId,
-                    level: this.currentLevel || 'a1', // Assuming currentLevel is set
-                    correct_count: this.correctAnswers,
-                    total_questions: this.words.length,
-                    success_rate: percentage,
-                    created_at: Timestamp.now()
-                });
-                console.log('Quiz sonuçları kaydedildi');
+                const isGuest = localStorage.getItem('isGuest') === 'true' || (window.currentUser && window.currentUser.isGuest);
+
+                if (!isGuest && this.userId) {
+                    await addDoc(collection(db, "quiz_results"), {
+                        user_id: this.userId,
+                        level: this.currentLevel || 'a1', // Assuming currentLevel is set
+                        correct_count: this.correctAnswers,
+                        total_questions: this.words.length,
+                        success_rate: percentage,
+                        created_at: Timestamp.now()
+                    });
+                    console.log('Quiz sonuçları kaydedildi');
+                } else {
+                    console.log('Misafir oturumu veya kullanıcı ID yok: Quiz sonuçları kaydedilmedi.');
+                }
 
                 // XP Kazandır
                 if (typeof window.giveXP === 'function') {

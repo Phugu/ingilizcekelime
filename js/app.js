@@ -230,6 +230,15 @@ function setupForms() {
         }
     });
 
+    document.getElementById('guest-login-btn')?.addEventListener('click', function (e) {
+        e.preventDefault();
+        console.log('Misafir olarak giriş yapılıyor...');
+        localStorage.setItem('isGuest', 'true');
+
+        // Başarılı misafir girişi
+        window.location.reload();
+    });
+
     // Register form submit
     document.getElementById('register-form')?.addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -298,7 +307,17 @@ async function initApp() {
         hideAllSections();
 
         // Aktif oturumu kontrol et
-        const user = auth.currentUser;
+        let user = auth.currentUser;
+
+        if (!user && localStorage.getItem('isGuest') === 'true') {
+            user = {
+                uid: 'guest_user_12345',
+                displayName: 'Misafir Kullanıcı',
+                email: 'misafir@kelimeingilizce.com',
+                isGuest: true
+            };
+        }
+
         console.log('Session kontrolü:', user ? 'Aktif oturum var' : 'Oturum yok');
 
         if (!user) {
@@ -327,7 +346,11 @@ async function initApp() {
         if (logoutBtn) {
             logoutBtn.onclick = async function () {
                 try {
-                    await signOut(auth);
+                    if (user.isGuest) {
+                        localStorage.removeItem('isGuest');
+                    } else {
+                        await signOut(auth);
+                    }
                     localStorage.removeItem('isLoggedIn');
                     window.location.reload();
                 } catch (err) {
@@ -355,6 +378,11 @@ async function initApp() {
         // Çerez uyarısını göster
         setTimeout(() => {
             initCookieConsent();
+
+            // İlk girişte tema seçim ekranını göster
+            if (!localStorage.getItem('themeSelected')) {
+                showThemeSelectionModal();
+            }
         }, 1000);
 
     } catch (error) {
@@ -365,6 +393,13 @@ async function initApp() {
 
 // Kullanıcı istatistiklerini (XP ve Seri) yükle
 async function loadUserStats(userId) {
+    if (currentUser && currentUser.isGuest) {
+        // Misafir kullanıcı için varsayılan istatistikler
+        updateXPUI(0, 1);
+        updateStreakUI(0, null);
+        return;
+    }
+
     try {
         let userDoc = await getDoc(doc(db, "users", userId));
 
@@ -453,6 +488,12 @@ function updateXPUI(xp, level) {
 // XP Kazandırma Fonksiyonu
 async function giveXP(amount, reason = "Tebrikler!") {
     console.log(`giveXP çağrıldı: ${amount} XP, Sebep: ${reason}`);
+
+    if (currentUser && currentUser.isGuest) {
+        console.log('Misafir kullanıcısı için XP kaydedilmiyor, sadece bildirim gösteriliyor.');
+        showXPNotification(amount, reason, false);
+        return;
+    }
 
     // currentUser yerine doğrudan auth.currentUser kullan (daha güvenli)
     const activeUser = auth.currentUser;
@@ -601,6 +642,59 @@ function initCookieConsent() {
     }
 }
 
+// Temel seçim modalini göster
+function showThemeSelectionModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'theme-selection-modal';
+
+    modal.innerHTML = `
+        <div class="modal-content" style="text-align: center; padding: 40px 20px;">
+            <h2 style="margin-bottom: 10px; color: var(--primary-color);">Görünümünüzü Seçin</h2>
+            <p style="margin-bottom: 30px; color: var(--text-color);">Aydınlık veya karanlık temayla öğrenmeye devam edin.<br><small>(Bunu daha sonra Profil sayfasından değiştirebilirsiniz.)</small></p>
+            <div style="display: flex; justify-content: center; gap: 20px;">
+                <button id="select-light-theme" class="btn" style="flex: 1; background: #f0f0f0; color: #333; border: 3px solid #ddd; padding: 20px 10px; font-size: 16px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <span style="font-size: 32px;">☀️</span>
+                    Aydınlık
+                </button>
+                <button id="select-dark-theme" class="btn" style="flex: 1; background: #2a2c38; color: #fff; border: 3px solid #3a3c48; padding: 20px 10px; font-size: 16px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <span style="font-size: 32px;">🌙</span>
+                    Karanlık
+                </button>
+            </div>
+            <button id="close-theme-modal" class="btn btn-primary" style="margin-top: 30px; width: auto; padding: 10px 30px;">Kaydet ve Devam Et</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const updateBorders = () => {
+        const isDark = document.documentElement.classList.contains('dark-theme');
+        document.getElementById('select-dark-theme').style.borderColor = isDark ? 'var(--primary-color)' : '#3a3c48';
+        document.getElementById('select-light-theme').style.borderColor = isDark ? '#ddd' : 'var(--primary-color)';
+    };
+
+    updateBorders();
+
+    document.getElementById('select-light-theme').addEventListener('click', () => {
+        document.documentElement.classList.remove('dark-theme');
+        localStorage.setItem('theme', 'light');
+        updateBorders();
+    });
+
+    document.getElementById('select-dark-theme').addEventListener('click', () => {
+        document.documentElement.classList.add('dark-theme');
+        localStorage.setItem('theme', 'dark');
+        updateBorders();
+    });
+
+    document.getElementById('close-theme-modal').addEventListener('click', () => {
+        localStorage.setItem('themeSelected', 'true');
+        modal.remove();
+    });
+}
+
+
 // Profil sayfasını yükle
 async function loadProfileContent() {
     try {
@@ -610,7 +704,7 @@ async function loadProfileContent() {
         if (!profileContent) return;
         profileContent.classList.remove('hide');
 
-        const user = auth.currentUser;
+        const user = window.currentUser || auth.currentUser || (localStorage.getItem('isGuest') === 'true' ? { uid: 'guest_user_12345', email: 'misafir@kelimeingilizce.com', isGuest: true, displayName: 'Misafir Kullanıcı' } : null);
         if (!user) {
             console.error('Kullanıcı oturumu bulunamadı.');
             profileContent.innerHTML = `<div class="error-message"><p>Profil bilgileri yüklenemedi: Kullanıcı oturumu bulunamadı.</p></div>`;
@@ -620,8 +714,15 @@ async function loadProfileContent() {
         console.log('Kullanıcı bilgileri:', user);
 
         // Kullanıcı XP ve Level bilgisini al
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        const userData = userDoc.exists() ? userDoc.data() : { xp: 0, level: 1, total_xp: 0 };
+        let userData = { xp: 0, level: 1, total_xp: 0 };
+        if (!user.isGuest) {
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                userData = userDoc.exists() ? userDoc.data() : { xp: 0, level: 1, total_xp: 0 };
+            } catch (err) {
+                console.error('Kullanıcı verisi alınamadı:', err);
+            }
+        }
         const xp = userData.xp || 0;
         const level = userData.level || 1;
         const totalXp = userData.total_xp || 0;
@@ -630,6 +731,13 @@ async function loadProfileContent() {
         let html = `
             <div class="profile-container">
                 <h2>Profil Bilgileriniz</h2>
+                
+                ${user.isGuest ? `
+                <div class="profile-section notification" style="background-color: rgba(243, 156, 18, 0.1); border-left-color: #f39c12;">
+                    <h3 style="color: #f39c12; border-bottom: none;"><span style="font-size: 20px; margin-right: 10px;">⚠️</span>Misafir Modundasınız</h3>
+                    <p class="info-message">Şu anda uygulamayı misafir olarak kullanıyorsunuz. Öğrendiğiniz kelimeler, XP'leriniz, serileriniz ve quiz geçmişiniz <strong>kaydedilmez.</strong> İlerlemenizi kaybetmemek için giriş yapın veya kayıt olun.</p>
+                </div>
+                ` : ''}
                 
                 <div class="profile-section user-details">
                     <h3>Kullanıcı Bilgileri</h3>
@@ -645,7 +753,7 @@ async function loadProfileContent() {
                         </div>
                         <div class="info-item">
                             <span class="label">Üyelik Tarihi:</span>
-                            <span class="value">${user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('tr-TR') : 'Belirtilmemiş'}</span>
+                            <span class="value">${user.metadata && user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('tr-TR') : 'Belirtilmemiş'}</span>
                         </div>
                     </div>
                 </div>
@@ -668,6 +776,20 @@ async function loadProfileContent() {
                     </div>
                 </div>
 
+                <div class="profile-section theme-settings">
+                    <h3>Görünüm Ayarları</h3>
+                    <div class="profile-info">
+                        <div class="info-item" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <span class="label" style="margin-bottom: 0;">Uygulama Teması:</span>
+                            <button class="theme-toggle" id="profile-theme-toggle" title="Temayı Değiştir" style="position: relative; right: auto; top: auto; transform: none; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: var(--input-bg); border: 2px solid var(--border-color); border-radius: 50%;">
+                                <span class="dark-icon">🌙</span>
+                                <span class="light-icon">☀️</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                ${!user.isGuest ? `
                 <div class="profile-section security">
                     <h3>Güvenlik</h3>
                     <div class="security-actions">
@@ -675,6 +797,7 @@ async function loadProfileContent() {
                         <button id="delete-account-btn" class="btn btn-danger">Hesabı Sil</button>
                     </div>
                 </div>
+                ` : ''}
 
                 <!-- İsim Değiştirme Modal -->
                 <div id="name-modal" class="modal hide">
@@ -738,96 +861,122 @@ async function loadProfileContent() {
         `;
 
         // Quiz sonuçları bölümü
-        try {
-            const q = query(
-                collection(db, "quiz_results"),
-                where("user_id", "==", user.uid),
-                orderBy("created_at", "desc"),
-                limit(5)
-            );
-            const querySnapshot = await getDocs(q);
-            const quizResults = querySnapshot.docs.map(doc => doc.data());
+        if (!user.isGuest) {
+            try {
+                const q = query(
+                    collection(db, "quiz_results"),
+                    where("user_id", "==", user.uid),
+                    orderBy("created_at", "desc"),
+                    limit(5)
+                );
+                const querySnapshot = await getDocs(q);
+                const quizResults = querySnapshot.docs.map(doc => doc.data());
 
-            if (quizResults.length > 0) {
-                html += `
-                <div class="profile-section recent-quizzes">
-                        <h3>Quiz Sonuçları</h3>
-                        <table class="quiz-history-table">
-                        <thead>
-                            <tr>
-                                <th>Seviye</th>
-                                <th>Doğru</th>
-                                <th>Toplam</th>
-                                <th>Başarı</th>
-                                <th>Tarih</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                                ${quizResults.map(result => {
-                    const date = result.created_at?.toDate() ? result.created_at.toDate().toLocaleDateString('tr-TR') : 'Belirtilmemiş';
-                    const successRate = Math.round((result.correct_count / result.total_questions) * 100);
-                    return `
-                                        <tr>
-                                            <td>${result.level.toUpperCase()}</td>
-                                            <td>${result.correct_count}</td>
-                                            <td>${result.total_questions}</td>
-                                            <td>%${successRate}</td>
-                                            <td>${date}</td>
-                            </tr>
-                                    `;
-                }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            } else {
-                html += `
+                if (quizResults.length > 0) {
+                    html += `
+                    <div class="profile-section recent-quizzes">
+                            <h3>Quiz Sonuçları</h3>
+                            <table class="quiz-history-table">
+                            <thead>
+                                <tr>
+                                    <th>Seviye</th>
+                                    <th>Doğru</th>
+                                    <th>Toplam</th>
+                                    <th>Başarı</th>
+                                    <th>Tarih</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                    ${quizResults.map(result => {
+                        const date = result.created_at?.toDate() ? result.created_at.toDate().toLocaleDateString('tr-TR') : 'Belirtilmemiş';
+                        const successRate = Math.round((result.correct_count / result.total_questions) * 100);
+                        return `
+                                            <tr>
+                                                <td>${result.level.toUpperCase()}</td>
+                                                <td>${result.correct_count}</td>
+                                                <td>${result.total_questions}</td>
+                                                <td>%${successRate}</td>
+                                                <td>${date}</td>
+                                </tr>
+                                        `;
+                    }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                } else {
+                    html += `
+                    <div class="profile-section notification">
+                        <h3>Quiz Geçmişi</h3>
+                        <p class="info-message">Henüz hiç quiz çözmediniz. Quiz çözmek için "Quiz" sekmesine geçebilirsiniz.</p>
+                    </div>
+                `;
+                }
+            } catch (error) {
+                console.error('Quiz sonuçları yüklenirken hata:', error);
+            }
+        } else {
+            html += `
                 <div class="profile-section notification">
                     <h3>Quiz Geçmişi</h3>
-                    <p class="info-message">Henüz hiç quiz çözmediniz. Quiz çözmek için "Quiz" sekmesine geçebilirsiniz.</p>
+                    <p class="info-message">Misafir oturumunda bulunduğunuz için quiz geçmişiniz kaydedilmiyor.</p>
                 </div>
             `;
-            }
-        } catch (error) {
-            console.error('Quiz sonuçları yüklenirken hata:', error);
         }
 
         // Çıkış yapma butonu
         html += `
             <div class="profile-section logout-section">
-                <button id="profile-logout-btn" class="btn btn-danger">Çıkış Yap</button>
+                <button id="profile-logout-btn" class="btn btn-danger">${user.isGuest ? 'Kayıt Ol / Giriş Yap' : 'Çıkış Yap'}</button>
             </div>
         `;
 
         profileContent.innerHTML = html + '</div>';
 
-        // Event Listeners
-        document.getElementById('change-name-btn').onclick = () => {
-            document.getElementById('name-modal').classList.remove('hide');
-        };
+        // Event Listeners (Only bind if buttons exist)
+        const changeNameBtn = document.getElementById('change-name-btn');
+        if (changeNameBtn) {
+            changeNameBtn.onclick = () => {
+                if (user.isGuest) {
+                    alert('İsim değiştirmek için normal üye olmalısınız.');
+                    return;
+                }
+                document.getElementById('name-modal').classList.remove('hide');
+            };
+        }
 
-        document.getElementById('change-password-btn').onclick = () => {
-            document.getElementById('password-modal').classList.remove('hide');
-        };
+        const changePasswordBtn = document.getElementById('change-password-btn');
+        if (changePasswordBtn) {
+            changePasswordBtn.onclick = () => {
+                document.getElementById('password-modal').classList.remove('hide');
+            };
+        }
 
-        document.getElementById('delete-account-btn').onclick = () => {
-            document.getElementById('delete-modal').classList.remove('hide');
-        };
+        const deleteAccountBtn = document.getElementById('delete-account-btn');
+        if (deleteAccountBtn) {
+            deleteAccountBtn.onclick = () => {
+                document.getElementById('delete-modal').classList.remove('hide');
+            };
+        }
 
         // İsim değiştirme formu
-        document.getElementById('name-change-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const newName = document.getElementById('new-name').value;
-            try {
-                await updateProfile(auth.currentUser, { displayName: newName });
-                await updateDoc(doc(db, "users", auth.currentUser.uid), { name: newName });
+        const nameChangeForm = document.getElementById('name-change-form');
+        if (nameChangeForm) {
+            nameChangeForm.onsubmit = async (e) => {
+                e.preventDefault();
+                if (user.isGuest) return;
+                const newName = document.getElementById('new-name').value;
+                try {
+                    await updateProfile(auth.currentUser, { displayName: newName });
+                    await updateDoc(doc(db, "users", auth.currentUser.uid), { name: newName });
 
-                document.getElementById('name-modal').classList.add('hide');
-                window.location.reload();
-            } catch (err) {
-                alert('İsim değiştirme başarısız: ' + err.message);
-            }
-        };
+                    document.getElementById('name-modal').classList.add('hide');
+                    window.location.reload();
+                } catch (err) {
+                    alert('İsim değiştirme başarısız: ' + err.message);
+                }
+            };
+        }
 
         // Şifre değiştirme formu
         document.getElementById('password-change-form').onsubmit = async (e) => {
@@ -891,10 +1040,21 @@ async function loadProfileContent() {
             }
         };
 
+        // Tema değiştirme butonu
+        const profileThemeToggle = document.getElementById('profile-theme-toggle');
+        if (profileThemeToggle) {
+            profileThemeToggle.onclick = toggleTheme;
+        }
+
         // Çıkış butonu
         document.getElementById('profile-logout-btn').onclick = async function () {
             try {
-                await signOut(auth);
+                if (user.isGuest) {
+                    localStorage.removeItem('isGuest');
+                } else {
+                    await signOut(auth);
+                }
+                localStorage.removeItem('isLoggedIn');
                 window.location.reload();
             } catch (err) {
                 console.error('Çıkış yaparken hata:', err);
@@ -907,10 +1067,10 @@ async function loadProfileContent() {
         const profileContent = document.getElementById('profile-content');
         if (profileContent) {
             profileContent.innerHTML = `
-                <div class="error-message">
-                    <p>Profil bilgileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
-                </div>
-            `;
+                    <div class="error-message">
+                        <p>Profil bilgileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
+                    </div>
+                `;
         }
     }
 }
@@ -996,6 +1156,21 @@ async function loadWordsList() {
     try {
         const wordsContent = document.getElementById('words-content');
         if (!wordsContent) return;
+
+        const isGuest = (typeof currentUser !== 'undefined' && currentUser && currentUser.isGuest) || localStorage.getItem('isGuest') === 'true';
+
+        if (isGuest) {
+            wordsContent.innerHTML = `
+                <div class="words-list-container">
+                    <h2>Kelime Listeniz</h2>
+                    <div class="error-message" style="background-color: rgba(243, 156, 18, 0.1); border-left-color: #f39c12; color: #f39c12; padding: 20px;">
+                        <h3 style="margin-bottom: 10px;">⚠️ Misafir Modundasınız</h3>
+                        <p>Misafir oturumunda bulunduğunuz için öğrendiğiniz kelimeler kaydedilmemektedir. Kelime listenizi görebilmek için giriş yapın veya kayıt olun.</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
 
         wordsContent.innerHTML = '<h2>Kelime Listeniz</h2><p>Kelimeleriniz yükleniyor...</p>';
 
@@ -1128,6 +1303,19 @@ class Dashboard {
 
     async getUserStats() {
         try {
+            const isGuest = (typeof currentUser !== 'undefined' && currentUser && currentUser.isGuest) || localStorage.getItem('isGuest') === 'true';
+
+            if (this.userId === 'guest_user_12345' || isGuest) {
+                return {
+                    totalWords: 0,
+                    totalQuizzes: 0,
+                    studyStreak: 1,
+                    level: 1,
+                    xp: 0,
+                    totalXP: 0
+                };
+            }
+
             // Öğrenilen kelime sayısını al
             const learnedWordsQuery = query(
                 collection(db, "learned_words"),
@@ -1242,6 +1430,20 @@ async function loadRecentWords(userId, levelFilter = 'all') {
     try {
         const recentContent = document.getElementById('recent-words-content');
         if (!recentContent) return;
+
+        const isGuest = (typeof currentUser !== 'undefined' && currentUser && currentUser.isGuest) || localStorage.getItem('isGuest') === 'true';
+
+        if (isGuest) {
+            recentContent.innerHTML = `
+                <div class="dashboard-container">
+                    <h2 class="section-title">Son Öğrenilen Kelimeler</h2>
+                    <div class="no-data-message" style="background-color: rgba(243, 156, 18, 0.1); border-color: #f39c12; color: #f39c12; padding: 15px; border-radius: 8px;">
+                        Misafir oturumunda bulunduğunuz için son öğrenilen kelimeler kaydedilmemektedir.
+                    </div>
+                </div>
+             `;
+            return;
+        }
 
         let q;
         if (levelFilter !== 'all') {
@@ -1461,6 +1663,21 @@ window.showQuizTypes = showQuizTypes;
 // Liderlik tablosunu yükle
 async function loadLeaderboard(container) {
     container.innerHTML = `<div style="text-align:center;padding:40px;">⏳ Yükleniyor...</div>`;
+
+    // Misafir kontrolü eklendi
+    const isGuest = (typeof currentUser !== 'undefined' && currentUser && currentUser.isGuest) || localStorage.getItem('isGuest') === 'true';
+    if (isGuest) {
+        container.innerHTML = `
+            <div class="leaderboard-container">
+                <h2>🏆 Liderlik Tablosu</h2>
+                <div class="error-message" style="background-color: rgba(243, 156, 18, 0.1); border-left-color: #f39c12; color: #f39c12; padding: 20px; text-align: left; margin-top: 20px;">
+                    <h3 style="margin-bottom: 10px; border: none; color: #f39c12;">⚠️ Misafir Modundasınız</h3>
+                    <p>Misafir oturumunda bulunduğunuz için liderlik tablosu görüntülenememektedir. Diğer kullanıcıların sıralamalarını görmek ve yarışa katılmak için giriş yapın veya kayıt olun.</p>
+                </div>
+            </div>`;
+        return;
+    }
+
     try {
         const q = query(
             collection(db, 'users'),

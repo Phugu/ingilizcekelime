@@ -940,14 +940,21 @@ export class WordLearning {
             if (localStorage.getItem('isGuest') === 'true' || (window.currentUser && window.currentUser.isGuest)) {
                 console.log('Misafir oturumu: Kelime öğrenme veri tabanına kaydedilmeyecek.');
 
-                // XP Kazandır (sadece animasyon için)
-                if (typeof window.giveXP === 'function') {
-                    window.giveXP(10, "Yeni kelime öğrendin!");
-                }
+                // Misafir için geçici bellekte kelime kontrolü (Sınırsız XP bug'ını önlemek için)
+                this.guestLearnedWords = this.guestLearnedWords || new Set();
 
-                // Dashboard'ı güncelle
-                if (typeof window.updateDashboard === 'function') {
-                    await window.updateDashboard();
+                if (!this.guestLearnedWords.has(word.english)) {
+                    this.guestLearnedWords.add(word.english);
+
+                    // Sadece ilk defa öğrenildiğinde XP Kazandır (animasyon için)
+                    if (typeof window.giveXP === 'function') {
+                        window.giveXP(10, "Yeni kelime öğrendin!");
+                    }
+
+                    // Dashboard'ı güncelle
+                    if (typeof window.updateDashboard === 'function') {
+                        await window.updateDashboard();
+                    }
                 }
 
                 return true;
@@ -966,7 +973,10 @@ export class WordLearning {
             );
             const querySnapshot = await getDocs(q);
 
+            let isNewWord = false;
+
             if (querySnapshot.empty) {
+                isNewWord = true;
                 await addDoc(collection(db, "learned_words"), {
                     user_id: this.userId,
                     word_english: word.english,
@@ -1019,18 +1029,20 @@ export class WordLearning {
                 console.log('İlerleme kaydı güncellendi.');
             }
 
-            // XP Kazandır
-            console.log('XP kazandırma kontrolü yapılıyor...');
-            if (typeof window.giveXP === 'function') {
-                console.log('window.giveXP fonksiyonu bulundu, 10 XP gönderiliyor...');
-                window.giveXP(10, "Yeni kelime öğrendin!");
-            } else {
-                console.warn('UYARI: window.giveXP fonksiyonu bulunamadı! XP kazanılamadı.');
-            }
+            // Sadece yeni öğrenilen kelimeler için XP ver (Sınırsız XP Bug Çözümü)
+            if (isNewWord) {
+                console.log('XP kazandırma kontrolü yapılıyor...');
+                if (typeof window.giveXP === 'function') {
+                    console.log('window.giveXP fonksiyonu bulundu, 10 XP gönderiliyor...');
+                    window.giveXP(10, "Yeni kelime öğrendin!");
+                } else {
+                    console.warn('UYARI: window.giveXP fonksiyonu bulunamadı! XP kazanılamadı.');
+                }
 
-            // Dashboard'ı güncelle
-            if (typeof window.updateDashboard === 'function') {
-                await window.updateDashboard();
+                // Dashboard'ı güncelle
+                if (typeof window.updateDashboard === 'function') {
+                    await window.updateDashboard();
+                }
             }
 
             console.log('Kelime başarıyla öğrenildi olarak işaretlendi:', word.english);

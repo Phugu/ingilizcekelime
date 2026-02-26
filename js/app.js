@@ -653,6 +653,13 @@ async function loadUserStats(userId) {
             }
         }
 
+        // GÜNLÜK GÖREV (DAILY QUESTS) KONTROLÜ VE ÜRETİMİ
+        try {
+            await checkAndGenerateDailyQuests(userId, privateData);
+        } catch (err) {
+            console.error('Günlük görevler kontrol edilirken hata oluştu:', err);
+        }
+
         // XP ve Level güncelle
         const xp = publicData.xp || 0;
         const level = publicData.level || 1;
@@ -669,6 +676,94 @@ async function loadUserStats(userId) {
         updateStreakUI(streak, lastActivity);
     } catch (error) {
         console.error('İstatistikler yüklenirken hata:', error);
+    }
+}
+
+// Günlük Görev Üretici ve Kontrolcüsü
+async function checkAndGenerateDailyQuests(userId, privateData) {
+    if (currentUser && currentUser.isGuest) return; // Misafirler görev kullanamaz
+    if (!privateData) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Görevler var mı ve bugüne mi ait?
+    const hasValidQuests = privateData.dailyQuests && privateData.dailyQuests.date === todayStr;
+
+    if (!hasValidQuests) {
+        console.log('Günlük görevler yenileniyor veya ilk defa oluşturuluyor...');
+
+        // Görev havuzu
+        const allPossibleQuests = [
+            { type: 'learn_words', target: 20, progress: 0, reward: 50, isClaimed: false, title: '20 Kelime Öğren', icon: '🎯' },
+            { type: 'earn_xp', target: 100, progress: 0, reward: 40, isClaimed: false, title: '100 XP Kazan', icon: '⭐' },
+            { type: 'take_quiz', target: 1, progress: 0, reward: 30, isClaimed: false, title: '1 Quiz Çöz', icon: '📝' },
+            { type: 'learn_words', target: 10, progress: 0, reward: 25, isClaimed: false, title: '10 Kelime Öğren', icon: '🎯' },
+            { type: 'earn_xp', target: 50, progress: 0, reward: 20, isClaimed: false, title: '50 XP Kazan', icon: '⭐' },
+            { type: 'take_quiz', target: 2, progress: 0, reward: 50, isClaimed: false, title: '2 Quiz Çöz', icon: '📝' }
+        ];
+
+        // 3 rastgele görev seç
+        const shuffled = allPossibleQuests.sort(() => 0.5 - Math.random());
+        const selectedQuests = JSON.parse(JSON.stringify(shuffled.slice(0, 3))); // Deep copy
+
+        // id'leri atama
+        selectedQuests.forEach((q, i) => q.id = 'q' + (i + 1));
+
+        const dailyQuestsObj = {
+            date: todayStr,
+            quests: selectedQuests
+        };
+
+        // Veritabanına kaydet
+        await updateDoc(doc(db, "users_private", userId), {
+            dailyQuests: dailyQuestsObj
+        });
+
+        // Bellekteki veriyi de referans olarak tazele
+        privateData.dailyQuests = dailyQuestsObj;
+    }
+}
+
+// Görev İlerlemesini (Progress) Günceller
+export async function updateQuestProgress(type, amount = 1) {
+    const activeUser = window.firebaseAuth ? window.firebaseAuth.currentUser : currentUser;
+    if (!activeUser || (currentUser && currentUser.isGuest)) return;
+
+    const userId = activeUser.uid;
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    try {
+        const privateRef = doc(db, "users_private", userId);
+        const privateDoc = await getDoc(privateRef);
+
+        if (!privateDoc.exists()) return;
+        const pData = privateDoc.data();
+
+        // Görevler eskimiş veya hiç yoksa çıkış yap (sıradaki initApp'te düzelir)
+        if (!pData.dailyQuests || pData.dailyQuests.date !== todayStr) return;
+
+        let updated = false;
+        const quests = pData.dailyQuests.quests.map(q => {
+            if (q.type === type && !q.isClaimed && q.progress < q.target) {
+                q.progress += amount;
+                if (q.progress >= q.target) {
+                    q.progress = q.target;
+                    console.log(`Görev tamamlandı: ${q.title}`);
+                }
+                updated = true;
+            }
+            return q;
+        });
+
+        // Güncelleme varsa Firestore'a kaydet (Arka planda çalışır, UI'ı bölmez)
+        if (updated) {
+            await updateDoc(privateRef, {
+                'dailyQuests.quests': quests
+            });
+            console.log(`✔️ Görev durumu güncellendi: [${type}] +${amount}`);
+        }
+    } catch (err) {
+        console.error('Görev güncellenirken hata (updateQuestProgress):', err);
     }
 }
 
@@ -1596,7 +1691,7 @@ class Dashboard {
             const quizResultsCount = quizResultsSnapshot.size;
 
             // Kullanıcı verilerini al (XP ve Seviye için)
-            const userDoc = await getDoc(doc(db, "users", this.userId));
+            const userDoc = await getDoc(doc(db, "users_public", this.userId));
             const userData = userDoc.exists() ? userDoc.data() : { xp: 0, level: 1, total_xp: 0, streak: 0 };
 
             return {

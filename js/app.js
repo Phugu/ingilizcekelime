@@ -333,19 +333,26 @@ function setupForms() {
                 displayName: name
             });
 
-            // Firestore'da kullanıcı dökümanı oluştur
-            await setDoc(doc(db, "users", user.uid), {
+            // Firestore'da kullanıcı dökümanlarını MİMARİ OLARAK BÖL (Public & Private)
+            const publicData = {
                 name: name,
-                email: email,
-                createdAt: Timestamp.now(),
                 xp: 0,
                 level: 1,
                 total_xp: 0,
+                streak: 0,
+                createdAt: Timestamp.now()
+            };
+            const privateData = {
+                email: email,
                 kvkkAccepted: true,
-                kvkkAcceptedAt: Timestamp.now()
-            });
+                kvkkAcceptedAt: Timestamp.now(),
+                accountStatus: 'active'
+            };
 
-            console.log('Kayıt başarılı:', user.email);
+            await setDoc(doc(db, "users_public", user.uid), publicData);
+            await setDoc(doc(db, "users_private", user.uid), privateData);
+
+            console.log('Kayıt başarılı (Public/Private ayrışımı tamam):', user.email);
 
             // Doğrulama e-postası gönder
             await sendEmailVerification(user);
@@ -492,30 +499,71 @@ async function loadUserStats(userId) {
     }
 
     try {
-        let userDoc = await getDoc(doc(db, "users", userId));
+        let publicDoc = await getDoc(doc(db, "users_public", userId));
+        let privateDoc = await getDoc(doc(db, "users_private", userId));
 
-        // Eğer döküman yoksa (eski kullanıcı), oluştur
-        if (!userDoc.exists()) {
-            console.log('Kullanıcı dökümanı bulunamadı, yeni oluşturuluyor...');
-            const defaultData = {
-                xp: 0,
-                level: 1,
-                total_xp: 0,
-                streak: 0,
-                kvkkAccepted: false, // Google ile giren yeni kullanıcıların KVKK modalını görmesi için false
-                createdAt: Timestamp.now()
-            };
-            await setDoc(doc(db, "users", userId), defaultData);
-            // Tekrar çek veya defaultData kullan
-            userDoc = { exists: () => true, data: () => defaultData };
+        // LAZY MIGRATION: Eski "users" koleksiyonunu taşı
+        if (!publicDoc.exists() || !privateDoc.exists()) {
+            const oldUserDoc = await getDoc(doc(db, "users", userId));
+
+            if (oldUserDoc.exists()) {
+                console.log('Eski users koleksiyonundan Public/Private aktarımı yapılıyor...');
+                const oldData = oldUserDoc.data();
+
+                const publicData = {
+                    name: currentUser.displayName || oldData.name || 'Anonim',
+                    xp: oldData.xp || 0,
+                    level: oldData.level || 1,
+                    total_xp: oldData.total_xp || 0,
+                    streak: oldData.streak || 0,
+                    createdAt: oldData.createdAt || Timestamp.now()
+                };
+
+                const privateData = {
+                    email: currentUser.email || oldData.email || '',
+                    kvkkAccepted: oldData.kvkkAccepted || false,
+                    kvkkAcceptedAt: oldData.kvkkAcceptedAt || null,
+                    accountStatus: oldData.accountStatus || 'active',
+                    deletionDate: oldData.deletionDate || null
+                };
+
+                await setDoc(doc(db, "users_public", userId), publicData);
+                await setDoc(doc(db, "users_private", userId), privateData);
+
+                publicDoc = { exists: () => true, data: () => publicData };
+                privateDoc = { exists: () => true, data: () => privateData };
+            } else {
+                // Hiçbir döküman yoksa (Google Auth ile giren tamamen yeni kullanıcı)
+                console.log('Kullanıcı dökümanı bulunamadı, yeni public/private oluşturuluyor...');
+                const publicData = {
+                    name: currentUser.displayName || 'Anonim',
+                    xp: 0,
+                    level: 1,
+                    total_xp: 0,
+                    streak: 0,
+                    createdAt: Timestamp.now()
+                };
+                const privateData = {
+                    email: currentUser.email || '',
+                    kvkkAccepted: false, // Google ile girenler için modal gösterilsin
+                    accountStatus: 'active'
+                };
+
+                await setDoc(doc(db, "users_public", userId), publicData);
+                await setDoc(doc(db, "users_private", userId), privateData);
+
+                publicDoc = { exists: () => true, data: () => publicData };
+                privateDoc = { exists: () => true, data: () => privateData };
+            }
         }
 
-        const userData = userDoc.data();
+        const publicData = publicDoc.data();
+        const privateData = privateDoc.data();
 
         // 30 GÜNLÜK HESAP SİLME KONTROLÜ (Soft Delete)
-        if (userData && userData.accountStatus === 'pending_deletion') {
+        if (privateData && privateData.accountStatus === 'pending_deletion') {
             const now = new Date();
-            const deleteAt = userData.deletionDate ? userData.deletionDate.toDate() : new Date();
+            const deleteAt = privateData.deletionDate ? privateData.deletionDate.toDate() : new Date();
 
             if (now > deleteAt) {
                 // 30 gün dolmuş, kalıcı silme işlemi (Gerçek hard delete)
@@ -529,7 +577,9 @@ async function loadUserStats(userId) {
                     for (const docRef of quizResultsSnapshot.docs) { await deleteDoc(docRef.ref); }
 
                     await deleteDoc(doc(db, "user_progress", userId));
-                    await deleteDoc(doc(db, "users", userId));
+                    await deleteDoc(doc(db, "users_private", userId));
+                    await deleteDoc(doc(db, "users_public", userId));
+                    await deleteDoc(doc(db, "users", userId)); // Eski yedek varsa sil
 
                     try { await firebaseDeleteUser(currentUser); } catch (e) { console.error('Auth user silinemedi:', e); }
 
@@ -545,7 +595,7 @@ async function loadUserStats(userId) {
                 const daysLeft = Math.ceil((deleteAt - now) / (1000 * 60 * 60 * 24));
                 const restore = confirm('Hesabınız silinme aşamasında (Kalan süre: ' + daysLeft + ' gün). Silme işlemini iptal edip hesabınızı kurtarmak ister misiniz?');
                 if (restore) {
-                    await updateDoc(doc(db, "users", userId), {
+                    await updateDoc(doc(db, "users_private", userId), {
                         accountStatus: "active",
                         deletionDate: null
                     });
@@ -560,7 +610,7 @@ async function loadUserStats(userId) {
 
 
         // KVKK ZORUNLU ONAY KONTROLÜ (Eski kullanıcılar için)
-        if (userData && userData.kvkkAccepted !== true) {
+        if (privateData && privateData.kvkkAccepted !== true) {
             console.log('Kullanıcı henüz KVKK sözleşmesini onaylamamış. Modal gösteriliyor...');
             const kvkkModal = document.getElementById('kvkk-update-modal');
             if (kvkkModal) {
@@ -584,7 +634,7 @@ async function loadUserStats(userId) {
                             submitBtn.textContent = 'Onaylanıyor...';
 
                             // Kullanıcı profilini güncelle
-                            await updateDoc(doc(db, "users", userId), {
+                            await updateDoc(doc(db, "users_private", userId), {
                                 kvkkAccepted: true,
                                 kvkkAcceptedAt: Timestamp.now()
                             });
@@ -702,18 +752,19 @@ async function giveXP(amount, reason = "Tebrikler!") {
     }
 
     try {
-        const userRef = doc(db, "users", activeUser.uid);
-        let userDoc = await getDoc(userRef);
+        const userPublicRef = doc(db, "users_public", activeUser.uid);
+        let publicDoc = await getDoc(userPublicRef);
 
-        let userData;
-        if (!userDoc.exists()) {
-            userData = { xp: 0, level: 1, total_xp: 0, streak: 0 };
-            await setDoc(userRef, { ...userData, createdAt: Timestamp.now() });
+        let publicData;
+        if (!publicDoc.exists()) {
+            // Hala eksikse fallback yap (Güvenlik)
+            publicData = { xp: 0, level: 1, total_xp: 0, streak: 0 };
+            await setDoc(userPublicRef, { ...publicData, createdAt: Timestamp.now(), name: activeUser.displayName || 'Anonim' });
         } else {
-            userData = userDoc.data();
+            publicData = publicDoc.data();
         }
 
-        let { xp, level, total_xp, streak, last_activity_date } = userData;
+        let { xp, level, total_xp, streak, last_activity_date } = publicData;
         xp = xp || 0;
         level = level || 1;
         total_xp = total_xp || 0;
@@ -1231,8 +1282,10 @@ async function loadProfileContent() {
                         await deleteDoc(docRef.ref);
                     }
 
-                    await deleteDoc(doc(db, "users", user.uid));
                     await deleteDoc(doc(db, "user_progress", user.uid));
+                    await deleteDoc(doc(db, "users_public", user.uid));
+                    await deleteDoc(doc(db, "users_private", user.uid));
+                    await deleteDoc(doc(db, "users", user.uid));
 
                     // Hesabı sil
                     await firebaseDeleteUser(auth.currentUser);
@@ -1889,7 +1942,7 @@ async function loadLeaderboard(container) {
 
     try {
         const q = query(
-            collection(db, 'users'),
+            collection(db, 'users_public'), // Artık public DB'yi görüyoruz, e-postalar güvende
             orderBy('total_xp', 'desc'),
             limit(10)
         );

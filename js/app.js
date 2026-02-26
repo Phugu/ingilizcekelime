@@ -654,13 +654,13 @@ async function loadUserStats(userId) {
         }
 
         // XP ve Level güncelle
-        const xp = userData.xp || 0;
-        const level = userData.level || 1;
+        const xp = publicData.xp || 0;
+        const level = publicData.level || 1;
         updateXPUI(xp, level);
 
         // Streak (Seri) güncelle - study_streak ismine de bak (geriye dönük uyum)
-        let streak = userData.streak || userData.study_streak || 0;
-        const lastActivity = userData.last_activity_date?.toDate() || null;
+        let streak = publicData.streak || publicData.study_streak || 0;
+        const lastActivity = publicData.last_activity_date?.toDate() || null;
 
         if (lastActivity && !isToday(lastActivity) && !isYesterday(lastActivity)) {
             streak = 0;

@@ -745,7 +745,7 @@ export async function giveXP(amount, reason = "Tebrikler!") {
     }
 
     // currentUser yerine doğrudan auth.currentUser kullan (daha güvenli)
-    const activeUser = auth.currentUser;
+    const activeUser = window.firebaseAuth ? window.firebaseAuth.currentUser : currentUser;
 
     if (!activeUser) {
         console.warn('giveXP başarısız: Aktif kullanıcı (auth.currentUser) bulunamadı.');

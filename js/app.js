@@ -805,7 +805,7 @@ export async function giveXP(amount, reason = "Tebrikler!") {
             leveledUp = true;
         }
 
-        await updateDoc(userRef, {
+        await updateDoc(userPublicRef, {
             xp: xp,
             level: level,
             total_xp: total_xp,

@@ -410,6 +410,38 @@
         </div>
     </div>
 
+    <!-- KVKK Zorunlu Onay Modalı (Eski Kullanıcılar İçin) -->
+    <div id="kvkk-update-modal" class="modal hide" style="z-index: 9999; backdrop-filter: blur(5px);">
+        <div class="modal-content" style="max-width: 500px; text-align: left; padding: 30px;">
+            <h2 style="color: var(--primary-color); margin-bottom: 15px; text-align: center;">Yasal Güncelleme Beyanı
+            </h2>
+            <p style="margin-bottom: 15px; font-size: 15px; line-height: 1.5;">Değerli kullanıcılarımız, yasal
+                düzenlemeler gereği <strong>Gizlilik Politikası</strong> ve <strong>Kullanım Koşulları</strong>
+                belgelerimizi güncelledik.</p>
+            <p style="margin-bottom: 25px; font-size: 15px; line-height: 1.5;">Platformu kullanmaya devam edebilmek için
+                bu koşulları okuyup onaylamanız gerekmektedir.</p>
+
+            <div class="form-group"
+                style="margin-bottom: 25px; background: var(--bg-color); padding: 15px; border-radius: 8px;">
+                <label
+                    style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 13px; line-height: 1.5; margin: 0;">
+                    <input type="checkbox" id="kvkk-update-consent"
+                        style="margin-top: 3px; min-width: 18px; width: 18px; height: 18px;">
+                    <span><a href="gizlilik-politikasi.html" target="_blank"
+                            style="color: var(--primary-color); font-weight: bold;">Gizlilik Politikası ve KVKK
+                            Aydınlatma Metni</a>'ni ve
+                        <a href="kullanim-kosullari.html" target="_blank"
+                            style="color: var(--primary-color); font-weight: bold;">Kullanım Koşulları</a>'nı okudum,
+                        kabul ediyorum.</span>
+                </label>
+            </div>
+
+            <div id="kvkk-update-error" class="error-message hide" style="margin-bottom: 15px;"></div>
+
+            <button id="kvkk-update-submit" class="btn" style="width: 100%;">Onaylıyorum ve Devam Et</button>
+        </div>
+    </div>
+
     <!-- Çerez Yönetimi Script -->
     <script src="js/cookie-consent.js"></script>
 </body>

@@ -328,7 +328,9 @@ function setupForms() {
                 createdAt: Timestamp.now(),
                 xp: 0,
                 level: 1,
-                total_xp: 0
+                total_xp: 0,
+                kvkkAccepted: true,
+                kvkkAcceptedAt: Timestamp.now()
             });
 
             console.log('Kayıt başarılı:', user.email);
@@ -488,6 +490,7 @@ async function loadUserStats(userId) {
                 level: 1,
                 total_xp: 0,
                 streak: 0,
+                kvkkAccepted: true, // Yeni oluşturuluyorsa varsayılan kabul etmiş sayılır (kayıtta zaten checkbox var)
                 createdAt: Timestamp.now()
             };
             await setDoc(doc(db, "users", userId), defaultData);
@@ -496,6 +499,50 @@ async function loadUserStats(userId) {
         }
 
         const userData = userDoc.data();
+
+        // KVKK ZORUNLU ONAY KONTROLÜ (Eski kullanıcılar için)
+        if (userData && userData.kvkkAccepted !== true) {
+            console.log('Kullanıcı henüz KVKK sözleşmesini onaylamamış. Modal gösteriliyor...');
+            const kvkkModal = document.getElementById('kvkk-update-modal');
+            if (kvkkModal) {
+                kvkkModal.classList.remove('hide');
+
+                // Onay butonunu dinle
+                const submitBtn = document.getElementById('kvkk-update-submit');
+                const checkbox = document.getElementById('kvkk-update-consent');
+                const errorDiv = document.getElementById('kvkk-update-error');
+
+                if (submitBtn && checkbox && errorDiv) {
+                    submitBtn.onclick = async () => {
+                        if (!checkbox.checked) {
+                            errorDiv.textContent = 'Devam edebilmek için koşulları kabul etmelisiniz.';
+                            errorDiv.classList.remove('hide');
+                            return;
+                        }
+
+                        try {
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'Onaylanıyor...';
+
+                            // Kullanıcı profilini güncelle
+                            await updateDoc(doc(db, "users", userId), {
+                                kvkkAccepted: true,
+                                kvkkAcceptedAt: Timestamp.now()
+                            });
+
+                            console.log('KVKK onayı başarıyla kaydedildi.');
+                            kvkkModal.classList.add('hide'); // Modalı kapat
+                        } catch (err) {
+                            console.error('KVKK onayı kaydedilemedi:', err);
+                            errorDiv.textContent = 'Bir hata oluştu. Lütfen bağlantınızı kontrol edip tekrar deneyin.';
+                            errorDiv.classList.remove('hide');
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = 'Onaylıyorum ve Devam Et';
+                        }
+                    };
+                }
+            }
+        }
 
         // XP ve Level güncelle
         const xp = userData.xp || 0;

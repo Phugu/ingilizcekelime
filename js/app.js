@@ -1131,10 +1131,14 @@ async function loadProfileContent() {
                     // Hesabı sil
                     await firebaseDeleteUser(auth.currentUser);
 
+                    // localStorage/sessionStorage temizle
+                    localStorage.clear();
+                    sessionStorage.clear();
+
                     alert('Hesabınız başarıyla silindi.');
                     window.location.href = '/';
                 } catch (err) {
-                    alert('Hesap silme başarısız: ' + err.message);
+                    alert('Hesap silme başarısız. Şifrenizi doğru girdiğinizden emin olun.');
                 }
             }
         };
@@ -1891,7 +1895,10 @@ async function deleteAccount() {
         <div class="confirm-dialog-content">
             <h3>Hesap Silme Onayı</h3>
             <p>Hesabınız kalıcı olarak silinecektir. Bu işlem geri alınamaz.</p>
-            <p>Devam etmek istediğinize emin misiniz?</p>
+            <p>Devam etmek için şifrenizi girin:</p>
+            <div class="form-group" style="margin: 15px 0;">
+                <input type="password" id="delete-password-confirm" placeholder="Şifreniz" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid var(--border-color, #ddd);">
+            </div>
             <div class="confirm-dialog-buttons">
                 <button class="action-btn cancel-btn" onclick="closeConfirmDialog()">İptal</button>
                 <button class="action-btn delete-btn" onclick="confirmDeleteAccount()">Hesabı Sil</button>
@@ -1919,6 +1926,15 @@ async function confirmDeleteAccount() {
         const user = auth.currentUser;
         if (!user) return;
 
+        // GÜVENLİK: Şifre ile re-authentication
+        const passwordInput = document.getElementById('delete-password-confirm');
+        if (!passwordInput || !passwordInput.value) {
+            alert('Lütfen şifrenizi girin.');
+            return;
+        }
+        const credential = EmailAuthProvider.credential(user.email, passwordInput.value);
+        await reauthenticateWithCredential(user, credential);
+
         // Verileri temizle
         const learnedWordsQuery = query(collection(db, "learned_words"), where("user_id", "==", user.uid));
         const learnedWordsSnapshot = await getDocs(learnedWordsQuery);
@@ -1938,11 +1954,19 @@ async function confirmDeleteAccount() {
         // Hesabı sil
         await firebaseDeleteUser(user);
 
+        // GÜVENLİK: Tüm yerel verileri temizle
+        localStorage.clear();
+        sessionStorage.clear();
+
         console.log('Hesap başarıyla silindi.');
         window.location.href = '/';
     } catch (error) {
         console.error('Hesap silme hatası:', error.message);
-        alert('Hesap silme başarısız. Lütfen tekrar deneyin.');
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            alert('Şifre hatalı. Lütfen doğru şifrenizi girin.');
+        } else {
+            alert('Hesap silme başarısız. Lütfen tekrar deneyin.');
+        }
     }
     closeConfirmDialog();
 }

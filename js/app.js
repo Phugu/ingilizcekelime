@@ -500,6 +500,53 @@ async function loadUserStats(userId) {
 
         const userData = userDoc.data();
 
+        // 30 GÜNLÜK HESAP SİLME KONTROLÜ (Soft Delete)
+        if (userData && userData.accountStatus === 'pending_deletion') {
+            const now = new Date();
+            const deleteAt = userData.deletionDate ? userData.deletionDate.toDate() : new Date();
+
+            if (now > deleteAt) {
+                // 30 gün dolmuş, kalıcı silme işlemi (Gerçek hard delete)
+                try {
+                    const learnedWordsQuery = query(collection(db, "learned_words"), where("user_id", "==", userId));
+                    const learnedWordsSnapshot = await getDocs(learnedWordsQuery);
+                    for (const docRef of learnedWordsSnapshot.docs) { await deleteDoc(docRef.ref); }
+
+                    const quizResultsQuery = query(collection(db, "quiz_results"), where("user_id", "==", userId));
+                    const quizResultsSnapshot = await getDocs(quizResultsQuery);
+                    for (const docRef of quizResultsSnapshot.docs) { await deleteDoc(docRef.ref); }
+
+                    await deleteDoc(doc(db, "user_progress", userId));
+                    await deleteDoc(doc(db, "users", userId));
+
+                    try { await firebaseDeleteUser(currentUser); } catch (e) { console.error('Auth user silinemedi:', e); }
+
+                    await signOut(auth);
+                    alert('Hesabınızın 30 günlük silinme süresi dolmuş ve kalıcı olarak silinmiştir.');
+                    window.location.reload();
+                    return;
+                } catch (err) {
+                    console.error("Otomatik silme başarısız:", err);
+                }
+            } else {
+                // 30 gün dolmamış, iptal etmek ister mi?
+                const daysLeft = Math.ceil((deleteAt - now) / (1000 * 60 * 60 * 24));
+                const restore = confirm('Hesabınız silinme aşamasında (Kalan süre: ' + daysLeft + ' gün). Silme işlemini iptal edip hesabınızı kurtarmak ister misiniz?');
+                if (restore) {
+                    await updateDoc(doc(db, "users", userId), {
+                        accountStatus: "active",
+                        deletionDate: null
+                    });
+                    alert('Hesabınız başarıyla kurtarıldı. Tekrar hoş geldiniz!');
+                } else {
+                    await signOut(auth);
+                    window.location.reload();
+                    return;
+                }
+            }
+        }
+
+
         // KVKK ZORUNLU ONAY KONTROLÜ (Eski kullanıcılar için)
         if (userData && userData.kvkkAccepted !== true) {
             console.log('Kullanıcı henüz KVKK sözleşmesini onaylamamış. Modal gösteriliyor...');
@@ -1982,30 +2029,22 @@ async function confirmDeleteAccount() {
         const credential = EmailAuthProvider.credential(user.email, passwordInput.value);
         await reauthenticateWithCredential(user, credential);
 
-        // Verileri temizle
-        const learnedWordsQuery = query(collection(db, "learned_words"), where("user_id", "==", user.uid));
-        const learnedWordsSnapshot = await getDocs(learnedWordsQuery);
-        for (const docRef of learnedWordsSnapshot.docs) {
-            await deleteDoc(docRef.ref);
-        }
+        const deleteDate = new Date();
+        deleteDate.setDate(deleteDate.getDate() + 30);
 
-        const quizResultsQuery = query(collection(db, "quiz_results"), where("user_id", "==", user.uid));
-        const quizResultsSnapshot = await getDocs(quizResultsQuery);
-        for (const docRef of quizResultsSnapshot.docs) {
-            await deleteDoc(docRef.ref);
-        }
-
-        await deleteDoc(doc(db, "user_progress", user.uid));
-        await deleteDoc(doc(db, "users", user.uid));
-
-        // Hesabı sil
-        await firebaseDeleteUser(user);
+        // Kullanıcıyı pending_deletion olarak işaretle
+        await updateDoc(doc(db, "users", user.uid), {
+            accountStatus: "pending_deletion",
+            deletionDate: Timestamp.fromDate(deleteDate)
+        });
 
         // GÜVENLİK: Tüm yerel verileri temizle
+        await signOut(auth);
         localStorage.clear();
         sessionStorage.clear();
 
-        console.log('Hesap başarıyla silindi.');
+        console.log('Hesap silinme sürecine alındı.');
+        alert('Hesabınız silinme sürecine alındı. 30 gün boyunca giriş yapmazsanız kalıcı olarak silinecektir. Fikrinizi değiştirirseniz 30 gün içinde tekrar giriş yaparak işlemi iptal edebilirsiniz.');
         window.location.href = '/';
     } catch (error) {
         console.error('Hesap silme hatası:', error.message);

@@ -1,5 +1,5 @@
-# Kelime İngilizce - İngilizce Kelime Öğrenme Platformu robots.txt
-# https://kelimeingilizcee.com/
+# İngilizce Kelime - İngilizce Kelime Öğrenme Platformu robots.txt
+# https://ingilizcekelime.com/
 
 User-agent: *
 Allow: /
@@ -18,4 +18,4 @@ Allow: /components/
 Crawl-delay: 10
 
 # Sitemap konumu (ileride eklenebilir)
-Sitemap: https://kelimeingilizcee.com/sitemap.xml 
+Sitemap: https://ingilizcekelime.com/sitemap.xml 

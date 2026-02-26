@@ -183,6 +183,39 @@
             </form>
             <p>Zaten hesabınız var mı? <a href="#" id="go-to-login">Giriş yapın</a></p>
             <div id="register-error" class="error-message hide"></div>
+            <div id="register-message" class="success-message hide"></div>
+        </div>
+
+        <!-- DOĞRULAMA BEKLEME EKRANI (YENİ EKLENDİ) -->
+        <div class="form-container hide" id="verification-section">
+            <h2>E-postanızı Doğrulayın</h2>
+            <div style="margin-bottom: 20px; color: var(--text-main); line-height: 1.5;">
+                Kayıt işleminiz başarılı! Hesabınızı kullanmaya başlamak için e-posta adresinize
+                gönderdiğimiz şifreli doğrulama bağlantısına tıklamanız gerekmektedir.<br><br>
+                <small style="color: var(--text-muted);">(Spam veya Gereksiz klasörünü kontrol etmeyi unutmayın)</small>
+            </div>
+
+            <div class="loader-spinner"
+                style="border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px auto;">
+            </div>
+            <p style="color: var(--primary-color); font-weight: bold; margin-bottom: 20px;">Onayınız bekleniyor...</p>
+
+            <button id="resend-verification-btn" class="btn" style="margin-bottom: 10px;" disabled>
+                Tekrar Gönder (Lütfen 60s bekleyin)
+            </button>
+
+            <div style="margin: 15px 0; text-align: center; position: relative;">
+                <hr style="border: none; border-top: 1px solid var(--border-color);">
+                <span
+                    style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--card-bg); padding: 0 10px; color: var(--text-muted); font-size: 14px;">veya</span>
+            </div>
+
+            <button id="verification-logout-btn" class="btn"
+                style="background-color: transparent; color: var(--text-muted); border: 2px solid var(--border-color);">
+                Giriş Ekranına Dön
+            </button>
+            <div id="verification-message" class="success-message hide"></div>
+            <div id="verification-error" class="error-message hide"></div>
         </div>
     </div>
 
@@ -237,17 +270,53 @@
     </div>
 
     <script type="module">
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // Oturum kontrolü
         window.checkSession = async function () {
-            onAuthStateChanged(window.firebaseAuth, (user) => {
+            onAuthStateChanged(window.firebaseAuth, async (user) => {
                 const loader = document.getElementById('initial-loader');
 
                 if (user) {
-                    console.log('Aktif kullanıcı:', user.email);
-                    localStorage.setItem('isLoggedIn', 'true');
-                    window.showDashboard(user);
+                    // E-posta doğrulama kontrolü
+                    if (!user.emailVerified) {
+                        console.log('E-posta doğrulanmamış: Doğrulama ekranı gösteriliyor');
+
+                        localStorage.setItem('isLoggedIn', 'false');
+                        document.getElementById('auth-container').classList.remove('hide');
+                        document.getElementById('app-container').classList.add('hide');
+
+                        document.getElementById('login-section').classList.add('hide');
+                        document.getElementById('register-section').classList.add('hide');
+                        document.getElementById('verification-section').classList.remove('hide');
+
+                        // Doğrulama periyodik kontrolü (Her 3 saniyede bir kontrol et)
+                        if (!window.verificationInterval) {
+                            window.verificationInterval = setInterval(async () => {
+                                try {
+                                    await user.reload(); // Firebase'den güncel user durumunu çek
+                                    if (user.emailVerified) {
+                                        clearInterval(window.verificationInterval);
+                                        window.verificationInterval = null;
+                                        // Sayfayı yenile veya doğrudan dashboard'a sok
+                                        window.location.reload();
+                                    }
+                                } catch (e) {
+                                    console.error("Otomatik kontrol hatası:", e);
+                                }
+                            }, 3000);
+                        }
+                    } else {
+                        // Eğer interval açıksa kapat
+                        if (window.verificationInterval) {
+                            clearInterval(window.verificationInterval);
+                            window.verificationInterval = null;
+                        }
+
+                        console.log('Aktif kullanıcı:', user.email);
+                        localStorage.setItem('isLoggedIn', 'true');
+                        window.showDashboard(user);
+                    }
                 } else if (localStorage.getItem('isGuest') === 'true') {
                     console.log('Misafir oturumu aktif');
                     const guestUser = {

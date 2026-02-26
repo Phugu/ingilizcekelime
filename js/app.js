@@ -7,7 +7,8 @@ import {
     reauthenticateWithCredential,
     EmailAuthProvider,
     deleteUser as firebaseDeleteUser,
-    updatePassword
+    updatePassword,
+    sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import {
     getFirestore,
@@ -38,6 +39,7 @@ function hideAllSections() {
     document.getElementById('app-container').classList.add('hide');
     document.getElementById('login-section').classList.add('hide');
     document.getElementById('register-section').classList.add('hide');
+    document.getElementById('verification-section').classList.add('hide');
 }
 
 // Tüm içerik bölümlerini gizle
@@ -211,8 +213,8 @@ function setupForms() {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             console.log('Giriş başarılı:', userCredential.user.email);
 
-            // Başarılı giriş - sayfayı yenile (onAuthStateChanged handles the rest)
-            window.location.reload();
+            // Başarılı giriş - onAuthStateChanged (index.html'de) gerisini otomatik halleder.
+            // Sayfayı yenilemeye gerek yok!
 
         } catch (err) {
             console.error('Giriş hatası:', err);
@@ -243,11 +245,17 @@ function setupForms() {
     document.getElementById('register-form')?.addEventListener('submit', async function (e) {
         e.preventDefault();
 
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Kayıt Yapılıyor...';
+
         const email = document.getElementById('register-email').value;
         const password = document.getElementById('register-password').value;
         const name = document.getElementById('register-name').value;
 
         try {
+            // ... (Firebase create user)
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
@@ -268,32 +276,39 @@ function setupForms() {
 
             console.log('Kayıt başarılı:', user.email);
 
-            // Başarılı kayıt - giriş formuna yönlendir
-            document.getElementById('register-section').classList.add('hide');
-            document.getElementById('login-section').classList.remove('hide');
+            // Doğrulama e-postası gönder
+            await sendEmailVerification(user);
+            console.log('Doğrulama e-postası gönderildi.');
 
-            // Başarı mesajı göster
-            const loginMessage = document.getElementById('login-message');
-            if (loginMessage) {
-                loginMessage.textContent = 'Kaydınız başarıyla oluşturuldu. Lütfen giriş yapın.';
-                loginMessage.classList.remove('hide');
-            }
+            // onAuthStateChanged (index.html içinde) auth durumunu fark edip
+            // otomatik olarak bizi doğrulama sayfasına geçirecek. Yenilemeye gerek yok.
 
         } catch (err) {
             console.error('Kayıt hatası:', err);
+
+            // Kayıt işlemi başarısız olsa da bayrağı kaldırıyoruz
+            window.isRegistering = false;
+
             const registerError = document.getElementById('register-error');
             if (registerError) {
                 let message = 'Kayıt oluşturulamadı: ';
                 if (err.code === 'auth/email-already-in-use') {
                     message += 'Bu e-posta adresi zaten kullanımda.';
                 } else if (err.code === 'auth/weak-password') {
-                    message += 'Şifre en az 6 karakter olmalıdır.';
+                    message += 'Şifre çok zayıf, en az 6 karakter olmalıdır.';
+                } else if (err.code === 'auth/invalid-email') {
+                    message += 'Geçersiz bir e-posta adresi girdiniz.';
+                } else if (err.code === 'permission-denied' || (err.message && err.message.includes('permission'))) {
+                    message += 'Yetki hatası. İşlem tamamlanamadı.';
                 } else {
-                    message += err.message;
+                    message += 'Bilinmeyen bir hata oluştu (' + (err.code || 'Bilinmiyor') + ').';
                 }
                 registerError.textContent = message;
                 registerError.classList.remove('hide');
             }
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
         }
     });
 }
@@ -1868,9 +1883,113 @@ function filterWords() {
         }
     });
 }
+// Olay dinleyicilerini sayfa her yenilendiğinde tekrar kontrol et
+function setupVerificationScreen() {
+    const resendBtn = document.getElementById('resend-verification-btn');
+    const verifyLogoutBtn = document.getElementById('verification-logout-btn');
+
+    if (resendBtn) {
+        let countdown = 60;
+        resendBtn.disabled = true;
+
+        const timerInterval = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                resendBtn.textContent = `Tekrar Gönder (Lütfen ${countdown}s bekleyin)`;
+            } else {
+                clearInterval(timerInterval);
+                resendBtn.disabled = false;
+                resendBtn.textContent = 'Doğrulama e-postasını tekrar gönder';
+            }
+        }, 1000);
+
+        resendBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (user && !user.emailVerified) {
+                try {
+                    resendBtn.disabled = true;
+                    resendBtn.textContent = 'Gönderiliyor...';
+                    await sendEmailVerification(user);
+
+                    const msg = document.getElementById('verification-message');
+                    if (msg) {
+                        msg.textContent = 'Yeni doğrulama bağlantısı e-posta adresinize gönderildi!';
+                        msg.classList.remove('hide');
+                        setTimeout(() => msg.classList.add('hide'), 5000);
+                    }
+
+                    // Reset 60s countdown
+                    countdown = 60;
+                    const resendInterval = setInterval(() => {
+                        countdown--;
+                        if (countdown > 0) {
+                            resendBtn.textContent = `Tekrar Gönder (Lütfen ${countdown}s bekleyin)`;
+                        } else {
+                            clearInterval(resendInterval);
+                            resendBtn.disabled = false;
+                            resendBtn.textContent = 'Doğrulama e-postasını tekrar gönder';
+                        }
+                    }, 1000);
+                } catch (error) {
+                    console.error('Doğrulama e-postası gönderilemedi:', error);
+                    let errText = 'E-posta gönderilemedi. Lütfen daha sonra tekrar deneyin.';
+                    if (error.code === 'auth/too-many-requests') {
+                        errText = 'Çok fazla istek yapıldı. Lütfen biraz bekleyip tekrar deneyin.';
+                    }
+                    const errMsg = document.getElementById('verification-error');
+                    if (errMsg) {
+                        errMsg.textContent = errText;
+                        errMsg.classList.remove('hide');
+                        setTimeout(() => errMsg.classList.add('hide'), 4000);
+                    }
+                    resendBtn.disabled = false;
+                    resendBtn.textContent = 'Doğrulama e-postasını tekrar gönder';
+                }
+            }
+        });
+    }
+
+    const checkBtn = document.getElementById('check-verification-btn');
+    if (checkBtn) {
+        checkBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (user) {
+                checkBtn.textContent = 'Kontrol ediliyor...';
+                checkBtn.disabled = true;
+                try {
+                    await user.reload();
+                    if (user.emailVerified) {
+                        window.location.reload();
+                    } else {
+                        checkBtn.textContent = 'Henüz onaylanmamış! (Tekrar deneyin)';
+                        setTimeout(() => {
+                            checkBtn.textContent = 'Onayladım, İçeri Al';
+                            checkBtn.disabled = false;
+                        }, 3000);
+                    }
+                } catch (e) {
+                    console.error('Yenileme hatası:', e);
+                    checkBtn.textContent = 'Bağlantı Hatası (Tekrar tıklayın)';
+                    setTimeout(() => {
+                        checkBtn.textContent = 'Onayladım, İçeri Al';
+                        checkBtn.disabled = false;
+                    }, 3000);
+                }
+            }
+        });
+    }
+
+    if (verifyLogoutBtn) {
+        verifyLogoutBtn.addEventListener('click', async () => {
+            await signOut(auth);
+            window.location.reload();
+        });
+    }
+}
 
 // Sayfa yüklendiğinde form olaylarını ayarla
 setupForms();
+setupVerificationScreen();
 
 // Giriş/Kayıt form geçişleri
 document.getElementById('go-to-register')?.addEventListener('click', function (e) {

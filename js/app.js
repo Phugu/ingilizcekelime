@@ -43,12 +43,7 @@ function escapeHTML(str) {
     return div.innerHTML;
 }
 
-// GÜVENLİK: İsim maskeleme fonksiyonu (KVKK/GDPR uyumu)
-function maskName(name) {
-    if (!name || name === 'Anonim') return 'Anonim';
-    if (name.length <= 2) return name[0] + '***';
-    return name.substring(0, 2) + '***';
-}
+
 
 // Tüm bölümleri gizle
 function hideAllSections() {
@@ -1906,8 +1901,8 @@ async function loadLeaderboard(container) {
             // GÜVENLİK: E-posta adresi ASLA gösterilmez, sadece isim kullanılır
             const rawName = d.name || 'Anonim';
             const isMe = docSnap.id === currentUser?.uid;
-            // Diğer kullanıcıların isimlerini kısmen maskele (KVKK/GDPR uyumu)
-            const displayName = isMe ? escapeHTML(rawName) : maskName(escapeHTML(rawName));
+            // Diğer kullanıcıların isimlerini artık maskelemiyoruz, doğrudan XSS'den temizleyip gösteriyoruz
+            const displayName = escapeHTML(rawName);
             const xp = d.total_xp || d.xp || 0;
             const medal = medals[i] || `${i + 1}.`;
             return `

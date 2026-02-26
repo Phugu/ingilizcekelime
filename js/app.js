@@ -269,8 +269,18 @@ function setupForms() {
         const password = document.getElementById('register-password').value;
         const name = document.getElementById('register-name').value.trim();
 
-        // GÜVENLİK: Şifre politikası kontrolü
+        // KVKK: Açık rıza onayı kontrolü
+        const kvkkConsent = document.getElementById('kvkk-consent');
         const registerError = document.getElementById('register-error');
+        if (kvkkConsent && !kvkkConsent.checked) {
+            registerError.textContent = 'Devam etmek için Gizlilik Politikası ve Kullanım Koşullarını kabul etmelisiniz.';
+            registerError.classList.remove('hide');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+            return;
+        }
+
+        // GÜVENLİK: Şifre politikası kontrolü
         if (password.length < 8) {
             registerError.textContent = 'Şifre en az 8 karakter olmalıdır.';
             registerError.classList.remove('hide');

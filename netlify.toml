@@ -28,6 +28,17 @@
   to = "/index.html"
   status = 301
 
+# Yasal sayfalar (catch-all'dan önce)
+[[redirects]]
+  from = "/gizlilik-politikasi"
+  to = "/gizlilik-politikasi.html"
+  status = 200
+
+[[redirects]]
+  from = "/kullanim-kosullari"
+  to = "/kullanim-kosullari.html"
+  status = 200
+
 [[redirects]]
 from = "/*"
 to = "/index.html"

@@ -5,6 +5,29 @@
     "./emails/**"
   ]
 
+# GÜVENLİK: HTTP Güvenlik Başlıkları
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagmanager.com https://www.google.com https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.google-analytics.com https://firestore.googleapis.com; frame-src https://www.google.com https://www.recaptcha.net; frame-ancestors 'none'"
+
+# GÜVENLİK: SQL dosyalarına erişimi engelle
+[[headers]]
+  for = "/*.sql"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[redirects]]
+  from = "/*.sql"
+  to = "/index.html"
+  status = 301
+
 [[redirects]]
 from = "/*"
 to = "/index.html"

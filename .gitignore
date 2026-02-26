@@ -32,3 +32,11 @@ build/
 # Log dosyaları
 *.log
 logs/
+
+# GÜVENLİK: SQL dosyaları (veritabanı şeması ifşası)
+*.sql
+
+# GÜVENLİK: Hassas dosyalar
+*.pem
+*.key
+*.cert

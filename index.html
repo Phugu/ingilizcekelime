@@ -319,10 +319,15 @@
                     }
                 } else if (localStorage.getItem('isGuest') === 'true') {
                     console.log('Misafir oturumu aktif');
+                    // GÜVENLİK: Her misafir oturumunda benzersiz ID üret
+                    let guestId = sessionStorage.getItem('guestSessionId');
+                    if (!guestId) {
+                        guestId = 'guest_' + crypto.randomUUID();
+                        sessionStorage.setItem('guestSessionId', guestId);
+                    }
                     const guestUser = {
-                        uid: 'guest_user_12345',
+                        uid: guestId,
                         displayName: 'Misafir Kullanıcı',
-                        email: 'misafir@kelimeingilizce.com',
                         isGuest: true
                     };
                     window.showDashboard(guestUser);

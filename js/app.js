@@ -33,6 +33,21 @@ let wordLearningInstance = null;
 const db = getFirestore();
 const auth = window.firebaseAuth; // Already initialized in index.html
 
+// GÜVENLİK: XSS koruması için HTML escape fonksiyonu
+function escapeHTML(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+// GÜVENLİK: İsim maskeleme fonksiyonu (KVKK/GDPR uyumu)
+function maskName(name) {
+    if (!name || name === 'Anonim') return 'Anonim';
+    if (name.length <= 2) return name[0] + '***';
+    return name.substring(0, 2) + '***';
+}
+
 // Tüm bölümleri gizle
 function hideAllSections() {
     document.getElementById('auth-container').classList.add('hide');
@@ -250,9 +265,41 @@ function setupForms() {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Kayıt Yapılıyor...';
 
-        const email = document.getElementById('register-email').value;
+        const email = document.getElementById('register-email').value.trim();
         const password = document.getElementById('register-password').value;
-        const name = document.getElementById('register-name').value;
+        const name = document.getElementById('register-name').value.trim();
+
+        // GÜVENLİK: Şifre politikası kontrolü
+        const registerError = document.getElementById('register-error');
+        if (password.length < 8) {
+            registerError.textContent = 'Şifre en az 8 karakter olmalıdır.';
+            registerError.classList.remove('hide');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+            return;
+        }
+        if (!/[A-Z]/.test(password)) {
+            registerError.textContent = 'Şifre en az 1 büyük harf içermelidir.';
+            registerError.classList.remove('hide');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+            return;
+        }
+        if (!/[0-9]/.test(password)) {
+            registerError.textContent = 'Şifre en az 1 rakam içermelidir.';
+            registerError.classList.remove('hide');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+            return;
+        }
+        // GÜVENLİK: İsim doğrulama
+        if (name.length < 2 || name.length > 50) {
+            registerError.textContent = 'İsim 2-50 karakter arasında olmalıdır.';
+            registerError.classList.remove('hide');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+            return;
+        }
 
         try {
             // ... (Firebase create user)
@@ -325,10 +372,15 @@ async function initApp() {
         let user = auth.currentUser;
 
         if (!user && localStorage.getItem('isGuest') === 'true') {
+            // GÜVENLİK: Her misafir oturumunda benzersiz ID üret
+            let guestId = sessionStorage.getItem('guestSessionId');
+            if (!guestId) {
+                guestId = 'guest_' + crypto.randomUUID();
+                sessionStorage.setItem('guestSessionId', guestId);
+            }
             user = {
-                uid: 'guest_user_12345',
+                uid: guestId,
                 displayName: 'Misafir Kullanıcı',
-                email: 'misafir@kelimeingilizce.com',
                 isGuest: true
             };
         }
@@ -501,7 +553,22 @@ function updateXPUI(xp, level) {
 }
 
 // XP Kazandırma Fonksiyonu
+// GÜVENLİK: Rate limiting ve maks XP sınırı
+let lastXPTime = 0;
+const XP_COOLDOWN_MS = 2000; // 2 saniyede bir XP verilebilir
+const MAX_XP_PER_CALL = 50;  // Tek seferde maksimum XP
+
 async function giveXP(amount, reason = "Tebrikler!") {
+    // GÜVENLİK: Rate limiting kontrolü
+    const now = Date.now();
+    if (now - lastXPTime < XP_COOLDOWN_MS) {
+        console.warn('XP çok hızlı verilmeye çalışıldı, reddedildi.');
+        return;
+    }
+    lastXPTime = now;
+
+    // GÜVENLİK: Maksimum XP sınırı
+    amount = Math.min(Math.max(0, Math.floor(amount)), MAX_XP_PER_CALL);
     console.log(`giveXP çağrıldı: ${amount} XP, Sebep: ${reason}`);
 
     if (currentUser && currentUser.isGuest) {
@@ -618,9 +685,10 @@ function showXPNotification(amount, reason, leveledUp) {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// Global scope'a ekle
+// GÜVENLİK: Sadece gerekli fonksiyonları window'a ekle (tehlikeli olanlar hariç)
 window.initApp = initApp;
-window.giveXP = giveXP;
+// giveXP artık doğrudan window'dan çağrılamaz (hile engeli)
+// window.giveXP kaldırıldı — sadece dahili kullanım için
 
 // Çerez uyarısını başlat
 function initCookieConsent() {
@@ -719,7 +787,13 @@ async function loadProfileContent() {
         if (!profileContent) return;
         profileContent.classList.remove('hide');
 
-        const user = window.currentUser || auth.currentUser || (localStorage.getItem('isGuest') === 'true' ? { uid: 'guest_user_12345', email: 'misafir@kelimeingilizce.com', isGuest: true, displayName: 'Misafir Kullanıcı' } : null);
+        // GÜVENLİK: Misafir kullanıcı için benzersiz oturum ID'si kullan
+        const guestFallback = localStorage.getItem('isGuest') === 'true' ? {
+            uid: sessionStorage.getItem('guestSessionId') || 'guest_' + crypto.randomUUID(),
+            isGuest: true,
+            displayName: 'Misafir Kullanıcı'
+        } : null;
+        const user = window.currentUser || auth.currentUser || guestFallback;
         if (!user) {
             console.error('Kullanıcı oturumu bulunamadı.');
             profileContent.innerHTML = `<div class="error-message"><p>Profil bilgileri yüklenemedi: Kullanıcı oturumu bulunamadı.</p></div>`;
@@ -759,12 +833,12 @@ async function loadProfileContent() {
                     <div class="profile-info">
                         <div class="info-item">
                             <span class="label">İsim:</span>
-                            <span class="value">${user.displayName || 'Belirtilmemiş'}</span>
+                            <span class="value">${escapeHTML(user.displayName || 'Belirtilmemiş')}</span>
                             <button class="btn btn-small" id="change-name-btn">Değiştir</button>
                         </div>
                         <div class="info-item">
                             <span class="label">E-posta:</span>
-                            <span class="value">${user.email}</span>
+                            <span class="value">${escapeHTML(user.email || '')}</span>
                         </div>
                         <div class="info-item">
                             <span class="label">Üyelik Tarihi:</span>
@@ -907,7 +981,7 @@ async function loadProfileContent() {
                         const successRate = Math.round((result.correct_count / result.total_questions) * 100);
                         return `
                                             <tr>
-                                                <td>${result.level.toUpperCase()}</td>
+                                                <td>${escapeHTML(result.level.toUpperCase())}</td>
                                                 <td>${result.correct_count}</td>
                                                 <td>${result.total_questions}</td>
                                                 <td>%${successRate}</td>
@@ -1158,7 +1232,7 @@ async function loadQuizHistory() {
         console.error('Quiz geçmişi yüklenirken hata:', error);
         const historyContent = document.getElementById('quiz-history-content');
         if (historyContent) {
-            historyContent.innerHTML = `Hata: Quiz geçmişi yüklenemedi. ${error.message}`;
+            historyContent.innerHTML = `Hata: Quiz geçmişi yüklenemedi. Lütfen daha sonra tekrar deneyin.`;
         }
     }
 }
@@ -1255,9 +1329,9 @@ async function loadWordsList() {
             const lastReviewed = lastReviewedRaw ? lastReviewedRaw.toLocaleDateString('tr-TR') : 'Henüz tekrar edilmedi';
             return `
                 <tr data-level="${word.level}">
-                    <td>${word.word_english}</td>
-                    <td>${word.word_turkish}</td>
-                    <td>${word.level}</td>
+                    <td>${escapeHTML(word.word_english)}</td>
+                    <td>${escapeHTML(word.word_turkish)}</td>
+                    <td>${escapeHTML(word.level)}</td>
                     <td>${lastReviewed}</td>
                     <td>
                         <button class="action-btn review-btn" data-word-id="${word.id}">Tekrar Et</button>
@@ -1288,7 +1362,7 @@ async function loadWordsList() {
         if (wordsContent) {
             wordsContent.innerHTML = `
                 <div class="error-message">
-                    <p>Kelime listesi yüklenirken bir hata oluştu: ${error.message}</p>
+                    <p>Kelime listesi yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
                 </div>
             `;
         }
@@ -1320,7 +1394,7 @@ class Dashboard {
         try {
             const isGuest = (typeof currentUser !== 'undefined' && currentUser && currentUser.isGuest) || localStorage.getItem('isGuest') === 'true';
 
-            if (this.userId === 'guest_user_12345' || isGuest) {
+            if ((this.userId && this.userId.startsWith('guest_')) || isGuest) {
                 return {
                     totalWords: 0,
                     totalQuizzes: 0,
@@ -1422,7 +1496,7 @@ class Dashboard {
             <div class="dashboard-container">
                 <div class="error-message">
                     <h2>Hata</h2>
-                    <p>Dashboard yüklenirken bir hata oluştu: ${error.message}</p>
+                    <p>Dashboard yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.</p>
                     <button onclick="window.location.reload()" class="action-btn">Sayfayı Yenile</button>
                 </div>
             </div>
@@ -1704,14 +1778,17 @@ async function loadLeaderboard(container) {
         const medals = ['🥇', '🥈', '🥉'];
         const rows = snapshot.docs.map((docSnap, i) => {
             const d = docSnap.data();
-            const name = d.name || d.email || 'Anonim';
+            // GÜVENLİK: E-posta adresi ASLA gösterilmez, sadece isim kullanılır
+            const rawName = d.name || 'Anonim';
+            const isMe = docSnap.id === currentUser?.uid;
+            // Diğer kullanıcıların isimlerini kısmen maskele (KVKK/GDPR uyumu)
+            const displayName = isMe ? escapeHTML(rawName) : maskName(escapeHTML(rawName));
             const xp = d.total_xp || d.xp || 0;
             const medal = medals[i] || `${i + 1}.`;
-            const isMe = docSnap.id === currentUser?.uid;
             return `
                 <div class="leaderboard-row ${isMe ? 'leaderboard-me' : ''}">
                     <span class="lb-rank">${medal}</span>
-                    <span class="lb-name">${name}${isMe ? ' (Sen)' : ''}</span>
+                    <span class="lb-name">${displayName}${isMe ? ' (Sen)' : ''}</span>
                     <span class="lb-xp">${xp} XP</span>
                 </div>`;
         }).join('');
@@ -1855,7 +1932,7 @@ async function confirmDeleteAccount() {
         window.location.href = '/';
     } catch (error) {
         console.error('Hesap silme hatası:', error.message);
-        alert('Hesap silme başarısız: ' + error.message);
+        alert('Hesap silme başarısız. Lütfen tekrar deneyin.');
     }
     closeConfirmDialog();
 }

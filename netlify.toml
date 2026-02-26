@@ -15,7 +15,7 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagmanager.com https://www.google.com https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.google-analytics.com https://firestore.googleapis.com; frame-src https://www.google.com https://www.recaptcha.net; frame-ancestors 'none'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagmanager.com https://www.google.com https://apis.google.com https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.google-analytics.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-src https://www.google.com https://www.recaptcha.net https://ingilizcekelime.firebaseapp.com; frame-ancestors 'none'"
 
 # GÜVENLİK: SQL dosyalarına erişimi engelle
 [[headers]]
@@ -37,6 +37,12 @@
 [[redirects]]
   from = "/kullanim-kosullari"
   to = "/kullanim-kosullari.html"
+  status = 200
+
+# Doğrulama sayfası (catch-all'dan önce)
+[[redirects]]
+  from = "/verify"
+  to = "/verify.html"
   status = 200
 
 [[redirects]]

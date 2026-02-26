@@ -8,7 +8,9 @@ import {
     EmailAuthProvider,
     deleteUser as firebaseDeleteUser,
     updatePassword,
-    sendEmailVerification
+    sendEmailVerification,
+    GoogleAuthProvider,
+    signInWithPopup
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import {
     getFirestore,
@@ -245,6 +247,21 @@ function setupForms() {
                 loginError.classList.remove('hide');
             }
         }
+    });
+
+    // Google ile Giriş / Kayıt
+    document.querySelectorAll('.google-login-btn').forEach(btn => {
+        btn.addEventListener('click', async function (e) {
+            e.preventDefault();
+            const provider = new GoogleAuthProvider();
+            try {
+                const result = await signInWithPopup(auth, provider);
+                console.log('Google ile giriş başarılı:', result.user.email);
+            } catch (err) {
+                console.error('Google Giriş Hatası:', err);
+                alert('Google ile giriş yapılamadı. Tarayıcınız popup engelliyor olabilir veya ağ hatası var: ' + err.message);
+            }
+        });
     });
 
     document.getElementById('guest-login-btn')?.addEventListener('click', function (e) {
@@ -490,7 +507,7 @@ async function loadUserStats(userId) {
                 level: 1,
                 total_xp: 0,
                 streak: 0,
-                kvkkAccepted: true, // Yeni oluşturuluyorsa varsayılan kabul etmiş sayılır (kayıtta zaten checkbox var)
+                kvkkAccepted: false, // Google ile giren yeni kullanıcıların KVKK modalını görmesi için false
                 createdAt: Timestamp.now()
             };
             await setDoc(doc(db, "users", userId), defaultData);

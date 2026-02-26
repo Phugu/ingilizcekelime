@@ -724,7 +724,8 @@ let lastXPTime = 0;
 const XP_COOLDOWN_MS = 2000; // 2 saniyede bir XP verilebilir
 const MAX_XP_PER_CALL = 50;  // Tek seferde maksimum XP
 
-async function giveXP(amount, reason = "Tebrikler!") {
+// Dahili modül kullanımı için XP Kazandırma Fonksiyonu export edildi (Güvenlik nedeniyle window nesnesinde değil)
+export async function giveXP(amount, reason = "Tebrikler!") {
     // GÜVENLİK: Rate limiting kontrolü
     const now = Date.now();
     if (now - lastXPTime < XP_COOLDOWN_MS) {

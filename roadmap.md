@@ -43,8 +43,16 @@ Bu dosya, platformun eğitim ve oyunlaştırma (gamification) özelliklerinin ge
 - [x] **Görsel Tasarım:** Premium avatar ve rütbe ikonları ile şık bir tablo görünümü.
 - [x] **Misafir Modu Uyumu:** Misafir kullanıcılarda tablonun yüklenmesini engelleyip giriş yapmaya teşvik eden uyarı mekanizması eklendi.
 
+### 🎯 Günlük Görevler (Daily Quests) - 🚧 (Şu an Üzerinde Çalışılıyor)
+- [ ] **Görev Havuzu:** "Bugün 20 kelime öğren", "A1 Quizinden %100 başarı sağla", "Toplam 100 XP kazan" gibi rastgele günlük görevlerin oluşturulması.
+- [ ] **Arayüz (UI):** Dashboard (Ana Sayfa) üzerinde görevlerin durumunu ve ilerlemesini gösteren bir "Günlük Görevler" kartı tasarımı.
+- [ ] **Ödül Sistemi:** Görevler tamamlandığında otomatik ekstra XP kazandırma ve seriyi artırma yeteneği.
+- [ ] **Veritabanı (Firestore):** Kullanıcıların o anki günlük görev ilerlemelerinin `users_private` veya yeni bir alana saatlik/günlük olarak kaydedilip gece 00:00'da sıfırlanması.
+
 ### 🎖️ Başarı Rozetleri (Badges)
 - [ ] "100 Kelime Öğrendin", "7 Günlük Seri", "İlk Mükemmel Quiz" gibi özel rozetlerin tasarımı ve kazanım mantığı.
+
+> **Eklenebilecek Onlarca Yeni Fikir** için proje kök dizinine `future_features.md` adlı özel doküman yaratılmış ve saklanmıştır.
 
 ---
 

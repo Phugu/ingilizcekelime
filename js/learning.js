@@ -1,4 +1,3 @@
-// Kelime Öğrenme Modülü
 import {
     getFirestore,
     doc,
@@ -12,6 +11,8 @@ import {
     addDoc,
     Timestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+import { giveXP } from './app.js';
 
 const db = getFirestore();
 
@@ -1032,11 +1033,11 @@ export class WordLearning {
             // Sadece yeni öğrenilen kelimeler için XP ver (Sınırsız XP Bug Çözümü)
             if (isNewWord) {
                 console.log('XP kazandırma kontrolü yapılıyor...');
-                if (typeof window.giveXP === 'function') {
-                    console.log('window.giveXP fonksiyonu bulundu, 10 XP gönderiliyor...');
-                    window.giveXP(10, "Yeni kelime öğrendin!");
-                } else {
-                    console.warn('UYARI: window.giveXP fonksiyonu bulunamadı! XP kazanılamadı.');
+                try {
+                    console.log('10 XP gönderiliyor...');
+                    await giveXP(10, "Yeni kelime öğrendin!");
+                } catch (e) {
+                    console.warn('UYARI: XP kazanımı sırasında hata:', e);
                 }
 
                 // Dashboard'ı güncelle
@@ -1553,7 +1554,7 @@ export class WordLearning {
                 }
 
                 // XP Kazandır
-                if (typeof window.giveXP === 'function') {
+                try {
                     const quizXP = this.correctAnswers * 5;
                     const bonusXP = percentage === 100 ? 50 : 0;
                     const totalQuizXP = quizXP + bonusXP;
@@ -1562,8 +1563,10 @@ export class WordLearning {
                     if (percentage === 100) reason += " (Mükemmel Skor Bonusu!)";
 
                     if (totalQuizXP > 0) {
-                        window.giveXP(totalQuizXP, reason);
+                        await giveXP(totalQuizXP, reason);
                     }
+                } catch (e) {
+                    console.warn('UYARI: XP kazanımı sırasında hata (Quiz):', e);
                 }
             } catch (error) {
                 console.error('Quiz sonuçları kaydedilirken hata:', error);
@@ -1630,30 +1633,22 @@ export class WordLearning {
     // Ana sayfaya dön
     backToDashboard() {
         try {
-            // Tüm içerikleri gizle
-            document.querySelectorAll('.content > div').forEach(div => div.classList.add('hide'));
-
-            // Dashboard içeriğini göster
-            const dashboardContent = document.getElementById('dashboard-content');
-            if (dashboardContent) {
-                dashboardContent.classList.remove('hide');
-
-                // Ana menüden aktif olan sekmeyi güncelle
-                document.querySelectorAll('.main-nav a').forEach(link => {
-                    if (link.id === 'nav-dashboard') {
-                        link.classList.add('active');
-                    } else {
-                        link.classList.remove('active');
-                    }
-                });
-
-                // Dashboard'ı yenile
-                if (window.Dashboard) {
-                    const dashboard = new Dashboard('dashboard-content', this.userId);
-                    dashboard.init();
-                }
+            const navDashboard = document.getElementById('nav-dashboard');
+            if (navDashboard) {
+                navDashboard.click(); // Ana navigasyon menüsündeki tuşa tıklatarak tüm sistemi zahmetsizce güvenle geri çevir
             } else {
-                console.error('Dashboard content element not found');
+                // Alternatif Fallback
+                const sections = ['dashboard-content', 'learning-content', 'profile-content', 'leaderboard-content'];
+                sections.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.add('hide');
+                });
+                const dC = document.getElementById('dashboard-content');
+                if (dC) dC.classList.remove('hide');
+
+                if (window.updateDashboard) {
+                    window.updateDashboard();
+                }
             }
         } catch (error) {
             console.error('Error in backToDashboard:', error);

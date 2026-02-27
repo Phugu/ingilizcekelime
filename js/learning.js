@@ -331,8 +331,8 @@ export class WordLearning {
             else if (key === 'travel') { title = "Seyahat"; desc = "A2 seviye seyahat kelimeleri"; }
             else if (key.startsWith('oxford')) {
                 const num = key.split('_set')[1] || key.replace('oxford', '');
-                title = `Oxford 3000 (Set ${num})`;
-                desc = `Dünyada en çok kullanılan kelimeler`;
+                title = `A2 Oxford Kelimeleri (Set ${num})`;
+                desc = `Dünyada en çok kullanılan A2 kelimeleri`;
                 extraStyle = 'border-color: #8e44ad;';
             }
 
@@ -393,8 +393,8 @@ export class WordLearning {
             if (key === 'learning1') { title = "Kelime Öğrenme 1"; desc = "B1 seviye temel kelimeler"; }
             else if (key.startsWith('oxford')) {
                 const num = key.split('_set')[1] || key.replace('oxford', '');
-                title = `Oxford 3000 (Set ${num})`;
-                desc = `Dünyada en çok kullanılan kelimeler`;
+                title = `B1 Oxford Kelimeleri (Set ${num})`;
+                desc = `Dünyada en çok kullanılan B1 kelimeleri`;
                 extraStyle = 'border-color: #8e44ad;';
             }
 
@@ -455,8 +455,8 @@ export class WordLearning {
             if (key === 'learning1') { title = "Kelime Öğrenme 1"; desc = "B2 seviye temel kelimeler"; }
             else if (key.startsWith('oxford')) {
                 const num = key.split('_set')[1] || key.replace('oxford', '');
-                title = `Oxford 3000 (Set ${num})`;
-                desc = `Dünyada en çok kullanılan kelimeler`;
+                title = `B2 Oxford Kelimeleri (Set ${num})`;
+                desc = `Dünyada en çok kullanılan B2 kelimeleri`;
                 extraStyle = 'border-color: #8e44ad;';
             }
 
@@ -517,8 +517,8 @@ export class WordLearning {
             if (key === 'learning1') { title = "Kelime Öğrenme 1"; desc = "C1 seviye temel kelimeler"; }
             else if (key.startsWith('oxford')) {
                 const num = key.split('_set')[1] || key.replace('oxford', '');
-                title = `Oxford 3000 (Set ${num})`;
-                desc = `Dünyada en çok kullanılan kelimeler`;
+                title = `C1 Oxford Kelimeleri (Set ${num})`;
+                desc = `Dünyada en çok kullanılan C1 kelimeleri`;
                 extraStyle = 'border-color: #8e44ad;';
             }
 

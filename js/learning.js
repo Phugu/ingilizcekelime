@@ -13,6 +13,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { giveXP, updateQuestProgress } from './app.js';
+import { oxfordA1Pool } from './oxford_words.js';
 
 const db = getFirestore();
 
@@ -96,7 +97,8 @@ export class WordLearning {
                 { english: "Sister", turkish: "Kız kardeş", level: "A1", category: "Family", example: "I have one sister and two brothers.", exampleTurkish: "Bir kız kardeşim ve iki erkek kardeşim var." },
                 { english: "Brother", turkish: "Erkek kardeş", level: "A1", category: "Family", example: "My brother is three years older than me.", exampleTurkish: "Erkek kardeşim benden üç yaş büyük." },
                 { english: "Child", turkish: "Çocuk", level: "A1", category: "Family", example: "The children are playing in the park.", exampleTurkish: "Çocuklar parkta oynuyor." }
-            ]
+            ],
+            oxford1: oxfordA1Pool
         };
     }
 
@@ -201,13 +203,14 @@ export class WordLearning {
             // Diğer kategorileri ekle
         ];
 
-        // Tekrarlanan kelimeleri kaldır (english değerine göre)
+        // Tekrarlanan kelimeleri kaldır (büyük/küçük harf duyarsız kontrol ile)
         const uniqueWords = [];
         const uniqueEnglishWords = new Set();
 
         for (const word of allWords) {
-            if (!uniqueEnglishWords.has(word.english)) {
-                uniqueEnglishWords.add(word.english);
+            const cleanWord = word.english.trim().toLowerCase();
+            if (!uniqueEnglishWords.has(cleanWord)) {
+                uniqueEnglishWords.add(cleanWord);
                 uniqueWords.push(word);
             }
         }
@@ -270,6 +273,12 @@ export class WordLearning {
                         <h3>Aile</h3>
                         <p>Aile üyeleriyle ilgili kelimeler</p>
                         <span class="word-count">${this.a1WordPools.family.length} kelime</span>
+                    </div>
+
+                    <div class="pool-card" data-pool="oxford1" data-level="a1" style="border-color: #8e44ad;">
+                        <h3 style="color: #8e44ad;">Oxford 3000 (Set 1)</h3>
+                        <p>Dünyada en çok kullanılan ilk 10 kelime</p>
+                        <span class="word-count">${this.a1WordPools.oxford1.length} kelime</span>
                     </div>
                 </div>
                 

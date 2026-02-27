@@ -270,7 +270,10 @@ export class WordLearning {
 
         let html = `
             <div class="word-learning-container">
-                <h2>A1 Kelime Havuzları</h2>
+                <div class="header-with-action">
+                    <h2>A1 Kelime Havuzları</h2>
+                    <button id="back-to-levels-btn-top-a1" class="btn btn-secondary btn-sm" style="margin-bottom: 1rem;"><i class="fas fa-arrow-left"></i> Geri Seçime Dön</button>
+                </div>
                 
                 <div class="word-pools">
                     ${poolsHtml}
@@ -293,6 +296,7 @@ export class WordLearning {
             });
         });
 
+        document.getElementById('back-to-levels-btn-top-a1').addEventListener('click', () => this.showLevelSelection());
         document.getElementById('back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
         document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
     }
@@ -343,7 +347,10 @@ export class WordLearning {
 
         let html = `
             <div class="word-learning-container">
-                <h2>A2 Kelime Havuzları</h2>
+                <div class="header-with-action">
+                    <h2>A2 Kelime Havuzları</h2>
+                    <button id="back-to-levels-btn-top-a2" class="btn btn-secondary btn-sm" style="margin-bottom: 1rem;"><i class="fas fa-arrow-left"></i> Geri Seçime Dön</button>
+                </div>
                 
                 <div class="word-pools">
                     ${poolsHtml}
@@ -366,6 +373,7 @@ export class WordLearning {
             });
         });
 
+        document.getElementById('back-to-levels-btn-top-a2').addEventListener('click', () => this.showLevelSelection());
         document.getElementById('back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
         document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
     }
@@ -401,7 +409,10 @@ export class WordLearning {
 
         let html = `
             <div class="word-learning-container">
-                <h2>B1 Kelime Havuzları</h2>
+                <div class="header-with-action">
+                    <h2>B1 Kelime Havuzları</h2>
+                    <button id="back-to-levels-btn-top-b1" class="btn btn-secondary btn-sm" style="margin-bottom: 1rem;"><i class="fas fa-arrow-left"></i> Geri Seçime Dön</button>
+                </div>
                 
                 <div class="word-pools">
                     ${poolsHtml}
@@ -424,6 +435,7 @@ export class WordLearning {
             });
         });
 
+        document.getElementById('back-to-levels-btn-top-b1').addEventListener('click', () => this.showLevelSelection());
         document.getElementById('back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
         document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
     }
@@ -459,7 +471,10 @@ export class WordLearning {
 
         let html = `
             <div class="word-learning-container">
-                <h2>B2 Kelime Havuzları</h2>
+                <div class="header-with-action">
+                    <h2>B2 Kelime Havuzları</h2>
+                    <button id="back-to-levels-btn-top-b2" class="btn btn-secondary btn-sm" style="margin-bottom: 1rem;"><i class="fas fa-arrow-left"></i> Geri Seçime Dön</button>
+                </div>
                 
                 <div class="word-pools">
                     ${poolsHtml}
@@ -482,6 +497,7 @@ export class WordLearning {
             });
         });
 
+        document.getElementById('back-to-levels-btn-top-b2').addEventListener('click', () => this.showLevelSelection());
         document.getElementById('back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
         document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
     }
@@ -517,7 +533,10 @@ export class WordLearning {
 
         let html = `
             <div class="word-learning-container">
-                <h2>C1 Kelime Havuzları</h2>
+                <div class="header-with-action">
+                    <h2>C1 Kelime Havuzları</h2>
+                    <button id="back-to-levels-btn-top-c1" class="btn btn-secondary btn-sm" style="margin-bottom: 1rem;"><i class="fas fa-arrow-left"></i> Geri Seçime Dön</button>
+                </div>
                 
                 <div class="word-pools">
                     ${poolsHtml}
@@ -540,6 +559,7 @@ export class WordLearning {
             });
         });
 
+        document.getElementById('back-to-levels-btn-top-c1').addEventListener('click', () => this.showLevelSelection());
         document.getElementById('back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
         document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
     }

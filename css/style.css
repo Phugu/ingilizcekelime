@@ -633,6 +633,18 @@ a {
     box-shadow: 0 4px 12px rgba(52, 152, 219, 0.35);
 }
 
+/* Üst Başlık ve Buton Hizalaması */
+.header-with-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.header-with-action h2 {
+    margin-bottom: 0 !important;
+}
+
 /* Kelime Öğrenme Alanı */
 .word-card-wrapper {
     display: flex;

@@ -911,6 +911,9 @@ export async function giveXP(amount, reason = "Tebrikler!") {
         updateXPUI(xp, level);
         updateStreakUI(streak, new Date()); // Şu an aktif oldu
 
+        // Günlük Görev (Daily Quest) ilerlemesini kaydet
+        await updateQuestProgress('earn_xp', amount);
+
         // XP Bildirimi Göster
         showXPNotification(amount, reason, leveledUp);
     } catch (error) {
@@ -1694,13 +1697,19 @@ class Dashboard {
             const userDoc = await getDoc(doc(db, "users_public", this.userId));
             const userData = userDoc.exists() ? userDoc.data() : { xp: 0, level: 1, total_xp: 0, streak: 0 };
 
+            // Özel verileri al (Günlük Görevler için)
+            const privateDoc = await getDoc(doc(db, "users_private", this.userId));
+            const privateData = privateDoc.exists() ? privateDoc.data() : {};
+            const dailyQuests = privateData.dailyQuests || null;
+
             return {
                 totalWords: learnedWordsCount,
                 totalQuizzes: quizResultsCount,
                 studyStreak: userData.streak || 0,
                 level: userData.level || 1,
                 xp: userData.xp || 0,
-                totalXP: userData.total_xp || 0
+                totalXP: userData.total_xp || 0,
+                dailyQuests: dailyQuests
             };
         } catch (error) {
             console.error('Dashboard yüklenirken hata:', error);
@@ -1745,6 +1754,43 @@ class Dashboard {
                     </div>
                 </div>
                 
+                ${stats.dailyQuests ? `
+                <div class="daily-quests-section">
+                    <h3 class="section-title">⭐ Günlük Görevler</h3>
+                    <div class="quests-grid">
+                        ${stats.dailyQuests.quests.map(quest => {
+            const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
+            const isCompleted = quest.progress >= quest.target;
+            const isClaimed = quest.isClaimed || false;
+
+            return `
+                                <div class="quest-card ${isCompleted ? 'completed' : ''} ${isClaimed ? 'claimed' : ''}">
+                                    <div class="quest-icon">${quest.icon}</div>
+                                    <div class="quest-info">
+                                        <div class="quest-title">${quest.title}</div>
+                                        <div class="quest-progress-container">
+                                            <div class="quest-progress-bar" style="width: ${percent}%"></div>
+                                        </div>
+                                        <div class="quest-stats">
+                                            <span>${quest.progress} / ${quest.target}</span>
+                                            <span class="quest-reward">+${quest.reward} XP</span>
+                                        </div>
+                                    </div>
+                                    <div class="quest-action">
+                                        ${isClaimed ?
+                    '<span class="claimed-badge">Alındı ✔️</span>' :
+                    isCompleted ?
+                        `<button onclick="window.claimQuestReward('${quest.id}')" class="claim-btn">Ödülü Al</button>` :
+                        `<span class="pending-badge">Devam Ediyor</span>`
+                }
+                                    </div>
+                                </div>
+                            `;
+        }).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
                 <div class="action-buttons">
                     <button onclick="document.getElementById('nav-learn').click()" class="action-btn">
                         Kelime Öğrenmeye Başla
@@ -1778,6 +1824,55 @@ window.updateDashboard = async function () {
     if (currentUser) {
         const dashboard = new Dashboard('dashboard-content', currentUser.uid);
         await dashboard.init();
+    }
+};
+
+// Ödül toplama fonksiyonu
+window.claimQuestReward = async function (questId) {
+    if (!currentUser || currentUser.isGuest) return;
+
+    try {
+        const privateRef = doc(db, "users_private", currentUser.uid);
+        const privateDoc = await getDoc(privateRef);
+
+        if (!privateDoc.exists()) return;
+        const pData = privateDoc.data();
+
+        if (!pData.dailyQuests) return;
+
+        const questIndex = pData.dailyQuests.quests.findIndex(q => q.id === questId);
+        if (questIndex === -1) return;
+
+        const quest = pData.dailyQuests.quests[questIndex];
+
+        if (quest.isClaimed || quest.progress < quest.target) return;
+
+        // Görevi 'alındı' olarak işaretle
+        const updatedQuests = [...pData.dailyQuests.quests];
+        updatedQuests[questIndex].isClaimed = true;
+
+        await updateDoc(privateRef, {
+            'dailyQuests.quests': updatedQuests
+        });
+
+        // XP ödülünü ver
+        await giveXP(quest.reward, `"${quest.title}" görevi tamamlandı!`);
+
+        // Dashboard'ı yenile
+        await window.updateDashboard();
+
+        // Konfeti efekti (isteğe bağlı, kütüphane varsa)
+        if (typeof confetti === 'function') {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
+
+    } catch (error) {
+        console.error('Ödül alınırken hata:', error);
+        alert('Ödül alınırken bir hata oluştu. Lütfen tekrar deneyin.');
     }
 };
 

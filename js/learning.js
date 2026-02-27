@@ -12,7 +12,7 @@ import {
     Timestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-import { giveXP } from './app.js';
+import { giveXP, updateQuestProgress } from './app.js';
 
 const db = getFirestore();
 
@@ -1040,6 +1040,13 @@ export class WordLearning {
                     console.warn('UYARI: XP kazanımı sırasında hata:', e);
                 }
 
+                // Günlük Görev İlerlemesini Kaydet (Kelime Öğrenildi)
+                try {
+                    await updateQuestProgress('learn_words', 1);
+                } catch (e) {
+                    console.warn('Görev ilerlemesi (learn_words) güncellenemedi:', e);
+                }
+
                 // Dashboard'ı güncelle
                 if (typeof window.updateDashboard === 'function') {
                     await window.updateDashboard();
@@ -1567,6 +1574,13 @@ export class WordLearning {
                     }
                 } catch (e) {
                     console.warn('UYARI: XP kazanımı sırasında hata (Quiz):', e);
+                }
+
+                // Günlük Görev İlerlemesini Kaydet (Quiz Çözüldü)
+                try {
+                    await updateQuestProgress('take_quiz', 1);
+                } catch (e) {
+                    console.warn('Görev ilerlemesi (take_quiz) güncellenemedi:', e);
                 }
             } catch (error) {
                 console.error('Quiz sonuçları kaydedilirken hata:', error);

@@ -3882,3 +3882,163 @@ a {
     color: var(--primary-color);
     font-size: 15px;
 }
+
+/* Günlük Görevler (Daily Quests) Stilleri */
+.daily-quests-section {
+    margin: 40px 0;
+    text-align: left;
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 25px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
+}
+
+.daily-quests-section .section-title {
+    margin: 0 0 25px 0;
+    text-align: left;
+    font-size: 22px;
+}
+
+.daily-quests-section .section-title:after {
+    left: 40px;
+    transform: none;
+}
+
+.quests-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.quest-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: var(--stat-card-gradient);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.quest-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.quest-card.completed {
+    border-color: #2ecc71;
+    background: rgba(46, 204, 113, 0.05);
+}
+
+.quest-card.claimed {
+    opacity: 0.8;
+    filter: grayscale(0.5);
+}
+
+.quest-icon {
+    font-size: 30px;
+    min-width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.quest-info {
+    flex: 1;
+}
+
+.quest-title {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.quest-progress-container {
+    height: 8px;
+    background: var(--xp-bar-bg);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.quest-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3498db, #2ecc71);
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.quest-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.quest-reward {
+    color: #f39c12;
+}
+
+.quest-action {
+    min-width: 80px;
+    text-align: right;
+}
+
+.claim-btn {
+    background: linear-gradient(135deg, #f1c40f, #f39c12);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.claim-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(243, 156, 18, 0.4);
+}
+
+.claimed-badge {
+    color: #2ecc71;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.pending-badge {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-style: italic;
+}
+
+/* Karanlık Tema Uyumluluğu */
+.dark-theme .quest-icon {
+    background: #1a1a1a;
+}
+
+.dark-theme .quest-card.completed {
+    background: rgba(46, 204, 113, 0.1);
+}
+
+@media (max-width: 768px) {
+    .quests-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .quest-card {
+        padding: 15px;
+    }
+}

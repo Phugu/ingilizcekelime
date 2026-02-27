@@ -4297,6 +4297,9 @@ a {
     object-fit: contain;
     margin-bottom: 8px;
     filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.15));
+    border-radius: 50%;
+    clip-path: circle(48% at 50% 50%);
+    /* Sahte damalı PNG'lerin kare kısımlarını kırpmak için hızlı düzeltme */
 }
 
 .dark-theme .badge-img {

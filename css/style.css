@@ -4243,41 +4243,43 @@ a {
 }
 
 .badge-item {
-    background: transparent;
-    border: none;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
     padding: 15px;
     text-align: center;
     position: relative;
     overflow: hidden;
-    transition: transform 0.2s, background 0.2s;
+    transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
     border-radius: 12px;
     cursor: help;
 }
 
 .badge-item:hover {
     transform: translateY(-5px);
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--card-bg);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .dark-theme .badge-item:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: #2a2a35;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
 }
 
 .badge-item.locked {
-    opacity: 0.5;
-    filter: grayscale(100%);
+    opacity: 0.6;
+    filter: grayscale(100%) brightness(0.8);
 }
 
 .badge-item.locked::after {
     content: "🔒";
     position: absolute;
-    top: 5px;
-    right: 5px;
+    top: 8px;
+    right: 8px;
     font-size: 14px;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7);
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;

@@ -4243,19 +4243,24 @@ a {
 }
 
 .badge-item {
-    background: var(--input-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    background: transparent;
+    border: none;
     padding: 15px;
     text-align: center;
     position: relative;
     overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s, background 0.2s;
+    border-radius: 12px;
+    cursor: help;
 }
 
 .badge-item:hover {
     transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.dark-theme .badge-item:hover {
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .badge-item.locked {
@@ -4280,25 +4285,25 @@ a {
 }
 
 .badge-item.unlocked {
-    border-color: var(--primary-color);
-    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.15);
+    border: 1px solid var(--primary-color);
+    box-shadow: inset 0 0 10px rgba(52, 152, 219, 0.05);
 }
 
 .badge-img {
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
     object-fit: contain;
     margin-bottom: 8px;
-    filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.15));
 }
 
 .dark-theme .badge-img {
-    filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.3));
+    filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.4));
 }
 
 .badge-name {
     font-weight: bold;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-main);
     margin-bottom: 5px;
 }

@@ -13,7 +13,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { giveXP, updateQuestProgress } from './app.js';
-import { oxfordPools } from './oxford_words.js';
+import {
+    oxfordA1Pools,
+    oxfordA2Pools,
+    oxfordB1Pools,
+    oxfordB2Pools,
+    oxfordC1Pools
+} from './oxford_words_levels.js';
 
 const db = getFirestore();
 
@@ -98,7 +104,7 @@ export class WordLearning {
                 { english: "Brother", turkish: "Erkek kardeş", level: "A1", category: "Family", example: "My brother is three years older than me.", exampleTurkish: "Erkek kardeşim benden üç yaş büyük." },
                 { english: "Child", turkish: "Çocuk", level: "A1", category: "Family", example: "The children are playing in the park.", exampleTurkish: "Çocuklar parkta oynuyor." }
             ],
-            ...oxfordPools
+            ...oxfordA1Pools
         };
     }
 
@@ -135,7 +141,8 @@ export class WordLearning {
                 { english: "Trip", turkish: "Seyahat", level: "A2", category: "Travel", example: "How was your trip to Paris?", exampleTurkish: "Paris seyahatiniz nasıldı?" },
                 { english: "Journey", turkish: "Yolculuk", level: "A2", category: "Travel", example: "The journey took five hours.", exampleTurkish: "Yolculuk beş saat sürdü." },
                 { english: "Tourist", turkish: "Turist", level: "A2", category: "Travel", example: "There are many tourists in the summer.", exampleTurkish: "Yazın çok sayıda turist vardır." }
-            ]
+            ],
+            ...oxfordA2Pools
         };
     }
 
@@ -153,7 +160,8 @@ export class WordLearning {
                 { english: "Responsibility", turkish: "Sorumluluk", level: "B1", category: "Learning1", example: "Taking care of a pet is a big responsibility.", exampleTurkish: "Bir evcil hayvana bakmak büyük bir sorumluluktur." },
                 { english: "Achievement", turkish: "Başarı", level: "B1", category: "Learning1", example: "Graduating from university was her greatest achievement.", exampleTurkish: "Üniversiteden mezun olmak onun en büyük başarısıydı." },
                 { english: "Improvement", turkish: "İyileştirme", level: "B1", category: "Learning1", example: "I can see a lot of improvement in your English.", exampleTurkish: "İngilizcende çok gelişme görüyorum." }
-            ]
+            ],
+            ...oxfordB1Pools
         };
     }
 
@@ -171,7 +179,8 @@ export class WordLearning {
                 { english: "Recommendation", turkish: "Tavsiye", level: "B2", category: "Learning1", example: "The committee will make a recommendation next month.", exampleTurkish: "Komite gelecek ay bir tavsiyede bulunacak." },
                 { english: "Assumption", turkish: "Varsayım", level: "B2", category: "Learning1", example: "Your assumption is incorrect.", exampleTurkish: "Varsayımınız yanlış." },
                 { english: "Interpretation", turkish: "Yorumlama", level: "B2", category: "Learning1", example: "There are many possible interpretations of this poem.", exampleTurkish: "Bu şiirin birçok olası yorumu var." }
-            ]
+            ],
+            ...oxfordB2Pools
         };
     }
 
@@ -189,7 +198,8 @@ export class WordLearning {
                 { english: "Controversial", turkish: "Tartışmalı", level: "C1", category: "Learning1", example: "It's a controversial topic that divides opinion.", exampleTurkish: "Görüşleri bölen tartışmalı bir konudur." },
                 { english: "Methodology", turkish: "Metodoloji", level: "C1", category: "Learning1", example: "The research methodology has been criticized by other scientists.", exampleTurkish: "Araştırma metodolojisi diğer bilim insanları tarafından eleştirildi." },
                 { english: "Unprecedented", turkish: "Benzeri görülmemiş", level: "C1", category: "Learning1", example: "The company has experienced unprecedented growth this year.", exampleTurkish: "Şirket bu yıl benzeri görülmemiş bir büyüme yaşadı." }
-            ]
+            ],
+            ...oxfordC1Pools
         };
     }
 
@@ -243,7 +253,7 @@ export class WordLearning {
             else if (key === 'food') { title = "Yiyecek"; desc = "Temel yiyecek ve içecek kelimeleri"; }
             else if (key === 'family') { title = "Aile"; desc = "Aile üyeleriyle ilgili kelimeler"; }
             else if (key.startsWith('oxford')) {
-                const num = key.replace('oxford', '');
+                const num = key.split('_set')[1] || key.replace('oxford', '');
                 title = `Oxford 3000 (Set ${num})`;
                 desc = `Dünyada en çok kullanılan kelimeler`;
                 extraStyle = 'border-color: #8e44ad;';
@@ -305,28 +315,38 @@ export class WordLearning {
         const container = document.getElementById(this.containerId);
         if (!container) return;
 
+        let poolsHtml = '';
+        Object.keys(this.a2WordPools).forEach(key => {
+            const pool = this.a2WordPools[key];
+            let title = key;
+            let desc = `${pool.length} kelime`;
+            let extraStyle = '';
+
+            if (key === 'learning1') { title = "Kelime Öğrenme 1"; desc = "A2 seviye temel kelimeler"; }
+            else if (key === 'learning2') { title = "Kelime Öğrenme 2"; desc = "A2 seviye ek kelimeler"; }
+            else if (key === 'travel') { title = "Seyahat"; desc = "A2 seviye seyahat kelimeleri"; }
+            else if (key.startsWith('oxford')) {
+                const num = key.split('_set')[1] || key.replace('oxford', '');
+                title = `Oxford 3000 (Set ${num})`;
+                desc = `Dünyada en çok kullanılan kelimeler`;
+                extraStyle = 'border-color: #8e44ad;';
+            }
+
+            poolsHtml += `
+                <div class="pool-card ${key.startsWith('oxford') ? 'oxford-card' : ''}" data-pool="${key}" data-level="a2" style="${extraStyle}">
+                    <h3 style="${key.startsWith('oxford') ? 'color: #8e44ad;' : ''}">${title}</h3>
+                    <p>${desc}</p>
+                    <span class="word-count">${pool.length} kelime</span>
+                </div>
+            `;
+        });
+
         let html = `
             <div class="word-learning-container">
                 <h2>A2 Kelime Havuzları</h2>
                 
                 <div class="word-pools">
-                    <div class="pool-card" data-pool="learning1" data-level="a2">
-                        <h3>Kelime Öğrenme 1</h3>
-                        <p>A2 seviye temel kelimeler</p>
-                        <span class="word-count">${this.a2WordPools.learning1.length} kelime</span>
-                    </div>
-                    
-                    <div class="pool-card" data-pool="learning2" data-level="a2">
-                        <h3>Kelime Öğrenme 2</h3>
-                        <p>A2 seviye ek kelimeler</p>
-                        <span class="word-count">${this.a2WordPools.learning2.length} kelime</span>
-                    </div>
-                    
-                    <div class="pool-card" data-pool="travel" data-level="a2">
-                        <h3>Seyahat</h3>
-                        <p>A2 seviye seyahat kelimeleri</p>
-                        <span class="word-count">${this.a2WordPools.travel.length} kelime</span>
-                    </div>
+                    ${poolsHtml}
                 </div>
                 
                 <div class="navigation-controls">
@@ -355,16 +375,36 @@ export class WordLearning {
         const container = document.getElementById(this.containerId);
         if (!container) return;
 
+        let poolsHtml = '';
+        Object.keys(this.b1WordPools).forEach(key => {
+            const pool = this.b1WordPools[key];
+            let title = key;
+            let desc = `${pool.length} kelime`;
+            let extraStyle = '';
+
+            if (key === 'learning1') { title = "Kelime Öğrenme 1"; desc = "B1 seviye temel kelimeler"; }
+            else if (key.startsWith('oxford')) {
+                const num = key.split('_set')[1] || key.replace('oxford', '');
+                title = `Oxford 3000 (Set ${num})`;
+                desc = `Dünyada en çok kullanılan kelimeler`;
+                extraStyle = 'border-color: #8e44ad;';
+            }
+
+            poolsHtml += `
+                <div class="pool-card ${key.startsWith('oxford') ? 'oxford-card' : ''}" data-pool="${key}" data-level="b1" style="${extraStyle}">
+                    <h3 style="${key.startsWith('oxford') ? 'color: #8e44ad;' : ''}">${title}</h3>
+                    <p>${desc}</p>
+                    <span class="word-count">${pool.length} kelime</span>
+                </div>
+            `;
+        });
+
         let html = `
             <div class="word-learning-container">
                 <h2>B1 Kelime Havuzları</h2>
                 
                 <div class="word-pools">
-                    <div class="pool-card" data-pool="learning1" data-level="b1">
-                        <h3>Kelime Öğrenme 1</h3>
-                        <p>B1 seviye temel kelimeler</p>
-                        <span class="word-count">${this.b1WordPools.learning1.length} kelime</span>
-                    </div>
+                    ${poolsHtml}
                 </div>
                 
                 <div class="navigation-controls">
@@ -393,16 +433,36 @@ export class WordLearning {
         const container = document.getElementById(this.containerId);
         if (!container) return;
 
+        let poolsHtml = '';
+        Object.keys(this.b2WordPools).forEach(key => {
+            const pool = this.b2WordPools[key];
+            let title = key;
+            let desc = `${pool.length} kelime`;
+            let extraStyle = '';
+
+            if (key === 'learning1') { title = "Kelime Öğrenme 1"; desc = "B2 seviye temel kelimeler"; }
+            else if (key.startsWith('oxford')) {
+                const num = key.split('_set')[1] || key.replace('oxford', '');
+                title = `Oxford 3000 (Set ${num})`;
+                desc = `Dünyada en çok kullanılan kelimeler`;
+                extraStyle = 'border-color: #8e44ad;';
+            }
+
+            poolsHtml += `
+                <div class="pool-card ${key.startsWith('oxford') ? 'oxford-card' : ''}" data-pool="${key}" data-level="b2" style="${extraStyle}">
+                    <h3 style="${key.startsWith('oxford') ? 'color: #8e44ad;' : ''}">${title}</h3>
+                    <p>${desc}</p>
+                    <span class="word-count">${pool.length} kelime</span>
+                </div>
+            `;
+        });
+
         let html = `
             <div class="word-learning-container">
                 <h2>B2 Kelime Havuzları</h2>
                 
                 <div class="word-pools">
-                    <div class="pool-card" data-pool="learning1" data-level="b2">
-                        <h3>Kelime Öğrenme 1</h3>
-                        <p>B2 seviye temel kelimeler</p>
-                        <span class="word-count">${this.b2WordPools.learning1.length} kelime</span>
-                    </div>
+                    ${poolsHtml}
                 </div>
                 
                 <div class="navigation-controls">
@@ -431,16 +491,36 @@ export class WordLearning {
         const container = document.getElementById(this.containerId);
         if (!container) return;
 
+        let poolsHtml = '';
+        Object.keys(this.c1WordPools).forEach(key => {
+            const pool = this.c1WordPools[key];
+            let title = key;
+            let desc = `${pool.length} kelime`;
+            let extraStyle = '';
+
+            if (key === 'learning1') { title = "Kelime Öğrenme 1"; desc = "C1 seviye temel kelimeler"; }
+            else if (key.startsWith('oxford')) {
+                const num = key.split('_set')[1] || key.replace('oxford', '');
+                title = `Oxford 3000 (Set ${num})`;
+                desc = `Dünyada en çok kullanılan kelimeler`;
+                extraStyle = 'border-color: #8e44ad;';
+            }
+
+            poolsHtml += `
+                <div class="pool-card ${key.startsWith('oxford') ? 'oxford-card' : ''}" data-pool="${key}" data-level="c1" style="${extraStyle}">
+                    <h3 style="${key.startsWith('oxford') ? 'color: #8e44ad;' : ''}">${title}</h3>
+                    <p>${desc}</p>
+                    <span class="word-count">${pool.length} kelime</span>
+                </div>
+            `;
+        });
+
         let html = `
             <div class="word-learning-container">
                 <h2>C1 Kelime Havuzları</h2>
                 
                 <div class="word-pools">
-                    <div class="pool-card" data-pool="learning1" data-level="c1">
-                        <h3>Kelime Öğrenme 1</h3>
-                        <p>C1 seviye temel kelimeler</p>
-                        <span class="word-count">${this.c1WordPools.learning1.length} kelime</span>
-                    </div>
+                    ${poolsHtml}
                 </div>
                 
                 <div class="navigation-controls">

@@ -4042,3 +4042,248 @@ a {
         padding: 15px;
     }
 }
+
+/* =========================================
+   YENİ PROFİL SAYFASI İÇİN ÖZEL STİLLER 
+========================================= */
+
+.user-profile-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--card-bg);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    position: relative;
+    padding-bottom: 30px;
+}
+
+.dark-theme .user-profile-wrapper {
+    background: var(--card-bg);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.profile-header-banner {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+    height: 140px;
+    position: relative;
+}
+
+.settings-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(5px);
+    transition: background 0.3s;
+}
+
+.settings-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.profile-avatar-container {
+    position: absolute;
+    bottom: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    background: white;
+    border-radius: 50%;
+    border: 4px solid var(--card-bg);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.dark-theme .profile-avatar {
+    background: #1e293b;
+    border-color: var(--card-bg);
+    color: #fff;
+}
+
+.profile-main-info {
+    text-align: center;
+    margin-top: 60px;
+    padding: 0 20px;
+}
+
+.profile-name {
+    margin: 0 0 5px 0;
+    font-size: 24px;
+    color: var(--text-main);
+}
+
+.profile-email {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.profile-level-badge-container {
+    margin-top: 15px;
+}
+
+.profile-level-badge {
+    background: var(--primary-color);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.profile-xp-progress-bar-container {
+    width: 80%;
+    max-width: 400px;
+    height: 10px;
+    background: var(--input-bg);
+    border-radius: 5px;
+    margin: 20px auto 10px auto;
+    overflow: hidden;
+}
+
+.profile-xp-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #f1c40f, #f39c12);
+    border-radius: 5px;
+    transition: width 1s ease-in-out;
+}
+
+.profile-xp-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    padding: 20px 30px;
+    margin-top: 20px;
+}
+
+@media (min-width: 600px) {
+    .profile-stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.profile-stat-box {
+    background: var(--input-bg);
+    padding: 20px 10px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.profile-stat-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
+}
+
+.dark-theme .profile-stat-box:hover {
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.profile-stat-box .stat-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.profile-stat-box .stat-val {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text-main);
+}
+
+.profile-stat-box .stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 5px;
+}
+
+.profile-badges-section {
+    padding: 0 30px;
+    margin-top: 20px;
+}
+
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 15px;
+}
+
+@media (max-width: 500px) {
+    .badges-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.badge-item {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.badge-item.locked {
+    opacity: 0.5;
+    filter: grayscale(100%);
+}
+
+.badge-item.locked::after {
+    content: "🔒";
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 14px;
+}
+
+.badge-item.unlocked {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.1);
+}
+
+.badge-icon {
+    font-size: 30px;
+    margin-bottom: 8px;
+}
+
+.badge-name {
+    font-weight: bold;
+    font-size: 14px;
+    color: var(--text-main);
+    margin-bottom: 5px;
+}
+
+.badge-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.3;
+}

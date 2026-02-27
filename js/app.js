@@ -63,6 +63,7 @@ function hideAllContentSections() {
     document.getElementById('profile-content').classList.add('hide');
     document.getElementById('recent-words-content').classList.add('hide');
     document.getElementById('leaderboard-content')?.classList.add('hide');
+    document.getElementById('settings-content')?.classList.add('hide');
 }
 
 // Aktif navigasyon öğesini güncelle
@@ -1043,8 +1044,7 @@ function showThemeSelectionModal() {
     });
 }
 
-
-// Profil sayfasını yükle
+// Görsel Yeni Profil Sayfasını Yükle
 async function loadProfileContent() {
     try {
         hideAllContentSections();
@@ -1052,6 +1052,148 @@ async function loadProfileContent() {
         const profileContent = document.getElementById('profile-content');
         if (!profileContent) return;
         profileContent.classList.remove('hide');
+
+        const isGuest = localStorage.getItem('isGuest') === 'true' || (window.currentUser && window.currentUser.isGuest);
+        const guestFallback = isGuest ? {
+            uid: sessionStorage.getItem('guestSessionId') || 'guest_' + crypto.randomUUID(),
+            isGuest: true,
+            displayName: 'Misafir Kullanıcı'
+        } : null;
+
+        const user = window.currentUser || auth.currentUser || guestFallback;
+        if (!user) {
+            console.error('Kullanıcı oturumu bulunamadı.');
+            profileContent.innerHTML = `<div class="error-message"><p>Profil bilgileri yüklenemedi: Oturum bulunamadı.</p></div>`;
+            return;
+        }
+
+        // Dashboard/Uygulama istatistiklerini alma mantığı
+        let stats = { totalWords: 0, totalQuizzes: 0, studyStreak: 1, level: 1, xp: 0, totalXP: 0 };
+
+        if (!isGuest) {
+            try {
+                // Öğrenilen kelimeler
+                const learnedWordsQuery = query(collection(db, "learned_words"), where("user_id", "==", user.uid));
+                stats.totalWords = (await getDocs(learnedWordsQuery)).size;
+
+                // Quiz Sonuçları
+                const quizResultsQuery = query(collection(db, "quiz_results"), where("user_id", "==", user.uid));
+                stats.totalQuizzes = (await getDocs(quizResultsQuery)).size;
+
+                // Genel User Data (XP, Seviye, Streak)
+                const userDoc = await getDoc(doc(db, "users_public", user.uid));
+                const userData = userDoc.exists() ? userDoc.data() : { xp: 0, level: 1, total_xp: 0, streak: 0 };
+
+                stats.studyStreak = userData.streak || 0;
+                stats.level = userData.level || 1;
+                stats.xp = userData.xp || 0;
+                stats.totalXP = userData.total_xp || 0;
+            } catch (err) {
+                console.error("Profil istatistikleri alınamadı:", err);
+            }
+        }
+
+        const nextLevelXp = stats.level * 200;
+        const xpPercent = Math.min(100, Math.round((stats.xp / nextLevelXp) * 100));
+
+        let html = `
+            <div class="user-profile-wrapper">
+                <div class="profile-header-banner">
+                    <button class="settings-btn" title="Ayarlar" onclick="window.loadSettingsContent()">⚙️ Ayarlar</button>
+                    <div class="profile-avatar-container">
+                        <div class="profile-avatar">${user.displayName ? user.displayName.charAt(0).toUpperCase() : 'M'}</div>
+                    </div>
+                </div>
+                
+                <div class="profile-main-info">
+                    <h2 class="profile-name">${escapeHTML(user.displayName || 'İsimsiz Kullanıcı')}</h2>
+                    <p class="profile-email">${escapeHTML(user.email || 'Misafir Modu')}</p>
+                    
+                    <div class="profile-level-badge-container">
+                        <span class="profile-level-badge">Seviye ${stats.level}</span>
+                    </div>
+                    
+                    <div class="profile-xp-progress-bar-container">
+                        <div class="profile-xp-progress-bar" style="width: ${xpPercent}%"></div>
+                    </div>
+                    <p class="profile-xp-text">${stats.xp} / ${nextLevelXp} XP (${xpPercent}%)</p>
+                </div>
+
+                <div class="profile-stats-grid">
+                    <div class="profile-stat-box">
+                        <div class="stat-icon">📚</div>
+                        <div class="stat-val">${stats.totalWords}</div>
+                        <div class="stat-label">Öğrenilen Kelime</div>
+                    </div>
+                    <div class="profile-stat-box">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-val">${stats.totalQuizzes}</div>
+                        <div class="stat-label">Tamamlanan Quiz</div>
+                    </div>
+                    <div class="profile-stat-box">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-val">${stats.studyStreak}</div>
+                        <div class="stat-label">Günlük Seri</div>
+                    </div>
+                    <div class="profile-stat-box">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-val">${stats.totalXP}</div>
+                        <div class="stat-label">Toplam XP</div>
+                    </div>
+                </div>
+                
+                <div class="profile-badges-section">
+                    <h3 class="section-title">Kazanılan Rozetler</h3>
+                    <div class="badges-grid">
+                        <!-- Örnek Dinamik Rozet Mantığı -->
+                        <div class="badge-item ${stats.totalWords >= 10 ? 'unlocked' : 'locked'}">
+                            <div class="badge-icon">📖</div>
+                            <div class="badge-name">Okuyucu</div>
+                            <div class="badge-desc">10 Kelime Öğren</div>
+                        </div>
+                        <div class="badge-item ${stats.totalQuizzes >= 5 ? 'unlocked' : 'locked'}">
+                            <div class="badge-icon">🧠</div>
+                            <div class="badge-name">Bilgin</div>
+                            <div class="badge-desc">5 Quiz Çöz</div>
+                        </div>
+                        <div class="badge-item ${stats.studyStreak >= 7 ? 'unlocked' : 'locked'}">
+                            <div class="badge-icon">🔥</div>
+                            <div class="badge-name">Ateşli</div>
+                            <div class="badge-desc">7 Günlük Seri</div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${isGuest ? `
+                <div class="profile-section notification mt-20" style="background-color: rgba(243, 156, 18, 0.1); border-left-color: #f39c12;">
+                    <h3 style="color: #f39c12; border-bottom: none;"><span style="font-size: 20px; margin-right: 10px;">⚠️</span>Misafir Modundasınız</h3>
+                    <p class="info-message">Şu anda uygulamayı misafir olarak kullanıyorsunuz. İstatistikleriniz sadece bu oturum için geçerlidir ve veritabanına kaydedilmez. Kalıcı bir profil için hesap oluşturun.</p>
+                </div>
+                ` : ''}
+            </div>
+        `;
+
+        profileContent.innerHTML = html;
+
+    } catch (error) {
+        console.error('Profil sayfası yüklenirken hata:', error);
+        if (profileContent) {
+            profileContent.innerHTML = `<div class="error-message"><p>Profil bilgileri yüklenirken bir hata oluştu.</p></div>`;
+        }
+    }
+}
+
+// Global'e çıkart
+window.loadProfileContent = loadProfileContent;
+
+// Ayarlar sayfasını yükle
+async function loadSettingsContent() {
+    try {
+        hideAllContentSections();
+
+        const settingsContent = document.getElementById('settings-content');
+        if (!settingsContent) return;
+        settingsContent.classList.remove('hide');
 
         // GÜVENLİK: Misafir kullanıcı için benzersiz oturum ID'si kullan
         const guestFallback = localStorage.getItem('isGuest') === 'true' ? {
@@ -1062,7 +1204,7 @@ async function loadProfileContent() {
         const user = window.currentUser || auth.currentUser || guestFallback;
         if (!user) {
             console.error('Kullanıcı oturumu bulunamadı.');
-            profileContent.innerHTML = `<div class="error-message"><p>Profil bilgileri yüklenemedi: Kullanıcı oturumu bulunamadı.</p></div>`;
+            settingsContent.innerHTML = `<div class="error-message"><p>Ayarlar bilgileri yüklenemedi: Kullanıcı oturumu bulunamadı.</p></div>`;
             return;
         }
 
@@ -1085,7 +1227,10 @@ async function loadProfileContent() {
 
         let html = `
             <div class="profile-container">
-                <h2>Profil Bilgileriniz</h2>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">⚙️ Ayarlar</h2>
+                    <button class="btn btn-small" onclick="document.getElementById('nav-profile').click()" style="background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-color);">< Geri Dön</button>
+                </div>
                 
                 ${user.isGuest ? `
                 <div class="profile-section notification" style="background-color: rgba(243, 156, 18, 0.1); border-left-color: #f39c12;">
@@ -1113,21 +1258,6 @@ async function loadProfileContent() {
                     </div>
                 </div>
 
-                <div class="profile-section gamification-details">
-                    <h3>Gelişim</h3>
-                    <div class="profile-info">
-                        <div class="info-item">
-                            <span class="label">Seviye:</span>
-                            <span class="value">Seviye ${level}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="label">Mevcut XP:</span>
-                            <span class="value">${xp} / ${nextLevelXp} XP</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="label">Toplam XP:</span>
-                            <span class="value">${totalXp} XP</span>
-                        </div>
                     </div>
                 </div>
 
@@ -1215,78 +1345,14 @@ async function loadProfileContent() {
                 </div>
         `;
 
-        // Quiz sonuçları bölümü
-        if (!user.isGuest) {
-            try {
-                const q = query(
-                    collection(db, "quiz_results"),
-                    where("user_id", "==", user.uid),
-                    orderBy("created_at", "desc"),
-                    limit(5)
-                );
-                const querySnapshot = await getDocs(q);
-                const quizResults = querySnapshot.docs.map(doc => doc.data());
-
-                if (quizResults.length > 0) {
-                    html += `
-                    <div class="profile-section recent-quizzes">
-                            <h3>Quiz Sonuçları</h3>
-                            <table class="quiz-history-table">
-                            <thead>
-                                <tr>
-                                    <th>Seviye</th>
-                                    <th>Doğru</th>
-                                    <th>Toplam</th>
-                                    <th>Başarı</th>
-                                    <th>Tarih</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                    ${quizResults.map(result => {
-                        const date = result.created_at?.toDate() ? result.created_at.toDate().toLocaleDateString('tr-TR') : 'Belirtilmemiş';
-                        const successRate = Math.round((result.correct_count / result.total_questions) * 100);
-                        return `
-                                            <tr>
-                                                <td>${escapeHTML(result.level.toUpperCase())}</td>
-                                                <td>${result.correct_count}</td>
-                                                <td>${result.total_questions}</td>
-                                                <td>%${successRate}</td>
-                                                <td>${date}</td>
-                                </tr>
-                                        `;
-                    }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-                } else {
-                    html += `
-                    <div class="profile-section notification">
-                        <h3>Quiz Geçmişi</h3>
-                        <p class="info-message">Henüz hiç quiz çözmediniz. Quiz çözmek için "Quiz" sekmesine geçebilirsiniz.</p>
-                    </div>
-                `;
-                }
-            } catch (error) {
-                console.error('Quiz sonuçları yüklenirken hata:', error);
-            }
-        } else {
-            html += `
-                <div class="profile-section notification">
-                    <h3>Quiz Geçmişi</h3>
-                    <p class="info-message">Misafir oturumunda bulunduğunuz için quiz geçmişiniz kaydedilmiyor.</p>
-                </div>
-            `;
-        }
-
         // Çıkış yapma butonu
         html += `
             <div class="profile-section logout-section">
-                <button id="profile-logout-btn" class="btn btn-danger">${user.isGuest ? 'Kayıt Ol / Giriş Yap' : 'Çıkış Yap'}</button>
+                <button id="profile-logout-btn" class="btn btn-danger">${user.isGuest ? 'Kayıt Ol / Giriş Yap' : 'Hesaptan Çıkış Yap'}</button>
             </div>
         `;
 
-        profileContent.innerHTML = html + '</div>';
+        settingsContent.innerHTML = html + '</div>';
 
         // Event Listeners (Only bind if buttons exist)
         const changeNameBtn = document.getElementById('change-name-btn');
@@ -1424,12 +1490,12 @@ async function loadProfileContent() {
         };
 
     } catch (error) {
-        console.error('Profil sayfası yüklenirken hata:', error);
-        const profileContent = document.getElementById('profile-content');
-        if (profileContent) {
-            profileContent.innerHTML = `
+        console.error('Ayarlar sayfası yüklenirken hata:', error);
+        const settingsContent = document.getElementById('settings-content');
+        if (settingsContent) {
+            settingsContent.innerHTML = `
                     <div class="error-message">
-                        <p>Profil bilgileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
+                        <p>Ayarlar bilgileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
                     </div>
                 `;
         }
@@ -1437,7 +1503,7 @@ async function loadProfileContent() {
 }
 
 // Global scope'a ekle
-window.loadProfileContent = loadProfileContent;
+window.loadSettingsContent = loadSettingsContent;
 
 // Quiz geçmişini yükle
 async function loadQuizHistory() {

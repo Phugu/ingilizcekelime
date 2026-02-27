@@ -13,7 +13,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { giveXP, updateQuestProgress } from './app.js';
-import { oxfordA1Pool } from './oxford_words.js';
+import { oxfordPools } from './oxford_words.js';
 
 const db = getFirestore();
 
@@ -98,7 +98,7 @@ export class WordLearning {
                 { english: "Brother", turkish: "Erkek kardeş", level: "A1", category: "Family", example: "My brother is three years older than me.", exampleTurkish: "Erkek kardeşim benden üç yaş büyük." },
                 { english: "Child", turkish: "Çocuk", level: "A1", category: "Family", example: "The children are playing in the park.", exampleTurkish: "Çocuklar parkta oynuyor." }
             ],
-            oxford1: oxfordA1Pool
+            ...oxfordPools
         };
     }
 
@@ -228,58 +228,42 @@ export class WordLearning {
         const container = document.getElementById(this.containerId);
         if (!container) return;
 
+        let poolsHtml = '';
+        Object.keys(this.a1WordPools).forEach(key => {
+            const pool = this.a1WordPools[key];
+            let title = key;
+            let desc = `${pool.length} kelime`;
+            let extraStyle = '';
+
+            if (key === 'learning1') { title = "Kelime Öğrenme 1"; desc = "İlk 10 temel kelime"; }
+            else if (key === 'learning2') { title = "Kelime Öğrenme 2"; desc = "İkinci 10 temel kelime"; }
+            else if (key === 'learning3') { title = "Kelime Öğrenme 3"; desc = "Üçüncü 10 temel kelime"; }
+            else if (key === 'general') { title = "Genel"; desc = "Temel günlük ifadeler ve kelimeler"; }
+            else if (key === 'travel') { title = "Seyahat"; desc = "Seyahat ile ilgili temel kelimeler"; }
+            else if (key === 'food') { title = "Yiyecek"; desc = "Temel yiyecek ve içecek kelimeleri"; }
+            else if (key === 'family') { title = "Aile"; desc = "Aile üyeleriyle ilgili kelimeler"; }
+            else if (key.startsWith('oxford')) {
+                const num = key.replace('oxford', '');
+                title = `Oxford 3000 (Set ${num})`;
+                desc = `Dünyada en çok kullanılan kelimeler`;
+                extraStyle = 'border-color: #8e44ad;';
+            }
+
+            poolsHtml += `
+                <div class="pool-card ${key.startsWith('oxford') ? 'oxford-card' : ''}" data-pool="${key}" data-level="a1" style="${extraStyle}">
+                    <h3 style="${key.startsWith('oxford') ? 'color: #8e44ad;' : ''}">${title}</h3>
+                    <p>${desc}</p>
+                    <span class="word-count">${pool.length} kelime</span>
+                </div>
+            `;
+        });
+
         let html = `
             <div class="word-learning-container">
                 <h2>A1 Kelime Havuzları</h2>
                 
                 <div class="word-pools">
-                    <div class="pool-card" data-pool="learning1" data-level="a1">
-                        <h3>Kelime Öğrenme 1</h3>
-                        <p>İlk 10 temel kelime</p>
-                        <span class="word-count">${this.a1WordPools.learning1.length} kelime</span>
-                    </div>
-                    
-                    <div class="pool-card" data-pool="learning2" data-level="a1">
-                        <h3>Kelime Öğrenme 2</h3>
-                        <p>İkinci 10 temel kelime</p>
-                        <span class="word-count">${this.a1WordPools.learning2.length} kelime</span>
-                    </div>
-                    
-                    <div class="pool-card" data-pool="learning3" data-level="a1">
-                        <h3>Kelime Öğrenme 3</h3>
-                        <p>Üçüncü 10 temel kelime</p>
-                        <span class="word-count">${this.a1WordPools.learning3.length} kelime</span>
-                    </div>
-                    
-                    <div class="pool-card" data-pool="general" data-level="a1">
-                        <h3>Genel</h3>
-                        <p>Temel günlük ifadeler ve kelimeler</p>
-                        <span class="word-count">${this.a1WordPools.general.length} kelime</span>
-                    </div>
-                    
-                    <div class="pool-card" data-pool="travel" data-level="a1">
-                        <h3>Seyahat</h3>
-                        <p>Seyahat ile ilgili temel kelimeler</p>
-                        <span class="word-count">${this.a1WordPools.travel.length} kelime</span>
-                    </div>
-                    
-                    <div class="pool-card" data-pool="food" data-level="a1">
-                        <h3>Yiyecek</h3>
-                        <p>Temel yiyecek ve içecek kelimeleri</p>
-                        <span class="word-count">${this.a1WordPools.food.length} kelime</span>
-                    </div>
-                    
-                    <div class="pool-card" data-pool="family" data-level="a1">
-                        <h3>Aile</h3>
-                        <p>Aile üyeleriyle ilgili kelimeler</p>
-                        <span class="word-count">${this.a1WordPools.family.length} kelime</span>
-                    </div>
-
-                    <div class="pool-card" data-pool="oxford1" data-level="a1" style="border-color: #8e44ad;">
-                        <h3 style="color: #8e44ad;">Oxford 3000 (Set 1)</h3>
-                        <p>Dünyada en çok kullanılan ilk 10 kelime</p>
-                        <span class="word-count">${this.a1WordPools.oxford1.length} kelime</span>
-                    </div>
+                    ${poolsHtml}
                 </div>
                 
                 <div class="navigation-controls">

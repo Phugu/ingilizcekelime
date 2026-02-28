@@ -1389,12 +1389,18 @@ function setupAvatarUploadEvents(user) {
                                     }
 
                                     // 3. Kullanıcıya net bir ceza/bilgi mesajı ver
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'Uygunsuz İçerik!',
-                                        text: 'Yüklediğiniz fotoğrafta yasaklı/uygunsuz bir nesne tespit edildiği için fotoğrafınız sistem tarafından otomatik olarak engellendi. Bu işlem devam ederse hesabınız kısıtlanabilir.',
-                                        confirmButtonColor: '#3085d6',
-                                    });
+                                    const messageText = 'Yüklediğiniz fotoğrafta yasaklı/uygunsuz bir nesne tespit edildiği için fotoğrafınız sistem tarafından otomatik olarak engellendi. Bu işlem devam ederse hesabınız kısıtlanabilir.';
+
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Uygunsuz İçerik!',
+                                            text: messageText,
+                                            confirmButtonColor: '#3085d6',
+                                        });
+                                    } else {
+                                        alert('⚠️ UYGUNSUZ İÇERİK!\n\n' + messageText);
+                                    }
                                 } else {
                                     console.log("✅ Profil fotoğrafı temiz ve güvenli.");
                                     unsubscribe();

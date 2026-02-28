@@ -1321,13 +1321,13 @@ function setupAvatarUploadEvents(user) {
 
                     // Arayüzü Güncelle (Profil Ekranı)
                     if (mainAvatar) {
-                        mainAvatar.style.backgroundImage = `url('${escapeHTML(downloadURL)}')`;
+                        mainAvatar.style.backgroundImage = `url('${downloadURL}')`;
                         mainAvatar.style.color = 'transparent';
                     }
 
                     // Arayüzü Güncelle (Header İkonu)
                     if (headerAvatar) {
-                        headerAvatar.style.backgroundImage = `url('${escapeHTML(downloadURL)}')`;
+                        headerAvatar.style.backgroundImage = `url('${downloadURL}')`;
                         headerAvatar.style.backgroundSize = 'cover';
                         headerAvatar.style.backgroundPosition = 'center';
                         headerAvatar.innerHTML = '';
@@ -1357,7 +1357,12 @@ function setupAvatarUploadEvents(user) {
                                     console.log("AI Tespit Sonuçları:", detectionData);
 
                                     if (detectionData && detectionData.objects && Array.isArray(detectionData.objects)) {
-                                        const foundObjects = detectionData.objects.map(obj => (obj.name || obj).toLowerCase());
+                                        const foundObjects = detectionData.objects.map(obj => {
+                                            if (typeof obj === 'string') return obj.toLowerCase();
+                                            if (obj && obj.name) return obj.name.toLowerCase();
+                                            return "";
+                                        }).filter(str => str !== "");
+
                                         const hasForbidden = foundObjects.some(obj => FORBIDDEN_OBJECTS.includes(obj));
 
                                         if (hasForbidden) {

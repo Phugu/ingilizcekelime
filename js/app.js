@@ -1108,15 +1108,17 @@ async function loadProfileContent() {
                     <div class="profile-avatar-container">
                         <div class="profile-avatar" id="main-profile-avatar" ${user.photoURL ? `style="background-image: url('${escapeHTML(user.photoURL)}'); color: transparent;"` : ''}>
                             ${user.displayName ? escapeHTML(user.displayName.charAt(0).toUpperCase()) : 'M'}
+                            ${!isGuest ? `
+                            <div class="avatar-edit-mask" id="avatar-edit-mask" title="Profil Fotoğrafını Değiştir">
+                                <i class="fa-solid fa-camera"></i>
+                            </div>
+                            <div class="avatar-loading" id="avatar-loading">
+                                <i class="fa-solid fa-spinner"></i>
+                                <span id="avatar-upload-pct">0%</span>
+                            </div>
+                            ` : ''}
                         </div>
                         ${!isGuest ? `
-                        <div class="avatar-edit-mask" id="avatar-edit-mask" title="Profil Fotoğrafını Değiştir">
-                            <i class="fa-solid fa-camera"></i>
-                        </div>
-                        <div class="avatar-loading" id="avatar-loading">
-                            <i class="fa-solid fa-spinner"></i>
-                            <span id="avatar-upload-pct">0%</span>
-                        </div>
                         <input type="file" id="avatar-upload-input" accept="image/jpeg, image/png, image/webp" style="display: none;">
                         ` : ''}
                     </div>

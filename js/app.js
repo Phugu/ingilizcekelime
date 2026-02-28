@@ -32,7 +32,7 @@ import {
 // AI Moderasyon Kara Listesi (Blacklist)
 const FORBIDDEN_OBJECTS = [
     'brassiere', 'underpants', 'swimwear', 'underwear', 'lingerie', 'bikini',
-    'gun', 'weapon', 'pistol', 'rifle', 'knife', 'dagger', 'sword',
+    'gun', 'weapon', 'pistol', 'rifle',
     'blood', 'nudity', 'gore', 'corpse', 'drug', 'syringe', 'pills'
 ];
 import {
@@ -1357,11 +1357,11 @@ function setupAvatarUploadEvents(user) {
                                     console.log("AI Tespit Sonuçları:", detectionData);
 
                                     if (detectionData && detectionData.objects && Array.isArray(detectionData.objects)) {
-                                        const foundObjects = detectionData.objects.map(obj => {
-                                            if (typeof obj === 'string') return obj.toLowerCase();
-                                            if (obj && obj.name) return obj.name.toLowerCase();
-                                            return "";
-                                        }).filter(str => str !== "");
+                                        // Sadece %65 ve üzeri güvenilirliği olan nesneleri dikkate alıyoruz (Hatalı tespitleri önlemek için)
+                                        const foundObjects = detectionData.objects
+                                            .filter(obj => (obj.score || 0) >= 0.65)
+                                            .map(obj => (obj.name || obj || "").toString().toLowerCase())
+                                            .filter(str => str !== "");
 
                                         const hasForbidden = foundObjects.some(obj => FORBIDDEN_OBJECTS.includes(obj));
 

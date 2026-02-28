@@ -303,6 +303,22 @@ a {
     box-shadow: var(--shadow);
 }
 
+.profile-avatar-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    background-size: cover;
+    background-position: center;
+}
+
 .level-badge {
     background: var(--primary-color);
     color: white;
@@ -4129,6 +4145,7 @@ a {
     bottom: -50px;
     left: 50%;
     transform: translateX(-50%);
+    cursor: pointer;
 }
 
 .profile-avatar {
@@ -4144,6 +4161,53 @@ a {
     font-size: 40px;
     font-weight: bold;
     color: var(--primary-color);
+    position: relative;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+}
+
+.avatar-edit-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.profile-avatar-container:hover .avatar-edit-mask {
+    opacity: 1;
+}
+
+.avatar-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.avatar-loading i {
+    color: var(--primary-color);
+    font-size: 24px;
+    animation: spin 1s linear infinite;
+}
+
+.dark-theme .avatar-loading {
+    background: rgba(30, 30, 40, 0.8);
 }
 
 .dark-theme .profile-avatar {

@@ -3,6 +3,7 @@ import { initializeApp as _0xinit } from "https://www.gstatic.com/firebasejs/10.
 import { getAuth as _0xauth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore as _0xfs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAnalytics as _0xan } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+import { getStorage as _0xst } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 // Protected Configuration Store
 const _0x1a2b = [
@@ -34,6 +35,7 @@ const _0xanalytics = _0xan(_0xapp);
 window[_0xdec(["ZmlyZWJhc2VBcHA="], 0)] = _0xapp;
 window[_0xdec(["ZmlyZWJhc2VBdXRo"], 0)] = _0xauth(_0xapp);
 window[_0xdec(["ZmlyZXN0b3Jl"], 0)] = _0xfs(_0xapp);
+window[_0xdec(["ZmlyZWJhc2VTdG9yYWdl"], 0)] = _0xst(_0xapp);
 
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.checkSession === 'function') {

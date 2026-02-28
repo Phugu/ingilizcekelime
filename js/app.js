@@ -27,6 +27,11 @@ import {
     limit,
     Timestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+    ref,
+    uploadBytesResumable,
+    getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 import { WordLearning } from './learning.js';
 
 // Global değişkenler
@@ -1101,7 +1106,19 @@ async function loadProfileContent() {
                 <div class="profile-header-banner">
                     <button class="settings-btn" title="Ayarlar" onclick="window.loadSettingsContent()">⚙️ Ayarlar</button>
                     <div class="profile-avatar-container">
-                        <div class="profile-avatar">${user.displayName ? user.displayName.charAt(0).toUpperCase() : 'M'}</div>
+                        <div class="profile-avatar" id="main-profile-avatar" ${user.photoURL ? `style="background-image: url('${escapeHTML(user.photoURL)}'); color: transparent;"` : ''}>
+                            ${user.displayName ? escapeHTML(user.displayName.charAt(0).toUpperCase()) : 'M'}
+                        </div>
+                        ${!isGuest ? `
+                        <div class="avatar-edit-mask" id="avatar-edit-mask" title="Profil Fotoğrafını Değiştir">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                        <div class="avatar-loading" id="avatar-loading">
+                            <i class="fa-solid fa-spinner"></i>
+                            <span id="avatar-upload-pct">0%</span>
+                        </div>
+                        <input type="file" id="avatar-upload-input" accept="image/jpeg, image/png, image/webp" style="display: none;">
+                        ` : ''}
                     </div>
                 </div>
                 
@@ -1195,12 +1212,126 @@ async function loadProfileContent() {
 
         profileContent.innerHTML = html;
 
+        // Avatar Yükleme Event Listeners
+        if (!isGuest) {
+            setupAvatarUploadEvents(user);
+        }
+
     } catch (error) {
         console.error('Profil sayfası yüklenirken hata:', error);
         if (profileContent) {
             profileContent.innerHTML = `<div class="error-message"><p>Profil bilgileri yüklenirken bir hata oluştu.</p></div>`;
         }
     }
+}
+
+// Avatar Yükleme Scripti
+function setupAvatarUploadEvents(user) {
+    const editMask = document.getElementById('avatar-edit-mask');
+    const fileInput = document.getElementById('avatar-upload-input');
+    const loadingMask = document.getElementById('avatar-loading');
+    const loadingPct = document.getElementById('avatar-upload-pct');
+    const mainAvatar = document.getElementById('main-profile-avatar');
+
+    // Header'da bulunan küçük avatar ikonu
+    const headerAvatar = document.querySelector('.user-stats-header .profile-avatar-small');
+
+    if (!editMask || !fileInput) return;
+
+    editMask.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Dosya türü ve boyutu kontrolü (Maksimum 2 MB)
+        if (!file.type.match('image.*')) {
+            alert('Lütfen geçerli bir resim dosyası seçin (JPG, PNG).');
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Profil fotoğrafı boyutu en fazla 2 MB olabilir.');
+            return;
+        }
+
+        try {
+            // Yükleme arayüzünü aç
+            editMask.style.display = 'none';
+            loadingMask.style.display = 'flex';
+
+            // Storage referansını al ve yükleme işlemini başlat
+            const storage = window.firebaseStorage;
+            const storageRef = ref(storage, `profile_pictures/${user.uid}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    // Yükleme progresini göster
+                    const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                    if (loadingPct) {
+                        loadingPct.innerText = progress + '%';
+                    }
+                },
+                (error) => {
+                    console.error("Yükleme sırasında hata:", error);
+                    alert("Fotoğraf yüklenemedi. Ağ bağlantınızı kontrol edin.");
+                    loadingMask.style.display = 'none';
+                    editMask.style.display = 'flex';
+                },
+                async () => {
+                    // Yükleme tamamlandı, URL'yi al
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+                    // Firebase Auth profilini güncelle
+                    await updateProfile(auth.currentUser, {
+                        photoURL: downloadURL
+                    });
+
+                    // Firestore Users tablosunu public erişim varsa güncelle
+                    try {
+                        const userDocRef = doc(db, "users_public", user.uid);
+                        await updateDoc(userDocRef, {
+                            photoURL: downloadURL
+                        });
+                    } catch (fsErr) {
+                        console.warn("Firestore public user güncellenemedi, sorun değil:", fsErr);
+                    }
+
+                    // Local state'i güncelle
+                    window.currentUser.photoURL = downloadURL;
+
+                    // Arayüzü Güncelle (Profil Ekranı)
+                    if (mainAvatar) {
+                        mainAvatar.style.backgroundImage = `url('${escapeHTML(downloadURL)}')`;
+                        mainAvatar.style.color = 'transparent';
+                    }
+
+                    // Arayüzü Güncelle (Header İkonu)
+                    if (headerAvatar) {
+                        headerAvatar.style.backgroundImage = `url('${escapeHTML(downloadURL)}')`;
+                        headerAvatar.style.backgroundSize = 'cover';
+                        headerAvatar.style.backgroundPosition = 'center';
+                        headerAvatar.innerHTML = '';
+                    }
+
+                    // Yükleme arayüzünü kapat
+                    loadingMask.style.display = 'none';
+                    editMask.style.display = 'flex';
+                    if (loadingPct) loadingPct.innerText = '0%';
+
+                    fileInput.value = ''; // Inputu temizle
+                }
+            );
+
+        } catch (error) {
+            console.error("Beklenmeyen yükleme hatası:", error);
+            alert("Beklenmeyen bir hata oluştu.");
+            loadingMask.style.display = 'none';
+            editMask.style.display = 'flex';
+        }
+    });
 }
 
 // Global'e çıkart

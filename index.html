@@ -246,6 +246,7 @@
 
             <div class="user-info">
                 <div class="user-stats-header">
+                    <div class="profile-avatar-small" id="header-profile-avatar" title="Profil"></div>
                     <div class="streak-badge" id="user-streak" title="Günlük Seri">
                         <span class="streak-icon">🔥</span>
                         <span class="streak-count" id="streak-count">0</span>
@@ -366,6 +367,18 @@
             console.log('Kullanıcı adı ayarlanıyor:', userName);
             const userNameEl = document.getElementById('user-name');
             if (userNameEl) userNameEl.textContent = userName;
+
+            // Header Avatarını Ayarla
+            const headerAvatar = document.getElementById('header-profile-avatar');
+            if (headerAvatar) {
+                if (user.photoURL) {
+                    headerAvatar.style.backgroundImage = `url('${user.photoURL}')`;
+                    headerAvatar.innerHTML = '';
+                } else {
+                    headerAvatar.style.backgroundImage = 'none';
+                    headerAvatar.textContent = userName ? userName.charAt(0).toUpperCase() : 'M';
+                }
+            }
 
             document.getElementById('auth-container').classList.add('hide');
             document.getElementById('app-container').classList.remove('hide');

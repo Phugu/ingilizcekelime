@@ -31,12 +31,13 @@ import {
 
 // AI Moderasyon Kara Listesi (Hassas İçerik Filtresi)
 const FORBIDDEN_OBJECTS = [
-    // İç Giyim & Mayo
+    // İç Giyim & Mayo & Vücut
     'brassiere', 'underpants', 'underwear', 'lingerie', 'bikini', 'swimwear',
     'swimsuit', 'bra', 'briefs', 'nightwear', 'sleepwear', 'activewear',
-    'thong', 'g-string', 'monokini', 'panties', 'undergarment',
+    'thong', 'g-string', 'monokini', 'panties', 'undergarment', 'topless',
     // Silah & Şiddet
-    'gun', 'weapon', 'pistol', 'rifle', 'knife', 'sword', 'blade',
+    'gun', 'weapon', 'pistol', 'rifle', 'handgun', 'firearm', 'weaponry',
+    'ammunition', 'arm', 'revolver', 'dagger', 'knife', 'sword', 'blade',
     // Zararlı Maddeler & Diğer
     'blood', 'nudity', 'gore', 'corpse', 'drug', 'syringe', 'pills', 'smoke', 'cigarette'
 ];
@@ -1371,7 +1372,7 @@ function setupAvatarUploadEvents(user) {
                                             const bad = processedItems
                                                 .filter(o => o.score >= 0.65)
                                                 .map(o => o.name)
-                                                .filter(n => FORBIDDEN_OBJECTS.includes(n));
+                                                .filter(n => FORBIDDEN_OBJECTS.some(forbidden => n.includes(forbidden)));
 
                                             if (bad.length > 0) {
                                                 console.error("⛔ YASAKLI:", bad);

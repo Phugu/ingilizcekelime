@@ -1341,20 +1341,37 @@ function setupAvatarUploadEvents(user) {
                     fileInput.value = ''; // Inputu temizle
 
                     // --- GÜVENLİK (AI BLACKLIST) KONTROLÜ ---
-                    // 3 Saniye Gecikme: AI eklentisinin eski resmi silip yenisini taranmaya başlaması için zaman tanıyoruz.
-                    // Bu sayede "önceki yasaklı resmin" sonucu yeni resme bulaşmaz.
+                    // Yükleme anındaki zamanı alıyoruz (Eski analiz sonuçlarını reddetmek için)
+                    const uploadTime = Date.now();
+
                     setTimeout(() => {
                         try {
                             console.log("Cloud Vision AI analizi taranıyor...");
                             const storagePath = `gs://ingilizcekelime-cbeb6.firebasestorage.app/profile_pictures/${user.uid}`;
                             const firestoreDB = window.firestore || db;
+
+                            // Not: Eklenti bazen eski dökümanı günceller. 
+                            // Bu yüzden sadece 'filepath' ile sorgulayıp içeride zaman kontrolü yapacağız.
                             const customQuery = query(collection(firestoreDB, "detectedObjects"), where("file", "==", storagePath), limit(1));
 
                             let detectionTimeout;
                             const unsubscribe = onSnapshot(customQuery, async (snapshot) => {
                                 try {
                                     if (!snapshot.empty) {
-                                        const detectionData = snapshot.docs[0].data();
+                                        const docSnap = snapshot.docs[0];
+                                        const detectionData = docSnap.data();
+
+                                        // KRİTİK: Verinin bu yüklemeden sonra mı geldiğini kontrol et
+                                        // Firestore'un server timestamp'i veya JS Date kullanabiliriz.
+                                        // detectedObjects dökümanında genellikle 'updateTime' veya snapshot'ın kendi metadata'sı olur.
+                                        // En garantisi döküman içindeki bir zaman alanına bakmaktır.
+                                        const docUpdateTime = detectionData.updated ? (detectionData.updated.seconds * 1000) : Date.now();
+
+                                        // Eğer döküman yükleme zamanımızdan öncesine aitse, bu eski (stale) veridir. Görmezden gel.
+                                        if (docUpdateTime < (uploadTime - 2000)) { // 2sn tolerans
+                                            console.log("Eski analiz sonucu atlanıyor (Stale data)... Yeni veri bekleniyor.");
+                                            return;
+                                        }
 
                                         if (detectionData && detectionData.objects && Array.isArray(detectionData.objects)) {
                                             // Güven sınırı %80'e çıkarıldı (Hatalı tespitleri sıfıra indirmek için)
@@ -1408,11 +1425,11 @@ function setupAvatarUploadEvents(user) {
                             detectionTimeout = setTimeout(() => {
                                 console.log("AI analiz süresi doldu.");
                                 unsubscribe();
-                            }, 15000);
+                            }, 20000);
                         } catch (aiModErr) {
                             console.error("AI Moderasyon başlatma hatası:", aiModErr);
                         }
-                    }, 3000); // 3 saniyelik kritik gecikme
+                    }, 1000); // 3 saniyelik kritik gecikme
                 }
             );
 

@@ -1350,17 +1350,27 @@ function setupAvatarUploadEvents(user) {
                                     if (!snap.empty) {
                                         const dDoc = snap.docs[0];
                                         const dData = dDoc.data();
+                                        console.error("📦 RAW AI DATA:", JSON.stringify(dData)); // Teşhis için kritik
+
                                         const upd = dData.updated ? dData.updated.seconds * 1000 : (dDoc.updateTime ? dDoc.updateTime.seconds * 1000 : Date.now());
 
                                         if (upd < (uploadTime - 5000)) return; // Eski veri
 
-                                        if (dData.objects && Array.isArray(dData.objects)) {
-                                            const all = dData.objects.map(o => `${o.name} (%${Math.round(o.score * 100)})`);
+                                        // Nesneleri tespit et (Esnek Yapı)
+                                        const rawObjects = dData.objects || dData.labels || dData.localizedObjectAnnotations || [];
+                                        if (Array.isArray(rawObjects)) {
+                                            const processedItems = rawObjects.map(o => {
+                                                const name = (o.name || o.label || o.object || (typeof o === 'string' ? o : "")).toString().toLowerCase();
+                                                const score = o.score || o.confidence || o.score_ || 0;
+                                                return { name, score };
+                                            });
+
+                                            const all = processedItems.map(o => `${o.name} (%${Math.round(o.score * 100)})`);
                                             console.error("🔍 AI Gördü:", all.join(", "));
 
-                                            const bad = dData.objects
+                                            const bad = processedItems
                                                 .filter(o => o.score >= 0.65)
-                                                .map(o => o.name.toLowerCase())
+                                                .map(o => o.name)
                                                 .filter(n => FORBIDDEN_OBJECTS.includes(n));
 
                                             if (bad.length > 0) {
@@ -1369,7 +1379,6 @@ function setupAvatarUploadEvents(user) {
                                                 const fallback = "https://ui-avatars.com/api/?name=" + (user.displayName || "A") + "&background=random";
                                                 await updateProfile(auth.currentUser, { photoURL: fallback });
 
-                                                // Yasaklı durumda UI sıfırlama (Direct DOM) - Sayfa değişmemesi için
                                                 [mainAvatar, headerAvatar].forEach(el => {
                                                     if (el) {
                                                         el.style.backgroundImage = 'none';

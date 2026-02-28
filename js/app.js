@@ -2430,10 +2430,26 @@ window.showPublicProfile = async function (uid) {
             document.getElementById('public-profile-name').textContent = escapeHTML(rawName);
             document.getElementById('public-profile-level').textContent = `Seviye ${data.level || 1}`;
 
-            document.getElementById('public-profile-streak').textContent = data.current_streak || 0;
+            document.getElementById('public-profile-streak').textContent = data.streak || 0;
             document.getElementById('public-profile-xp').textContent = data.total_xp || data.xp || 0;
-            document.getElementById('public-profile-quizzes').textContent = data.completed_quizzes || 0;
-            document.getElementById('public-profile-words').textContent = data.learned_words || 0;
+
+            // Quiz ve Öğrenilen Kelimeleri Diğer Koleksiyonlardan Async Olarak Çek
+            try {
+                const quizQuery = query(collection(db, "quiz_results"), where("user_id", "==", uid));
+                const wordsQuery = query(collection(db, "learned_words"), where("user_id", "==", uid));
+
+                const [quizSnap, wordsSnap] = await Promise.all([
+                    getDocs(quizQuery),
+                    getDocs(wordsQuery)
+                ]);
+
+                document.getElementById('public-profile-quizzes').textContent = quizSnap.size || 0;
+                document.getElementById('public-profile-words').textContent = wordsSnap.size || 0;
+            } catch (err) {
+                console.error("Kullanıcının ekstara bilgileri okunamadı:", err);
+                document.getElementById('public-profile-quizzes').textContent = "-";
+                document.getElementById('public-profile-words').textContent = "-";
+            }
 
             // Avatar kontrolü ve yerleşimi
             if (data.photoURL) {

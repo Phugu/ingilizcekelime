@@ -4226,7 +4226,7 @@ a {
 }
 
 .dark-theme .profile-avatar {
-    background: #1e293b;
+    background-color: #1e293b;
     border-color: var(--card-bg);
     color: #fff;
 }

@@ -394,18 +394,21 @@
                 mainAvatar.innerHTML = '';
             }
 
+            const appContainer = document.getElementById('app-container');
+            const isFirstLoad = appContainer.classList.contains('hide');
+
+            // Konteynırları yönet
             document.getElementById('auth-container').classList.add('hide');
-            document.getElementById('app-container').classList.remove('hide');
+            appContainer.classList.remove('hide');
 
             // Ana uygulamayı başlat (SADECE ilk girişte)
-            const appContainer = document.getElementById('app-container');
-            if (typeof initApp === 'function' && appContainer.classList.contains('hide')) {
+            if (typeof initApp === 'function' && isFirstLoad) {
                 console.error('🚀 DEBUG: Uygulama İLK KEZ başlatılıyor...');
                 initApp().catch(error => {
                     console.error('initApp çalıştırılırken hata:', error);
                 });
             } else {
-                console.error('ℹ️ DEBUG: Uygulama zaten aktif, initApp atlandı.');
+                console.error('ℹ️ DEBUG: Uygulama zaten aktif veya tekrar yönlendirildi.');
             }
         };
     </script>

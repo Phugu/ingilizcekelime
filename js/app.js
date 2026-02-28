@@ -1357,12 +1357,17 @@ function setupAvatarUploadEvents(user) {
 
                                         if (upd < (uploadTime - 5000)) return; // Eski veri
 
-                                        // Nesneleri tespit et (Esnek Yapı)
+                                        // Nesneleri tespit et (String ve Object Desteği)
                                         const rawObjects = dData.objects || dData.labels || dData.localizedObjectAnnotations || [];
                                         if (Array.isArray(rawObjects)) {
                                             const processedItems = rawObjects.map(o => {
-                                                const name = (o.name || o.label || o.object || (typeof o === 'string' ? o : "")).toString().toLowerCase();
-                                                const score = o.score || o.confidence || o.score_ || 0;
+                                                if (typeof o === 'string') {
+                                                    return { name: o.toLowerCase(), score: 1.0 };
+                                                }
+                                                const name = (o.name || o.label || o.object || "").toString().toLowerCase();
+                                                const score = (o.score !== undefined) ? o.score :
+                                                    ((o.confidence !== undefined) ? o.confidence :
+                                                        ((o.score_ !== undefined) ? o.score_ : 0.8));
                                                 return { name, score };
                                             });
 

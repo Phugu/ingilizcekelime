@@ -25,8 +25,16 @@ import {
     getDocs,
     orderBy,
     limit,
-    Timestamp
+    Timestamp,
+    onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// AI Moderasyon Kara Listesi (Blacklist)
+const FORBIDDEN_OBJECTS = [
+    'brassiere', 'underpants', 'swimwear', 'underwear', 'lingerie', 'bikini',
+    'gun', 'weapon', 'pistol', 'rifle', 'knife', 'dagger', 'sword',
+    'blood', 'nudity', 'gore', 'corpse', 'drug', 'syringe', 'pills'
+];
 import {
     ref,
     uploadBytesResumable,
@@ -1331,6 +1339,76 @@ function setupAvatarUploadEvents(user) {
                     if (loadingPct) loadingPct.innerText = '0%';
 
                     fileInput.value = ''; // Inputu temizle
+
+                    // --- GÜVENLİK (AI BLACKLIST) KONTROLÜ ---
+                    console.log("Cloud Vision API analizi bekleniyor...");
+
+                    // Firestore'da 'detectedObjects' isimli koleksiyonda, fotoğrafı niteleyen belgeyi dinle (Dosya adıyla aynı klasör yapısında olabilir, veya dokümanlara bakmalıyız.)
+                    // Eklentinin doküman isimlendirmesine gore genelde "filepath" veya URL'ye göre query yapabiliriz ya da tüm dizinde son eklenene bakabiliriz ama en güvenlisi storage referans adı.
+                    // Eklentinin varsayılan dosya adı genellikle Storage yolundaki slashların URL Encode/Tire yapılmış halidir. Fakat doğrudan sorgu yazmak daha evrenseldir.
+
+                    const storagePath = `gs://ingilizcekelime-cbeb6.firebasestorage.app/profile_pictures/${user.uid}`;
+                    const customQuery = query(collection(db, "detectedObjects"), where("file", "==", storagePath));
+
+                    // Bir Timeout kuralım, 15 saniye içinde cevap gelmezse dinlemeyi bırak.
+                    let detectionTimeout;
+                    const unsubscribe = onSnapshot(customQuery, async (snapshot) => {
+                        if (!snapshot.empty) {
+                            const detectionData = snapshot.docs[0].data();
+                            console.log("AI Tespit Sonuçları:", detectionData);
+
+                            if (detectionData && detectionData.objects && Array.isArray(detectionData.objects)) {
+                                const foundObjects = detectionData.objects.map(obj => obj.toLowerCase());
+
+                                // Kara listeyle ('Brassiere', 'Gun' vs.) eşleşme var mı?
+                                const hasForbidden = foundObjects.some(obj => FORBIDDEN_OBJECTS.includes(obj));
+
+                                if (hasForbidden) {
+                                    console.error("⛔ UYGUNSUZ İÇERİK TESPİT EDİLDİ!", foundObjects);
+
+                                    // Dinlemeyi durdur
+                                    unsubscribe();
+                                    clearTimeout(detectionTimeout);
+
+                                    // 1. Resmi veritabanından hemen sil
+                                    const fallbackAvatar = "https://ui-avatars.com/api/?name=" + (user.displayName || "A") + "&background=random";
+                                    await updateProfile(auth.currentUser, { photoURL: fallbackAvatar });
+                                    try {
+                                        await updateDoc(doc(db, "users_public", user.uid), { photoURL: fallbackAvatar });
+                                    } catch (e) { }
+
+                                    // 2. Arayüzü eski haline döndür
+                                    if (mainAvatar) {
+                                        mainAvatar.style.backgroundImage = 'none';
+                                        mainAvatar.innerHTML = escapeHTML((user.displayName || "A").charAt(0).toUpperCase());
+                                        mainAvatar.style.color = 'white';
+                                    }
+                                    if (headerAvatar) {
+                                        headerAvatar.style.backgroundImage = 'none';
+                                        headerAvatar.innerHTML = escapeHTML((user.displayName || "A").charAt(0).toUpperCase());
+                                    }
+
+                                    // 3. Kullanıcıya net bir ceza/bilgi mesajı ver
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Uygunsuz İçerik!',
+                                        text: 'Yüklediğiniz fotoğrafta yasaklı/uygunsuz bir nesne tespit edildiği için fotoğrafınız sistem tarafından otomatik olarak engellendi. Bu işlem devam ederse hesabınız kısıtlanabilir.',
+                                        confirmButtonColor: '#3085d6',
+                                    });
+                                } else {
+                                    console.log("✅ Profil fotoğrafı temiz ve güvenli.");
+                                    unsubscribe();
+                                    clearTimeout(detectionTimeout);
+                                }
+                            }
+                        }
+                    });
+
+                    // 15 Saniye sonra dinlemeyi (ve bellek yükünü) durdur.
+                    detectionTimeout = setTimeout(() => {
+                        console.log("AI analiz süresi doldu, dinleyici kapatılıyor.");
+                        unsubscribe();
+                    }, 15000);
                 }
             );
 

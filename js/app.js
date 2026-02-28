@@ -1117,7 +1117,11 @@ async function loadProfileContent() {
                         </div>
                         ${!isGuest ? `
                         <div class="avatar-edit-btn" id="avatar-edit-btn" title="Profil Fotoğrafını Değiştir">
-                            <i class="fa-solid fa-pen"></i>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none">
+                                <path d="M12.5 6.2l5.3 5.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M4 20l3.7-.6c.5-.1 1-.3 1.3-.7L19 8.7a1.8 1.8 0 0 0 0-2.6l-1.1-1.1a1.8 1.8 0 0 0-2.6 0L5.4 14.9c-.4.4-.6.8-.7 1.3L4 20z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                <path d="M4 20h5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
                         </div>
                         <input type="file" id="avatar-upload-input" accept="image/jpeg, image/png, image/webp" style="display: none;">
                         ` : ''}

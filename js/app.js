@@ -2376,7 +2376,7 @@ async function loadLeaderboard(container) {
             const xp = d.total_xp || d.xp || 0;
             const medal = medals[i] || `${i + 1}.`;
             return `
-                <div class="leaderboard-row ${isMe ? 'leaderboard-me' : ''}">
+                <div class="leaderboard-row ${isMe ? 'leaderboard-me' : ''}" onclick="window.showPublicProfile('${docSnap.id}')">
                     <span class="lb-rank">${medal}</span>
                     <span class="lb-name">${displayName}${isMe ? ' (Sen)' : ''}</span>
                     <span class="lb-xp">${xp} XP</span>
@@ -2395,6 +2395,75 @@ async function loadLeaderboard(container) {
         console.error('Liderlik tablosu yüklenemedi:', err);
         container.innerHTML = `<div style="text-align:center;padding:40px;color:red;">Liderlik tablosu yüklenemedi.</div>`;
     }
+}
+
+// Liderlik Tablosundan Herkese Açık Profil (Public Profile) Gösterme
+window.showPublicProfile = async function (uid) {
+    if (!uid) return;
+
+    const modal = document.getElementById('public-profile-modal');
+    if (!modal) return;
+
+    // Yükleniyor durumuna al
+    document.getElementById('public-profile-name').textContent = 'Yükleniyor...';
+    document.getElementById('public-profile-level').textContent = 'Seviye -';
+    document.getElementById('public-profile-streak').textContent = '0';
+    document.getElementById('public-profile-xp').textContent = '0';
+    document.getElementById('public-profile-quizzes').textContent = '0';
+    document.getElementById('public-profile-words').textContent = '0';
+
+    const avatarEl = document.getElementById('public-profile-avatar');
+    avatarEl.style.backgroundImage = 'none';
+    avatarEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+    // Modalı aç
+    modal.classList.remove('hide');
+
+    try {
+        const userDocRef = doc(db, "users_public", uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+            const data = userDoc.data();
+
+            const rawName = data.name || 'Anonim';
+            document.getElementById('public-profile-name').textContent = escapeHTML(rawName);
+            document.getElementById('public-profile-level').textContent = `Seviye ${data.level || 1}`;
+
+            document.getElementById('public-profile-streak').textContent = data.current_streak || 0;
+            document.getElementById('public-profile-xp').textContent = data.total_xp || data.xp || 0;
+            document.getElementById('public-profile-quizzes').textContent = data.completed_quizzes || 0;
+            document.getElementById('public-profile-words').textContent = data.learned_words || 0;
+
+            // Avatar kontrolü ve yerleşimi
+            if (data.photoURL) {
+                avatarEl.innerHTML = '';
+                avatarEl.style.backgroundImage = `url('${escapeHTML(data.photoURL)}')`;
+            } else {
+                avatarEl.style.backgroundImage = 'none';
+                avatarEl.innerHTML = escapeHTML(rawName.charAt(0).toUpperCase());
+            }
+
+        } else {
+            document.getElementById('public-profile-name').textContent = 'Kullanıcı Bulunamadı';
+            avatarEl.innerHTML = '?';
+        }
+    } catch (error) {
+        console.error("Public profil çekilirken hata:", error);
+        document.getElementById('public-profile-name').textContent = 'Bilgiler Yüklenemedi';
+        avatarEl.innerHTML = '!';
+    }
+
+    // Kapatma eventlerini bir kere ekle
+    const closeBtn = document.getElementById('close-public-profile-btn');
+    closeBtn.onclick = () => modal.classList.add('hide');
+
+    // Dışarı tıklayınca da kapansın
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.classList.add('hide');
+        }
+    };
 }
 
 // Quiz'i başlat

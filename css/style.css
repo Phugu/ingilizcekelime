@@ -1437,6 +1437,23 @@ a {
     overflow-y: auto;
 }
 
+.leaderboard-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--card-bg);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.leaderboard-row:hover {
+    background: var(--input-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
 .result-item {
     display: flex;
     justify-content: space-between;
@@ -3888,12 +3905,14 @@ a {
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 14px 20px;
-    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .leaderboard-row:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background: var(--input-bg);
 }
 
 .leaderboard-row:nth-child(1) {

@@ -400,6 +400,60 @@
     <script type="module" src="js/learning.js"></script>
 
     <!-- Çerez Bildirimi -->
+    <!-- Herkese Açık Profil Modalı (Liderlik) -->
+    <div id="public-profile-modal" class="modal hide" style="z-index: 10000; backdrop-filter: blur(5px);">
+        <div class="modal-content" style="max-width: 450px; padding: 0; overflow: hidden; position: relative;">
+            <button class="close-btn" id="close-public-profile-btn"
+                style="position: absolute; top: 15px; right: 20px; z-index: 10; font-size: 24px; color: var(--text-muted);">&times;</button>
+
+            <div style="background: var(--primary-color); height: 120px; width: 100%;"></div>
+
+            <div style="padding: 0 25px 30px 25px; text-align: center; margin-top: -50px;">
+                <div id="public-profile-avatar"
+                    style="width: 100px; height: 100px; background-color: var(--card-bg); border-radius: 50%; border: 4px solid var(--card-bg); margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; color: var(--primary-color); box-shadow: 0 5px 15px rgba(0,0,0,0.1); background-size: cover; background-position: center; background-repeat: no-repeat;">
+                    <!-- Avatar veya Baş harf buraya gelecek -->
+                </div>
+
+                <h2 id="public-profile-name" style="margin: 15px 0 5px 0; color: var(--text-main); font-size: 22px;">
+                    Yükleniyor...</h2>
+                <div style="display: inline-block; background: var(--border-color); color: var(--text-main); padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; margin-bottom: 25px;"
+                    id="public-profile-level">
+                    Seviye -
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div
+                        style="background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 24px; margin-bottom: 5px;">🔥</div>
+                        <div id="public-profile-streak"
+                            style="font-size: 20px; font-weight: bold; color: var(--text-main);">0</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Günlük Seri</div>
+                    </div>
+                    <div
+                        style="background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 24px; margin-bottom: 5px;">⭐</div>
+                        <div id="public-profile-xp"
+                            style="font-size: 20px; font-weight: bold; color: var(--text-main);">0</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Toplam XP</div>
+                    </div>
+                    <div
+                        style="background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 24px; margin-bottom: 5px;">🎯</div>
+                        <div id="public-profile-quizzes"
+                            style="font-size: 20px; font-weight: bold; color: var(--text-main);">0</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Tamamlanan Quiz</div>
+                    </div>
+                    <div
+                        style="background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 24px; margin-bottom: 5px;">📚</div>
+                        <div id="public-profile-words"
+                            style="font-size: 20px; font-weight: bold; color: var(--text-main);">0</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Öğrenilen Kelime</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="cookie-consent" class="cookie-consent">
         <div class="cookie-text">
             Bu web sitesi, deneyiminizi geliştirmek için çerezleri kullanmaktadır. Detaylı bilgi için

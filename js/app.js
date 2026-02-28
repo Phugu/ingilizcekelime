@@ -29,11 +29,16 @@ import {
     onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// AI Moderasyon Kara Listesi (Blacklist)
+// AI Moderasyon Kara Listesi (Hassas İçerik Filtresi)
 const FORBIDDEN_OBJECTS = [
-    'brassiere', 'underpants', 'underwear', 'lingerie', 'bikini',
-    'gun', 'weapon', 'pistol', 'rifle',
-    'blood', 'nudity', 'gore', 'corpse', 'drug', 'syringe', 'pills'
+    // İç Giyim & Mayo
+    'brassiere', 'underpants', 'underwear', 'lingerie', 'bikini', 'swimwear',
+    'swimsuit', 'bra', 'briefs', 'nightwear', 'sleepwear', 'activewear',
+    'thong', 'g-string', 'monokini', 'panties', 'undergarment',
+    // Silah & Şiddet
+    'gun', 'weapon', 'pistol', 'rifle', 'knife', 'sword', 'blade',
+    // Zararlı Maddeler & Diğer
+    'blood', 'nudity', 'gore', 'corpse', 'drug', 'syringe', 'pills', 'smoke', 'cigarette'
 ];
 import {
     ref,

@@ -1348,7 +1348,8 @@ function setupAvatarUploadEvents(user) {
                     // Eklentinin varsayılan dosya adı genellikle Storage yolundaki slashların URL Encode/Tire yapılmış halidir. Fakat doğrudan sorgu yazmak daha evrenseldir.
 
                     const storagePath = `gs://ingilizcekelime-cbeb6.firebasestorage.app/profile_pictures/${user.uid}`;
-                    const customQuery = query(collection(db, "detectedObjects"), where("file", "==", storagePath));
+                    // En son yüklenen analizi almak için limit(1) ekliyoruz
+                    const customQuery = query(collection(db, "detectedObjects"), where("file", "==", storagePath), limit(1));
 
                     // Bir Timeout kuralım, 15 saniye içinde cevap gelmezse dinlemeyi bırak.
                     let detectionTimeout;
@@ -1412,7 +1413,7 @@ function setupAvatarUploadEvents(user) {
 
                     // 15 Saniye sonra dinlemeyi (ve bellek yükünü) durdur.
                     detectionTimeout = setTimeout(() => {
-                        console.log("AI analiz süresi doldu, dinleyici kapatılıyor.");
+                        console.log("AI analiz süresi doldu veya analiz tamamlandı.");
                         unsubscribe();
                     }, 15000);
                 }

@@ -1295,13 +1295,21 @@ function setupAvatarUploadEvents(user) {
                     editBtn.style.display = 'flex';
                 },
                 async () => {
+                    console.log("🚀 DEBUG: Firebase Storage yüklemesi TAMAMLANDI. Profil güncelleniyor...");
+
                     // Yükleme tamamlandı, URL'yi al
                     const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    console.log("🔗 DEBUG: Yeni URL alındı:", downloadURL);
 
                     // Firebase Auth profilini güncelle
-                    await updateProfile(auth.currentUser, {
-                        photoURL: downloadURL
-                    });
+                    try {
+                        await updateProfile(auth.currentUser, {
+                            photoURL: downloadURL
+                        });
+                        console.log("✅ DEBUG: Firebase Auth profili güncellendi.");
+                    } catch (authErr) {
+                        console.error("❌ DEBUG: updateProfile hatası:", authErr);
+                    }
 
                     // Firestore Users tablosunu public erişim varsa güncelle
                     try {
@@ -1309,20 +1317,22 @@ function setupAvatarUploadEvents(user) {
                         await updateDoc(userDocRef, {
                             photoURL: downloadURL
                         });
+                        console.log("✅ DEBUG: Firestore users_public güncellendi.");
                     } catch (fsErr) {
-                        console.warn("Firestore public user güncellenemedi, sorun değil:", fsErr);
+                        console.warn("⚠️ DEBUG: Firestore güncelleme (beklenen) hatası:", fsErr);
                     }
 
-                    // Local state'i güncelle (Güvenlik kontrolü ekleyerek)
-                    user.photoURL = downloadURL;
+                    // Local state'i güncelle - Bazı nesneler read-only olabilir, sessizce geç
+                    try { user.photoURL = downloadURL; } catch (e) { }
                     if (window.currentUser) {
-                        window.currentUser.photoURL = downloadURL;
+                        try { window.currentUser.photoURL = downloadURL; } catch (e) { }
                     }
 
                     // Arayüzü Güncelle (Profil Ekranı)
                     if (mainAvatar) {
                         mainAvatar.style.backgroundImage = `url('${downloadURL}')`;
                         mainAvatar.style.color = 'transparent';
+                        mainAvatar.innerHTML = '';
                     }
 
                     // Arayüzü Güncelle (Header İkonu)
@@ -1351,7 +1361,6 @@ function setupAvatarUploadEvents(user) {
                             const firestoreDB = window.firestore || db;
 
                             // Not: Eklenti bazen eski dökümanı günceller. 
-                            // Bu yüzden sadece 'filepath' ile sorgulayıp içeride zaman kontrolü yapacağız.
                             const customQuery = query(collection(firestoreDB, "detectedObjects"), where("file", "==", storagePath), limit(1));
 
                             let detectionTimeout;
@@ -1361,18 +1370,13 @@ function setupAvatarUploadEvents(user) {
                                         const docSnap = snapshot.docs[0];
                                         const detectionData = docSnap.data();
 
-                                        // KRİTİK: Verinin bu yüklemeden sonra mı geldiğini kontrol et
-                                        // Firestore'un server timestamp'i veya JS Date kullanabiliriz.
-                                        // detectedObjects dökümanında genellikle 'updateTime' veya snapshot'ın kendi metadata'sı olur.
-                                        // En garantisi döküman içindeki bir zaman alanına bakmaktır.
                                         const docUpdateTime = detectionData.updated ? (detectionData.updated.seconds * 1000) : (docSnap.updateTime ? docSnap.updateTime.seconds * 1000 : Date.now());
 
-                                        console.log("DEBUG - Fotoğraf Yükleme Zamanı:", new Date(uploadTime).toLocaleTimeString());
-                                        console.log("DEBUG - AI Analiz Güncelleme Zamanı:", new Date(docUpdateTime).toLocaleTimeString());
+                                        console.log("📊 DEBUG - Fotoğraf Yükleme Zamanı:", new Date(uploadTime).toLocaleTimeString());
+                                        console.log("📊 DEBUG - AI Analiz Güncelleme Zamanı:", new Date(docUpdateTime).toLocaleTimeString());
 
-                                        // Eğer döküman yükleme zamanımızdan öncesine aitse, bu eski (stale) veridir. Görmezden gel.
-                                        if (docUpdateTime < (uploadTime - 5000)) { // 5sn tolerans
-                                            console.log("DEBUG: Eski (Stale) veri atlanıyor. Yeni analiz bekleniyor...");
+                                        if (docUpdateTime < (uploadTime - 5000)) {
+                                            console.log("⏭️ DEBUG: Eski analiz sonucu atlanıyor (Stale data)...");
                                             return;
                                         }
 
@@ -1380,7 +1384,6 @@ function setupAvatarUploadEvents(user) {
                                             const allObjects = detectionData.objects.map(obj => `${obj.name || obj} (%${Math.round((obj.score || 0) * 100)})`);
                                             console.log("🔍 AI'nın Gördüğü Her Şey:", allObjects.join(", "));
 
-                                            // Güven sınırı %80'e çıkarıldı (Hatalı tespitleri sıfıra indirmek için)
                                             const foundObjects = detectionData.objects
                                                 .filter(obj => (obj.score || 0) >= 0.80)
                                                 .map(obj => (obj.name || obj || "").toString().toLowerCase())
@@ -1391,6 +1394,7 @@ function setupAvatarUploadEvents(user) {
                                             if (hasForbidden) {
                                                 const detectedForbidden = foundObjects.filter(obj => FORBIDDEN_OBJECTS.includes(obj));
                                                 console.error("⛔ UYGUNSUZ İÇERİK!", detectedForbidden);
+
                                                 unsubscribe();
                                                 clearTimeout(detectionTimeout);
 
@@ -1410,31 +1414,52 @@ function setupAvatarUploadEvents(user) {
 
                                                 const messageText = `Yüklediğiniz fotoğrafta Yapay Zeka tarafından "${detectedForbidden.join(", ")}" tespit edildiği için engellendi.`;
                                                 if (typeof Swal !== 'undefined') {
-                                                    Swal.fire({ icon: 'error', title: 'Uygunsuz İçerik!', text: messageText, footer: 'Görülen Nesneler: ' + allObjects.join(", ") });
+                                                    Swal.fire({
+                                                        icon: 'error',
+                                                        title: 'Uygunsuz İçerik!',
+                                                        text: messageText,
+                                                        footer: 'AI Raporu: ' + allObjects.join(", "),
+                                                        confirmButtonColor: '#d33'
+                                                    });
                                                 } else {
                                                     alert('⚠️ UYGUNSUZ İÇERİK!\n\n' + messageText);
                                                 }
                                             } else {
                                                 console.log("✅ Profil fotoğrafı temiz. Görülenler:", allObjects.join(", "));
+
+                                                // Başarılı sonucu kullanıcıya bildir (opsiyonel ama teşhis için iyi)
+                                                if (typeof Swal !== 'undefined') {
+                                                    Swal.fire({
+                                                        toast: true,
+                                                        position: 'top-end',
+                                                        icon: 'success',
+                                                        title: 'AI Kontrolü Başarılı: Profiliniz Güvende.',
+                                                        showConfirmButton: false,
+                                                        timer: 2000
+                                                    });
+                                                }
+
                                                 unsubscribe();
                                                 clearTimeout(detectionTimeout);
                                             }
                                         }
+                                    } else {
+                                        console.log("⏳ DEBUG: AI analiz dökümanı henüz oluşturulmadı, bekleniyor...");
                                     }
                                 } catch (snapErr) {
-                                    console.error("Snapshot işleme hatası:", snapErr);
+                                    console.error("🚨 DEBUG: Snapshot işleme hatası:", snapErr);
                                     unsubscribe();
                                 }
                             }, (err) => {
-                                console.error("onSnapshot error:", err);
+                                console.error("🚨 DEBUG: onSnapshot bağlantı hatası:", err);
                             });
 
                             detectionTimeout = setTimeout(() => {
-                                console.log("AI analiz süresi doldu.");
+                                console.log("⌛ DEBUG: AI analiz süresi doldu (20 saniye).");
                                 unsubscribe();
                             }, 20000);
                         } catch (aiModErr) {
-                            console.error("AI Moderasyon başlatma hatası:", aiModErr);
+                            console.error("🚨 DEBUG: AI Moderasyon başlatma hatası:", aiModErr);
                         }
                     }, 1000); // 3 saniyelik kritik gecikme
                 }

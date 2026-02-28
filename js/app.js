@@ -1299,8 +1299,11 @@ function setupAvatarUploadEvents(user) {
                         console.warn("Firestore public user güncellenemedi, sorun değil:", fsErr);
                     }
 
-                    // Local state'i güncelle
-                    window.currentUser.photoURL = downloadURL;
+                    // Local state'i güncelle (Güvenlik kontrolü ekleyerek)
+                    user.photoURL = downloadURL;
+                    if (window.currentUser) {
+                        window.currentUser.photoURL = downloadURL;
+                    }
 
                     // Arayüzü Güncelle (Profil Ekranı)
                     if (mainAvatar) {

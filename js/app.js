@@ -1114,7 +1114,7 @@ async function loadProfileContent() {
                 <div class="profile-header-banner">
                     <button class="settings-btn" title="Ayarlar" onclick="window.loadSettingsContent()">⚙️ Ayarlar</button>
                     <div class="profile-avatar-container">
-                        <div class="profile-avatar" id="main-profile-avatar" ${user.photoURL ? `style="background-image: url('${escapeHTML(user.photoURL)}'); color: transparent;"` : ''}>
+                        <div class="profile-avatar" id="main-profile-avatar" ${user.photoURL ? `style="background-image: url('${user.photoURL}'); color: transparent;"` : ''}>
                             ${user.displayName ? escapeHTML(user.displayName.charAt(0).toUpperCase()) : 'M'}
                             ${!isGuest ? `
                             <div class="avatar-loading" id="avatar-loading">
@@ -2536,7 +2536,7 @@ window.showPublicProfile = async function (uid) {
             // Avatar kontrolü ve yerleşimi
             if (data.photoURL) {
                 avatarEl.innerHTML = '';
-                avatarEl.style.backgroundImage = `url('${escapeHTML(data.photoURL)}')`;
+                avatarEl.style.backgroundImage = `url('${data.photoURL}')`;
             } else {
                 avatarEl.style.backgroundImage = 'none';
                 avatarEl.innerHTML = escapeHTML(rawName.charAt(0).toUpperCase());

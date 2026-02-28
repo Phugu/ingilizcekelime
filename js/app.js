@@ -31,7 +31,7 @@ import {
 
 // AI Moderasyon Kara Listesi (Blacklist)
 const FORBIDDEN_OBJECTS = [
-    'brassiere', 'underpants', 'swimwear', 'underwear', 'lingerie', 'bikini',
+    'brassiere', 'underpants', 'underwear', 'lingerie', 'bikini',
     'gun', 'weapon', 'pistol', 'rifle',
     'blood', 'nudity', 'gore', 'corpse', 'drug', 'syringe', 'pills'
 ];
@@ -1341,77 +1341,78 @@ function setupAvatarUploadEvents(user) {
                     fileInput.value = ''; // Inputu temizle
 
                     // --- GÜVENLİK (AI BLACKLIST) KONTROLÜ ---
-                    try {
-                        console.log("Cloud Vision API analizi bekleniyor...");
+                    // 3 Saniye Gecikme: AI eklentisinin eski resmi silip yenisini taranmaya başlaması için zaman tanıyoruz.
+                    // Bu sayede "önceki yasaklı resmin" sonucu yeni resme bulaşmaz.
+                    setTimeout(() => {
+                        try {
+                            console.log("Cloud Vision AI analizi taranıyor...");
+                            const storagePath = `gs://ingilizcekelime-cbeb6.firebasestorage.app/profile_pictures/${user.uid}`;
+                            const firestoreDB = window.firestore || db;
+                            const customQuery = query(collection(firestoreDB, "detectedObjects"), where("file", "==", storagePath), limit(1));
 
-                        const storagePath = `gs://ingilizcekelime-cbeb6.firebasestorage.app/profile_pictures/${user.uid}`;
-                        // Firestore referansını window üzerinden alarak garantiye alıyoruz
-                        const firestoreDB = window.firestore || db;
-                        const customQuery = query(collection(firestoreDB, "detectedObjects"), where("file", "==", storagePath), limit(1));
+                            let detectionTimeout;
+                            const unsubscribe = onSnapshot(customQuery, async (snapshot) => {
+                                try {
+                                    if (!snapshot.empty) {
+                                        const detectionData = snapshot.docs[0].data();
 
-                        let detectionTimeout;
-                        const unsubscribe = onSnapshot(customQuery, async (snapshot) => {
-                            try {
-                                if (!snapshot.empty) {
-                                    const detectionData = snapshot.docs[0].data();
-                                    console.log("AI Tespit Sonuçları:", detectionData);
+                                        if (detectionData && detectionData.objects && Array.isArray(detectionData.objects)) {
+                                            // Güven sınırı %80'e çıkarıldı (Hatalı tespitleri sıfıra indirmek için)
+                                            const foundObjects = detectionData.objects
+                                                .filter(obj => (obj.score || 0) >= 0.80)
+                                                .map(obj => (obj.name || obj || "").toString().toLowerCase())
+                                                .filter(str => str !== "");
 
-                                    if (detectionData && detectionData.objects && Array.isArray(detectionData.objects)) {
-                                        // Sadece %65 ve üzeri güvenilirliği olan nesneleri dikkate alıyoruz (Hatalı tespitleri önlemek için)
-                                        const foundObjects = detectionData.objects
-                                            .filter(obj => (obj.score || 0) >= 0.65)
-                                            .map(obj => (obj.name || obj || "").toString().toLowerCase())
-                                            .filter(str => str !== "");
+                                            const hasForbidden = foundObjects.some(obj => FORBIDDEN_OBJECTS.includes(obj));
 
-                                        const hasForbidden = foundObjects.some(obj => FORBIDDEN_OBJECTS.includes(obj));
+                                            if (hasForbidden) {
+                                                console.error("⛔ UYGUNSUZ İÇERİK TESPİT EDİLDİ!", foundObjects);
+                                                unsubscribe();
+                                                clearTimeout(detectionTimeout);
 
-                                        if (hasForbidden) {
-                                            console.error("⛔ UYGUNSUZ İÇERİK TESPİT EDİLDİ!", foundObjects);
-                                            unsubscribe();
-                                            clearTimeout(detectionTimeout);
+                                                const fallbackAvatar = "https://ui-avatars.com/api/?name=" + (user.displayName || "A") + "&background=random";
+                                                await updateProfile(auth.currentUser, { photoURL: fallbackAvatar });
+                                                try { await updateDoc(doc(firestoreDB, "users_public", user.uid), { photoURL: fallbackAvatar }); } catch (e) { }
 
-                                            const fallbackAvatar = "https://ui-avatars.com/api/?name=" + (user.displayName || "A") + "&background=random";
-                                            await updateProfile(auth.currentUser, { photoURL: fallbackAvatar });
-                                            try { await updateDoc(doc(firestoreDB, "users_public", user.uid), { photoURL: fallbackAvatar }); } catch (e) { }
+                                                if (mainAvatar) {
+                                                    mainAvatar.style.backgroundImage = 'none';
+                                                    mainAvatar.innerHTML = escapeHTML((user.displayName || "A").charAt(0).toUpperCase());
+                                                    mainAvatar.style.color = 'white';
+                                                }
+                                                if (headerAvatar) {
+                                                    headerAvatar.style.backgroundImage = 'none';
+                                                    headerAvatar.innerHTML = escapeHTML((user.displayName || "A").charAt(0).toUpperCase());
+                                                }
 
-                                            if (mainAvatar) {
-                                                mainAvatar.style.backgroundImage = 'none';
-                                                mainAvatar.innerHTML = escapeHTML((user.displayName || "A").charAt(0).toUpperCase());
-                                                mainAvatar.style.color = 'white';
-                                            }
-                                            if (headerAvatar) {
-                                                headerAvatar.style.backgroundImage = 'none';
-                                                headerAvatar.innerHTML = escapeHTML((user.displayName || "A").charAt(0).toUpperCase());
-                                            }
-
-                                            const messageText = 'Yüklediğiniz fotoğrafta yasaklı/uygunsuz bir nesne tespit edildiği için fotoğrafınız sistem tarafından otomatik olarak engellendi.';
-                                            if (typeof Swal !== 'undefined') {
-                                                Swal.fire({ icon: 'error', title: 'Uygunsuz İçerik!', text: messageText, confirmButtonColor: '#3085d6' });
+                                                const messageText = 'Yüklediğiniz fotoğrafta uygunsuz içerik tespit edildiği için engellendi. Lütfen kurallara uygun bir fotoğraf yükleyin.';
+                                                if (typeof Swal !== 'undefined') {
+                                                    Swal.fire({ icon: 'error', title: 'Uygunsuz İçerik!', text: messageText, confirmButtonColor: '#3085d6' });
+                                                } else {
+                                                    alert('⚠️ UYGUNSUZ İÇERİK!\n\n' + messageText);
+                                                }
                                             } else {
-                                                alert('⚠️ UYGUNSUZ İÇERİK!\n\n' + messageText);
+                                                console.log("✅ Profil fotoğrafı temiz.");
+                                                unsubscribe();
+                                                clearTimeout(detectionTimeout);
                                             }
-                                        } else {
-                                            console.log("✅ Profil fotoğrafı temiz.");
-                                            unsubscribe();
-                                            clearTimeout(detectionTimeout);
                                         }
                                     }
+                                } catch (snapErr) {
+                                    console.error("Snapshot işleme hatası:", snapErr);
+                                    unsubscribe();
                                 }
-                            } catch (snapErr) {
-                                console.error("Snapshot işleme hatası:", snapErr);
-                                unsubscribe();
-                            }
-                        }, (err) => {
-                            console.error("onSnapshot error:", err);
-                        });
+                            }, (err) => {
+                                console.error("onSnapshot error:", err);
+                            });
 
-                        detectionTimeout = setTimeout(() => {
-                            console.log("AI analiz süresi doldu veya tamamlandı.");
-                            unsubscribe();
-                        }, 15000);
-                    } catch (aiModErr) {
-                        console.error("AI Moderasyon başlatma hatası:", aiModErr);
-                    }
+                            detectionTimeout = setTimeout(() => {
+                                console.log("AI analiz süresi doldu.");
+                                unsubscribe();
+                            }, 15000);
+                        } catch (aiModErr) {
+                            console.error("AI Moderasyon başlatma hatası:", aiModErr);
+                        }
+                    }, 3000); // 3 saniyelik kritik gecikme
                 }
             );
 

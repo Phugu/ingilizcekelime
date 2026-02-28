@@ -1146,37 +1146,37 @@ async function loadProfileContent() {
                     <h3 class="section-title">Kazanılan Rozetler</h3>
                     <div class="badges-grid">
                         
-                        <div class="badge-item ${stats.totalWords >= 100 ? 'unlocked' : 'locked'}" title="100 Kelime Öğren">
+                        <div class="badge-item ${stats.totalWords >= 100 ? 'unlocked' : 'locked'}" title="100 Kelime Öğren" onclick="alert('🛡️ Rozet Hedefi:\\n\\n' + this.title)">
                             <img src="assets/badges/100kelime.png" alt="100 Kelime" class="badge-img">
                             <div class="badge-name">İlk Adım</div>
                         </div>
                         
-                        <div class="badge-item ${stats.totalWords >= 500 ? 'unlocked' : 'locked'}" title="500 Kelime Öğren">
+                        <div class="badge-item ${stats.totalWords >= 500 ? 'unlocked' : 'locked'}" title="500 Kelime Öğren" onclick="alert('🛡️ Rozet Hedefi:\\n\\n' + this.title)">
                             <img src="assets/badges/500kelime.png" alt="500 Kelime" class="badge-img">
                             <div class="badge-name">Kelime Avcısı</div>
                         </div>
 
-                        <div class="badge-item ${stats.totalWords >= 1000 ? 'unlocked' : 'locked'}" title="1000 Kelime Öğren">
+                        <div class="badge-item ${stats.totalWords >= 1000 ? 'unlocked' : 'locked'}" title="1000 Kelime Öğren" onclick="alert('🛡️ Rozet Hedefi:\\n\\n' + this.title)">
                             <img src="assets/badges/1000kelime.png" alt="1000 Kelime" class="badge-img">
                             <div class="badge-name">Kelime Üstadı</div>
                         </div>
                         
-                        <div class="badge-item ${stats.studyStreak >= 7 ? 'unlocked' : 'locked'}" title="7 Gün aralıksız uygulama girişi yap">
+                        <div class="badge-item ${stats.studyStreak >= 7 ? 'unlocked' : 'locked'}" title="7 Gün aralıksız uygulama girişi yap" onclick="alert('🛡️ Rozet Hedefi:\\n\\n' + this.title)">
                             <img src="assets/badges/7g%C3%BCnl%C3%BCkseri.png" alt="7 Günlük Seri" class="badge-img">
                             <div class="badge-name">Ateşli</div>
                         </div>
 
-                        <div class="badge-item ${stats.studyStreak >= 30 ? 'unlocked' : 'locked'}" title="30 Gün aralıksız uygulama girişi yap">
+                        <div class="badge-item ${stats.studyStreak >= 30 ? 'unlocked' : 'locked'}" title="30 Gün aralıksız uygulama girişi yap" onclick="alert('🛡️ Rozet Hedefi:\\n\\n' + this.title)">
                             <img src="assets/badges/30g%C3%BCnl%C3%BCkseri.png" alt="30 Günlük Seri" class="badge-img">
                             <div class="badge-name">Efsanevi</div>
                         </div>
 
-                        <div class="badge-item ${stats.totalQuizzes >= 1 ? 'unlocked' : 'locked'}" title="İstediğin zorlukta en az 1 Quiz tamamla">
+                        <div class="badge-item ${stats.totalQuizzes >= 1 ? 'unlocked' : 'locked'}" title="İstediğin zorlukta en az 1 Quiz tamamla" onclick="alert('🛡️ Rozet Hedefi:\\n\\n' + this.title)">
                             <img src="assets/badges/quiz%20100%C2%BD.png" alt="Quiz Kurdu" class="badge-img">
                             <div class="badge-name">Quiz Kurdu</div>
                         </div>
 
-                        <div class="badge-item locked" title="Herhangi bir Quiz'i tek bir hata bile yapmadan tamamla">
+                        <div class="badge-item locked" title="Herhangi bir Quiz'i tek bir hata bile yapmadan tamamla" onclick="alert('🛡️ Rozet Hedefi:\\n\\n' + this.title)">
                             <img src="assets/badges/hatas%C4%B1z%20kul%20olmaz%20ben%20oldum%20s%C4%B1f%C4%B1r%20hata%20quiz.png%20.png" alt="Kusursuz" class="badge-img">
                             <div class="badge-name">Kusursuz</div>
                         </div>

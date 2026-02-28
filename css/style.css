@@ -4283,7 +4283,7 @@ a {
     overflow: hidden;
     transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
     border-radius: 12px;
-    cursor: help;
+    cursor: pointer;
 }
 
 .badge-item:hover {

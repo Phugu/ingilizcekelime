@@ -1331,8 +1331,11 @@ function setupAvatarUploadEvents(user) {
                     // Arayüzü Güncelle (Profil Ekranı)
                     if (mainAvatar) {
                         mainAvatar.style.backgroundImage = `url('${downloadURL}')`;
+                        mainAvatar.style.backgroundSize = 'cover';
+                        mainAvatar.style.backgroundPosition = 'center';
                         mainAvatar.style.color = 'transparent';
                         mainAvatar.innerHTML = '';
+                        console.log("🎨 DOM: Main Avatar arka planı güncellendi.");
                     }
 
                     // Arayüzü Güncelle (Header İkonu)
@@ -1341,6 +1344,12 @@ function setupAvatarUploadEvents(user) {
                         headerAvatar.style.backgroundSize = 'cover';
                         headerAvatar.style.backgroundPosition = 'center';
                         headerAvatar.innerHTML = '';
+                        console.log("🎨 DOM: Header Avatar arka planı güncellendi.");
+                    }
+
+                    // Global Dashboard fonksiyonunu tetikle (Her şeyin senkron olması için)
+                    if (typeof window.showDashboard === 'function') {
+                        window.showDashboard(auth.currentUser);
                     }
 
                     // Yükleme arayüzünü kapat
@@ -1384,8 +1393,9 @@ function setupAvatarUploadEvents(user) {
                                             const allObjects = detectionData.objects.map(obj => `${obj.name || obj} (%${Math.round((obj.score || 0) * 100)})`);
                                             console.log("🔍 AI'nın Gördüğü Her Şey:", allObjects.join(", "));
 
+                                            // Güven sınırı %65'e geri çekildi (Daha hassas kontrol için)
                                             const foundObjects = detectionData.objects
-                                                .filter(obj => (obj.score || 0) >= 0.80)
+                                                .filter(obj => (obj.score || 0) >= 0.65)
                                                 .map(obj => (obj.name || obj || "").toString().toLowerCase())
                                                 .filter(str => str !== "");
 

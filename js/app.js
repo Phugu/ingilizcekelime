@@ -1282,196 +1282,101 @@ function setupAvatarUploadEvents(user) {
 
             uploadTask.on('state_changed',
                 (snapshot) => {
-                    // Yükleme progresini göster
                     const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
                     if (loadingPct) {
                         loadingPct.innerText = progress + '%';
                     }
                 },
                 (error) => {
-                    console.error("Yükleme sırasında hata:", error);
-                    alert("Fotoğraf yüklenemedi. Ağ bağlantınızı kontrol edin.");
+                    console.error("❌ DEBUG: Yükleme Hatası:", error);
+                    alert("Fotoğraf yüklenemedi: " + error.message);
                     loadingMask.style.display = 'none';
                     editBtn.style.display = 'flex';
                 },
                 async () => {
-                    console.log("🚀 DEBUG: Firebase Storage yüklemesi TAMAMLANDI. Profil güncelleniyor...");
-
-                    // Yükleme tamamlandı, URL'yi al
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    console.log("🔗 DEBUG: Yeni URL alındı:", downloadURL);
-
-                    // Firebase Auth profilini güncelle
                     try {
-                        await updateProfile(auth.currentUser, {
-                            photoURL: downloadURL
-                        });
-                        console.log("✅ DEBUG: Firebase Auth profili güncellendi.");
-                    } catch (authErr) {
-                        console.error("❌ DEBUG: updateProfile hatası:", authErr);
-                    }
+                        console.error("🚀 DEBUG: Storage yüklemesi bitti. URL alınıyor...");
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        const cacheURL = `${downloadURL}&cb=${Date.now()}`;
+                        console.error("🔗 DEBUG: Yeni URL (Zırhlı):", cacheURL);
 
-                    // Firestore Users tablosunu public erişim varsa güncelle
-                    try {
-                        const userDocRef = doc(db, "users_public", user.uid);
-                        await updateDoc(userDocRef, {
-                            photoURL: downloadURL
-                        });
-                        console.log("✅ DEBUG: Firestore users_public güncellendi.");
-                    } catch (fsErr) {
-                        console.warn("⚠️ DEBUG: Firestore güncelleme (beklenen) hatası:", fsErr);
-                    }
+                        // Auth Güncelle
+                        await updateProfile(auth.currentUser, { photoURL: cacheURL });
 
-                    // Local state'i güncelle - Bazı nesneler read-only olabilir, sessizce geç
-                    try { user.photoURL = downloadURL; } catch (e) { }
-                    if (window.currentUser) {
-                        try { window.currentUser.photoURL = downloadURL; } catch (e) { }
-                    }
-
-                    // Arayüzü Güncelle (Profil Ekranı)
-                    if (mainAvatar) {
-                        mainAvatar.style.backgroundImage = `url('${downloadURL}')`;
-                        mainAvatar.style.backgroundSize = 'cover';
-                        mainAvatar.style.backgroundPosition = 'center';
-                        mainAvatar.style.color = 'transparent';
-                        mainAvatar.innerHTML = '';
-                        console.log("🎨 DOM: Main Avatar arka planı güncellendi.");
-                    }
-
-                    // Arayüzü Güncelle (Header İkonu)
-                    if (headerAvatar) {
-                        headerAvatar.style.backgroundImage = `url('${downloadURL}')`;
-                        headerAvatar.style.backgroundSize = 'cover';
-                        headerAvatar.style.backgroundPosition = 'center';
-                        headerAvatar.innerHTML = '';
-                        console.log("🎨 DOM: Header Avatar arka planı güncellendi.");
-                    }
-
-                    // Global Dashboard fonksiyonunu tetikle (Her şeyin senkron olması için)
-                    if (typeof window.showDashboard === 'function') {
-                        window.showDashboard(auth.currentUser);
-                    }
-
-                    // Yükleme arayüzünü kapat
-                    loadingMask.style.display = 'none';
-                    editBtn.style.display = 'flex';
-                    if (loadingPct) loadingPct.innerText = '0%';
-
-                    fileInput.value = ''; // Inputu temizle
-
-                    // --- GÜVENLİK (AI BLACKLIST) KONTROLÜ ---
-                    // Yükleme anındaki zamanı alıyoruz (Eski analiz sonuçlarını reddetmek için)
-                    const uploadTime = Date.now();
-
-                    setTimeout(() => {
+                        // Firestore Güncelle
                         try {
-                            console.log("Cloud Vision AI analizi taranıyor...");
-                            const storagePath = `gs://ingilizcekelime-cbeb6.firebasestorage.app/profile_pictures/${user.uid}`;
-                            const firestoreDB = window.firestore || db;
+                            await updateDoc(doc(db, "users_public", user.uid), { photoURL: cacheURL });
+                        } catch (e) { console.error("⚠️ Firestore güncelleme atlandı:", e); }
 
-                            // Not: Eklenti bazen eski dökümanı günceller. 
-                            const customQuery = query(collection(firestoreDB, "detectedObjects"), where("file", "==", storagePath), limit(1));
+                        // DOM Güncelle
+                        if (mainAvatar) {
+                            mainAvatar.style.backgroundImage = `url('${cacheURL}')`;
+                            mainAvatar.style.backgroundSize = 'cover';
+                            mainAvatar.style.backgroundPosition = 'center';
+                            mainAvatar.style.color = 'transparent';
+                            mainAvatar.innerHTML = '';
+                        }
 
-                            let detectionTimeout;
-                            const unsubscribe = onSnapshot(customQuery, async (snapshot) => {
-                                try {
-                                    if (!snapshot.empty) {
-                                        const docSnap = snapshot.docs[0];
-                                        const detectionData = docSnap.data();
+                        // Header ve Genel Senkron
+                        if (typeof window.showDashboard === 'function') {
+                            window.showDashboard({ ...auth.currentUser, photoURL: cacheURL });
+                        }
 
-                                        const docUpdateTime = detectionData.updated ? (detectionData.updated.seconds * 1000) : (docSnap.updateTime ? docSnap.updateTime.seconds * 1000 : Date.now());
+                        loadingMask.style.display = 'none';
+                        editBtn.style.display = 'flex';
+                        fileInput.value = '';
 
-                                        console.log("📊 DEBUG - Fotoğraf Yükleme Zamanı:", new Date(uploadTime).toLocaleTimeString());
-                                        console.log("📊 DEBUG - AI Analiz Güncelleme Zamanı:", new Date(docUpdateTime).toLocaleTimeString());
+                        // AI MODERASYON
+                        const uploadTime = Date.now();
+                        setTimeout(() => {
+                            try {
+                                console.error("🕵️ DEBUG: AI Taraması başladı...");
+                                const storagePath = `gs://ingilizcekelime-cbeb6.firebasestorage.app/profile_pictures/${user.uid}`;
+                                const firestoreDB = window.firestore || db;
+                                const q = query(collection(firestoreDB, "detectedObjects"), where("file", "==", storagePath), limit(1));
 
-                                        if (docUpdateTime < (uploadTime - 5000)) {
-                                            console.log("⏭️ DEBUG: Eski analiz sonucu atlanıyor (Stale data)...");
-                                            return;
-                                        }
+                                const unsubscribe = onSnapshot(q, async (snap) => {
+                                    if (!snap.empty) {
+                                        const dDoc = snap.docs[0];
+                                        const dData = dDoc.data();
+                                        const upd = dData.updated ? dData.updated.seconds * 1000 : (dDoc.updateTime ? dDoc.updateTime.seconds * 1000 : Date.now());
 
-                                        if (detectionData && detectionData.objects && Array.isArray(detectionData.objects)) {
-                                            const allObjects = detectionData.objects.map(obj => `${obj.name || obj} (%${Math.round((obj.score || 0) * 100)})`);
-                                            console.log("🔍 AI'nın Gördüğü Her Şey:", allObjects.join(", "));
+                                        if (upd < (uploadTime - 5000)) return; // Eski veri
 
-                                            // Güven sınırı %65'e geri çekildi (Daha hassas kontrol için)
-                                            const foundObjects = detectionData.objects
-                                                .filter(obj => (obj.score || 0) >= 0.65)
-                                                .map(obj => (obj.name || obj || "").toString().toLowerCase())
-                                                .filter(str => str !== "");
+                                        if (dData.objects && Array.isArray(dData.objects)) {
+                                            const all = dData.objects.map(o => `${o.name} (%${Math.round(o.score * 100)})`);
+                                            console.error("🔍 AI Gördü:", all.join(", "));
 
-                                            const hasForbidden = foundObjects.some(obj => FORBIDDEN_OBJECTS.includes(obj));
+                                            const bad = dData.objects
+                                                .filter(o => o.score >= 0.65)
+                                                .map(o => o.name.toLowerCase())
+                                                .filter(n => FORBIDDEN_OBJECTS.includes(n));
 
-                                            if (hasForbidden) {
-                                                const detectedForbidden = foundObjects.filter(obj => FORBIDDEN_OBJECTS.includes(obj));
-                                                console.error("⛔ UYGUNSUZ İÇERİK!", detectedForbidden);
-
+                                            if (bad.length > 0) {
+                                                console.error("⛔ YASAKLI:", bad);
                                                 unsubscribe();
-                                                clearTimeout(detectionTimeout);
-
-                                                const fallbackAvatar = "https://ui-avatars.com/api/?name=" + (user.displayName || "A") + "&background=random";
-                                                await updateProfile(auth.currentUser, { photoURL: fallbackAvatar });
-                                                try { await updateDoc(doc(firestoreDB, "users_public", user.uid), { photoURL: fallbackAvatar }); } catch (e) { }
-
-                                                if (mainAvatar) {
-                                                    mainAvatar.style.backgroundImage = 'none';
-                                                    mainAvatar.innerHTML = escapeHTML((user.displayName || "A").charAt(0).toUpperCase());
-                                                    mainAvatar.style.color = 'white';
-                                                }
-                                                if (headerAvatar) {
-                                                    headerAvatar.style.backgroundImage = 'none';
-                                                    headerAvatar.innerHTML = escapeHTML((user.displayName || "A").charAt(0).toUpperCase());
-                                                }
-
-                                                const messageText = `Yüklediğiniz fotoğrafta Yapay Zeka tarafından "${detectedForbidden.join(", ")}" tespit edildiği için engellendi.`;
-                                                if (typeof Swal !== 'undefined') {
-                                                    Swal.fire({
-                                                        icon: 'error',
-                                                        title: 'Uygunsuz İçerik!',
-                                                        text: messageText,
-                                                        footer: 'AI Raporu: ' + allObjects.join(", "),
-                                                        confirmButtonColor: '#d33'
-                                                    });
-                                                } else {
-                                                    alert('⚠️ UYGUNSUZ İÇERİK!\n\n' + messageText);
-                                                }
+                                                const fallback = "https://ui-avatars.com/api/?name=" + (user.displayName || "A") + "&background=random";
+                                                await updateProfile(auth.currentUser, { photoURL: fallback });
+                                                window.showDashboard({ ...auth.currentUser, photoURL: fallback });
+                                                Swal.fire({ icon: 'error', title: 'Yasaklı İçerik!', text: `Yapay zeka şunları tespit etti: ${bad.join(", ")}`, footer: `Rapor: ${all.join(", ")}` });
                                             } else {
-                                                console.log("✅ Profil fotoğrafı temiz. Görülenler:", allObjects.join(", "));
-
-                                                // Başarılı sonucu kullanıcıya bildir (opsiyonel ama teşhis için iyi)
-                                                if (typeof Swal !== 'undefined') {
-                                                    Swal.fire({
-                                                        toast: true,
-                                                        position: 'top-end',
-                                                        icon: 'success',
-                                                        title: 'AI Kontrolü Başarılı: Profiliniz Güvende.',
-                                                        showConfirmButton: false,
-                                                        timer: 2000
-                                                    });
-                                                }
-
+                                                console.error("✅ TEMİZ");
                                                 unsubscribe();
-                                                clearTimeout(detectionTimeout);
+                                                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'AI: Profil Temiz', showConfirmButton: false, timer: 2000 });
                                             }
                                         }
-                                    } else {
-                                        console.log("⏳ DEBUG: AI analiz dökümanı henüz oluşturulmadı, bekleniyor...");
                                     }
-                                } catch (snapErr) {
-                                    console.error("🚨 DEBUG: Snapshot işleme hatası:", snapErr);
-                                    unsubscribe();
-                                }
-                            }, (err) => {
-                                console.error("🚨 DEBUG: onSnapshot bağlantı hatası:", err);
-                            });
+                                }, (err) => console.error("🚨 Snapshot hatası:", err));
 
-                            detectionTimeout = setTimeout(() => {
-                                console.log("⌛ DEBUG: AI analiz süresi doldu (20 saniye).");
-                                unsubscribe();
-                            }, 20000);
-                        } catch (aiModErr) {
-                            console.error("🚨 DEBUG: AI Moderasyon başlatma hatası:", aiModErr);
-                        }
-                    }, 1000); // 3 saniyelik kritik gecikme
+                                setTimeout(() => unsubscribe(), 30000);
+                            } catch (e) { console.error("🚨 AI başlatma hatası:", e); }
+                        }, 1500);
+
+                    } catch (err) {
+                        console.error("🚨 Başarı callback hatası:", err);
+                        loadingMask.style.display = 'none';
+                        editBtn.style.display = 'flex';
+                    }
                 }
             );
 

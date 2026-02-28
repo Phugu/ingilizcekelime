@@ -375,11 +375,23 @@
             if (headerAvatar) {
                 if (user.photoURL) {
                     headerAvatar.style.backgroundImage = `url('${user.photoURL}')`;
+                    headerAvatar.style.backgroundSize = 'cover';
+                    headerAvatar.style.backgroundPosition = 'center';
                     headerAvatar.innerHTML = '';
                 } else {
                     headerAvatar.style.backgroundImage = 'none';
                     headerAvatar.textContent = userName ? userName.charAt(0).toUpperCase() : 'M';
                 }
+            }
+
+            // Ana Profil Avatarını Ayarla (Eğer o sayfadaysak)
+            const mainAvatar = document.getElementById('main-profile-avatar');
+            if (mainAvatar && user.photoURL) {
+                mainAvatar.style.backgroundImage = `url('${user.photoURL}')`;
+                mainAvatar.style.backgroundSize = 'cover';
+                mainAvatar.style.backgroundPosition = 'center';
+                mainAvatar.style.color = 'transparent';
+                mainAvatar.innerHTML = '';
             }
 
             document.getElementById('auth-container').classList.add('hide');

@@ -1,4 +1,5 @@
-// App.js - Ana uygulama dosyası
+// App.js - Ana uygulama dosyası (Versiyon: 19:25)
+console.error("🚀 MODERASYON MOTORU AKTİF (V19:25)");
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,

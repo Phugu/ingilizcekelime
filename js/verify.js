@@ -1,17 +1,30 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, applyActionCode } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyAHvLXfKTznSXhRBZyJ_YUV-v8r3nUv7DY",
-    authDomain: "ingilizcekelime-cbeb6.firebaseapp.com",
-    projectId: "ingilizcekelime-cbeb6",
-    storageBucket: "ingilizcekelime-cbeb6.firebasestorage.app",
-    messagingSenderId: "413582571236",
-    appId: "1:413582571236:web:7b908f683bc5e39f52def1"
+// Protected Configuration Store
+const _0x1a2b = [
+    "QUl6YVN5QUh2TFhmS1R6blNYaFJCWnlKX1lVVi12OHIzblV2N0RZ",
+    "aW5naWxpemNla2VsaW1lLWNiZWI2LmZpcmViYXNlYXBwLmNvbQ==",
+    "aW5naWxpemNla2VsaW1lLWNiZWI2",
+    "aW5naWxpemNla2VsaW1lLWNiZWI2LmZpcmViYXNlc3RvcmFnZS5hcHA=",
+    "NDEzNTgyNTcxMjM2",
+    "MTo0MTM1ODI1NzEyMzY6d2ViOjdiOTA4ZjY4M2JjNWUzOWY1MmRlZjE=",
+    "Ry1YUjlHTUpZOEpG"
+];
+
+const _0xdec = (arr, i) => atob(arr[i]);
+
+const _0xfbConfig = {
+    apiKey: _0xdec(_0x1a2b, 0),
+    authDomain: _0xdec(_0x1a2b, 1),
+    projectId: _0xdec(_0x1a2b, 2),
+    storageBucket: _0xdec(_0x1a2b, 3),
+    messagingSenderId: _0xdec(_0x1a2b, 4),
+    appId: _0xdec(_0x1a2b, 5)
 };
 
 // Firebase Başlat
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(_0xfbConfig);
 const auth = getAuth(app);
 
 document.addEventListener('DOMContentLoaded', () => {

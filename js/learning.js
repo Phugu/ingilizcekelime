@@ -289,16 +289,16 @@ export class WordLearning {
         container.innerHTML = html;
 
         // Event listeners for pool selection
-        document.querySelectorAll('.pool-card[data-level="a1"]').forEach(card => {
+        container.querySelectorAll('.pool-card[data-level="a1"]').forEach(card => {
             card.addEventListener('click', (e) => {
                 const poolName = e.currentTarget.getAttribute('data-pool');
                 this.startLearningA1Pool(poolName);
             });
         });
 
-        document.getElementById('back-to-levels-btn-top-a1').addEventListener('click', () => this.showLevelSelection());
-        document.getElementById('back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
-        document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
+        container.querySelector('#back-to-levels-btn-top-a1').addEventListener('click', () => this.showLevelSelection());
+        container.querySelector('#back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
+        container.querySelector('#back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
     }
 
     // Belirli bir A1 kelime havuzunu öğrenmeyi başlat
@@ -366,16 +366,16 @@ export class WordLearning {
         container.innerHTML = html;
 
         // Event listeners for pool selection
-        document.querySelectorAll('.pool-card[data-level="a2"]').forEach(card => {
+        container.querySelectorAll('.pool-card[data-level="a2"]').forEach(card => {
             card.addEventListener('click', (e) => {
                 const poolName = e.currentTarget.getAttribute('data-pool');
                 this.startLearningA2Pool(poolName);
             });
         });
 
-        document.getElementById('back-to-levels-btn-top-a2').addEventListener('click', () => this.showLevelSelection());
-        document.getElementById('back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
-        document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
+        container.querySelector('#back-to-levels-btn-top-a2').addEventListener('click', () => this.showLevelSelection());
+        container.querySelector('#back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
+        container.querySelector('#back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
     }
 
     // B1 seviye kelime havuzlarını göster
@@ -428,16 +428,16 @@ export class WordLearning {
         container.innerHTML = html;
 
         // Event listeners for pool selection
-        document.querySelectorAll('.pool-card[data-level="b1"]').forEach(card => {
+        container.querySelectorAll('.pool-card[data-level="b1"]').forEach(card => {
             card.addEventListener('click', (e) => {
                 const poolName = e.currentTarget.getAttribute('data-pool');
                 this.startLearningB1Pool(poolName);
             });
         });
 
-        document.getElementById('back-to-levels-btn-top-b1').addEventListener('click', () => this.showLevelSelection());
-        document.getElementById('back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
-        document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
+        container.querySelector('#back-to-levels-btn-top-b1').addEventListener('click', () => this.showLevelSelection());
+        container.querySelector('#back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
+        container.querySelector('#back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
     }
 
     // B2 seviye kelime havuzlarını göster
@@ -490,16 +490,16 @@ export class WordLearning {
         container.innerHTML = html;
 
         // Event listeners for pool selection
-        document.querySelectorAll('.pool-card[data-level="b2"]').forEach(card => {
+        container.querySelectorAll('.pool-card[data-level="b2"]').forEach(card => {
             card.addEventListener('click', (e) => {
                 const poolName = e.currentTarget.getAttribute('data-pool');
                 this.startLearningB2Pool(poolName);
             });
         });
 
-        document.getElementById('back-to-levels-btn-top-b2').addEventListener('click', () => this.showLevelSelection());
-        document.getElementById('back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
-        document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
+        container.querySelector('#back-to-levels-btn-top-b2').addEventListener('click', () => this.showLevelSelection());
+        container.querySelector('#back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
+        container.querySelector('#back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
     }
 
     // C1 seviye kelime havuzlarını göster
@@ -552,16 +552,16 @@ export class WordLearning {
         container.innerHTML = html;
 
         // Event listeners for pool selection
-        document.querySelectorAll('.pool-card[data-level="c1"]').forEach(card => {
+        container.querySelectorAll('.pool-card[data-level="c1"]').forEach(card => {
             card.addEventListener('click', (e) => {
                 const poolName = e.currentTarget.getAttribute('data-pool');
                 this.startLearningC1Pool(poolName);
             });
         });
 
-        document.getElementById('back-to-levels-btn-top-c1').addEventListener('click', () => this.showLevelSelection());
-        document.getElementById('back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
-        document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
+        container.querySelector('#back-to-levels-btn-top-c1').addEventListener('click', () => this.showLevelSelection());
+        container.querySelector('#back-to-levels-btn').addEventListener('click', () => this.showLevelSelection());
+        container.querySelector('#back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
     }
 
     // Belirli bir A2 kelime havuzunu öğrenmeyi başlat
@@ -658,7 +658,7 @@ export class WordLearning {
         container.innerHTML = html;
 
         // Event listeners - seviyeye göre doğru metodu çağır
-        document.getElementById('restart-learning-btn').addEventListener('click', () => {
+        container.querySelector('#restart-learning-btn').addEventListener('click', () => {
             switch (level) {
                 case 'A1':
                     this.startLearningA1Pool(this.currentPool);
@@ -680,12 +680,28 @@ export class WordLearning {
             }
         });
 
-        document.getElementById('back-to-pools-btn').addEventListener('click', () => {
-            // Seviyeye göre doğru havuz listesini göster
-            this.showLevelWordPools(level);
+        container.querySelector('#back-to-pools-btn').addEventListener('click', () => {
+            switch (level) {
+                case 'A1':
+                    this.showA1WordPools();
+                    break;
+                case 'A2':
+                    this.showA2WordPools();
+                    break;
+                case 'B1':
+                    this.showB1WordPools();
+                    break;
+                case 'B2':
+                    this.showB2WordPools();
+                    break;
+                case 'C1':
+                    this.showC1WordPools();
+                    break;
+                default:
+                    this.showA1WordPools();
+            }
         });
-
-        document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
+        container.querySelector('#back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
     }
 
     // Kelime kartını oluştur
@@ -1709,9 +1725,9 @@ export class WordLearning {
             `;
 
             // Buton işlevlerini ekle
-            const restartButton = document.getElementById('restart-test-btn');
-            const backToTestsButton = document.getElementById('back-to-tests-btn');
-            const backToDashboardButton = document.getElementById('back-to-dashboard-btn');
+            const restartButton = container.querySelector('#restart-test-btn');
+            const backToTestsButton = container.querySelector('#back-to-tests-btn');
+            const backToDashboardButton = container.querySelector('#back-to-dashboard-btn');
 
             if (restartButton) {
                 restartButton.addEventListener('click', () => {
@@ -1892,14 +1908,15 @@ export class WordLearning {
         container.innerHTML = html;
 
         // Event listeners for test selection
-        document.querySelectorAll('.pool-card[data-test]').forEach(card => {
+        container.querySelectorAll('.pool-card[data-test]').forEach(card => {
             card.addEventListener('click', (e) => {
                 const testNumber = parseInt(e.currentTarget.getAttribute('data-test'));
                 this.startSpecificTest(testNumber);
             });
         });
 
-        document.getElementById('back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
+        const dashboardBtn = container.querySelector('#back-to-dashboard-btn');
+        if (dashboardBtn) dashboardBtn.addEventListener('click', () => this.backToDashboard());
     }
 
     // Belirli bir testi başlat

@@ -1109,9 +1109,6 @@ async function loadProfileContent() {
                         <div class="profile-avatar" id="main-profile-avatar" ${user.photoURL ? `style="background-image: url('${escapeHTML(user.photoURL)}'); color: transparent;"` : ''}>
                             ${user.displayName ? escapeHTML(user.displayName.charAt(0).toUpperCase()) : 'M'}
                             ${!isGuest ? `
-                            <div class="avatar-edit-mask" id="avatar-edit-mask" title="Profil Fotoğrafını Değiştir">
-                                <i class="fa-solid fa-camera"></i>
-                            </div>
                             <div class="avatar-loading" id="avatar-loading">
                                 <i class="fa-solid fa-spinner"></i>
                                 <span id="avatar-upload-pct">0%</span>
@@ -1119,6 +1116,9 @@ async function loadProfileContent() {
                             ` : ''}
                         </div>
                         ${!isGuest ? `
+                        <div class="avatar-edit-btn" id="avatar-edit-btn" title="Profil Fotoğrafını Değiştir">
+                            <i class="fa-solid fa-pen"></i>
+                        </div>
                         <input type="file" id="avatar-upload-input" accept="image/jpeg, image/png, image/webp" style="display: none;">
                         ` : ''}
                     </div>
@@ -1229,7 +1229,7 @@ async function loadProfileContent() {
 
 // Avatar Yükleme Scripti
 function setupAvatarUploadEvents(user) {
-    const editMask = document.getElementById('avatar-edit-mask');
+    const editBtn = document.getElementById('avatar-edit-btn');
     const fileInput = document.getElementById('avatar-upload-input');
     const loadingMask = document.getElementById('avatar-loading');
     const loadingPct = document.getElementById('avatar-upload-pct');
@@ -1238,9 +1238,9 @@ function setupAvatarUploadEvents(user) {
     // Header'da bulunan küçük avatar ikonu
     const headerAvatar = document.querySelector('.user-stats-header .profile-avatar-small');
 
-    if (!editMask || !fileInput) return;
+    if (!editBtn || !fileInput) return;
 
-    editMask.addEventListener('click', () => {
+    editBtn.addEventListener('click', () => {
         fileInput.click();
     });
 
@@ -1260,7 +1260,7 @@ function setupAvatarUploadEvents(user) {
 
         try {
             // Yükleme arayüzünü aç
-            editMask.style.display = 'none';
+            editBtn.style.display = 'none';
             loadingMask.style.display = 'flex';
 
             // Storage referansını al ve yükleme işlemini başlat
@@ -1280,7 +1280,7 @@ function setupAvatarUploadEvents(user) {
                     console.error("Yükleme sırasında hata:", error);
                     alert("Fotoğraf yüklenemedi. Ağ bağlantınızı kontrol edin.");
                     loadingMask.style.display = 'none';
-                    editMask.style.display = 'flex';
+                    editBtn.style.display = 'flex';
                 },
                 async () => {
                     // Yükleme tamamlandı, URL'yi al
@@ -1323,7 +1323,7 @@ function setupAvatarUploadEvents(user) {
 
                     // Yükleme arayüzünü kapat
                     loadingMask.style.display = 'none';
-                    editMask.style.display = 'flex';
+                    editBtn.style.display = 'flex';
                     if (loadingPct) loadingPct.innerText = '0%';
 
                     fileInput.value = ''; // Inputu temizle
@@ -1334,7 +1334,7 @@ function setupAvatarUploadEvents(user) {
             console.error("Beklenmeyen yükleme hatası:", error);
             alert("Beklenmeyen bir hata oluştu.");
             loadingMask.style.display = 'none';
-            editMask.style.display = 'flex';
+            editBtn.style.display = 'flex';
         }
     });
 }

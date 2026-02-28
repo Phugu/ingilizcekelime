@@ -1365,15 +1365,21 @@ function setupAvatarUploadEvents(user) {
                                         // Firestore'un server timestamp'i veya JS Date kullanabiliriz.
                                         // detectedObjects dökümanında genellikle 'updateTime' veya snapshot'ın kendi metadata'sı olur.
                                         // En garantisi döküman içindeki bir zaman alanına bakmaktır.
-                                        const docUpdateTime = detectionData.updated ? (detectionData.updated.seconds * 1000) : Date.now();
+                                        const docUpdateTime = detectionData.updated ? (detectionData.updated.seconds * 1000) : (docSnap.updateTime ? docSnap.updateTime.seconds * 1000 : Date.now());
+
+                                        console.log("DEBUG - Fotoğraf Yükleme Zamanı:", new Date(uploadTime).toLocaleTimeString());
+                                        console.log("DEBUG - AI Analiz Güncelleme Zamanı:", new Date(docUpdateTime).toLocaleTimeString());
 
                                         // Eğer döküman yükleme zamanımızdan öncesine aitse, bu eski (stale) veridir. Görmezden gel.
-                                        if (docUpdateTime < (uploadTime - 2000)) { // 2sn tolerans
-                                            console.log("Eski analiz sonucu atlanıyor (Stale data)... Yeni veri bekleniyor.");
+                                        if (docUpdateTime < (uploadTime - 5000)) { // 5sn tolerans
+                                            console.log("DEBUG: Eski (Stale) veri atlanıyor. Yeni analiz bekleniyor...");
                                             return;
                                         }
 
                                         if (detectionData && detectionData.objects && Array.isArray(detectionData.objects)) {
+                                            const allObjects = detectionData.objects.map(obj => `${obj.name || obj} (%${Math.round((obj.score || 0) * 100)})`);
+                                            console.log("🔍 AI'nın Gördüğü Her Şey:", allObjects.join(", "));
+
                                             // Güven sınırı %80'e çıkarıldı (Hatalı tespitleri sıfıra indirmek için)
                                             const foundObjects = detectionData.objects
                                                 .filter(obj => (obj.score || 0) >= 0.80)
@@ -1383,7 +1389,8 @@ function setupAvatarUploadEvents(user) {
                                             const hasForbidden = foundObjects.some(obj => FORBIDDEN_OBJECTS.includes(obj));
 
                                             if (hasForbidden) {
-                                                console.error("⛔ UYGUNSUZ İÇERİK TESPİT EDİLDİ!", foundObjects);
+                                                const detectedForbidden = foundObjects.filter(obj => FORBIDDEN_OBJECTS.includes(obj));
+                                                console.error("⛔ UYGUNSUZ İÇERİK!", detectedForbidden);
                                                 unsubscribe();
                                                 clearTimeout(detectionTimeout);
 
@@ -1401,14 +1408,14 @@ function setupAvatarUploadEvents(user) {
                                                     headerAvatar.innerHTML = escapeHTML((user.displayName || "A").charAt(0).toUpperCase());
                                                 }
 
-                                                const messageText = 'Yüklediğiniz fotoğrafta uygunsuz içerik tespit edildiği için engellendi. Lütfen kurallara uygun bir fotoğraf yükleyin.';
+                                                const messageText = `Yüklediğiniz fotoğrafta Yapay Zeka tarafından "${detectedForbidden.join(", ")}" tespit edildiği için engellendi.`;
                                                 if (typeof Swal !== 'undefined') {
-                                                    Swal.fire({ icon: 'error', title: 'Uygunsuz İçerik!', text: messageText, confirmButtonColor: '#3085d6' });
+                                                    Swal.fire({ icon: 'error', title: 'Uygunsuz İçerik!', text: messageText, footer: 'Görülen Nesneler: ' + allObjects.join(", ") });
                                                 } else {
                                                     alert('⚠️ UYGUNSUZ İÇERİK!\n\n' + messageText);
                                                 }
                                             } else {
-                                                console.log("✅ Profil fotoğrafı temiz.");
+                                                console.log("✅ Profil fotoğrafı temiz. Görülenler:", allObjects.join(", "));
                                                 unsubscribe();
                                                 clearTimeout(detectionTimeout);
                                             }

@@ -397,14 +397,15 @@
             document.getElementById('auth-container').classList.add('hide');
             document.getElementById('app-container').classList.remove('hide');
 
-            // Ana uygulamayı başlat
-            if (typeof initApp === 'function') {
-                console.log('initApp fonksiyonu çağrılıyor...');
+            // Ana uygulamayı başlat (SADECE ilk girişte)
+            const appContainer = document.getElementById('app-container');
+            if (typeof initApp === 'function' && appContainer.classList.contains('hide')) {
+                console.error('🚀 DEBUG: Uygulama İLK KEZ başlatılıyor...');
                 initApp().catch(error => {
                     console.error('initApp çalıştırılırken hata:', error);
                 });
             } else {
-                console.error('initApp fonksiyonu bulunamadı');
+                console.error('ℹ️ DEBUG: Uygulama zaten aktif, initApp atlandı.');
             }
         };
     </script>

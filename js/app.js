@@ -1308,18 +1308,24 @@ function setupAvatarUploadEvents(user) {
                             await updateDoc(doc(db, "users_public", user.uid), { photoURL: cacheURL });
                         } catch (e) { console.error("⚠️ Firestore güncelleme atlandı:", e); }
 
-                        // DOM Güncelle
+                        // DOM Güncelle (Ana Profil Resmi)
                         if (mainAvatar) {
                             mainAvatar.style.backgroundImage = `url('${cacheURL}')`;
                             mainAvatar.style.backgroundSize = 'cover';
                             mainAvatar.style.backgroundPosition = 'center';
                             mainAvatar.style.color = 'transparent';
                             mainAvatar.innerHTML = '';
+                            console.error("🎨 DOM: Main avatar güncellendi.");
                         }
 
-                        // Header ve Genel Senkron
-                        if (typeof window.showDashboard === 'function') {
-                            window.showDashboard({ ...auth.currentUser, photoURL: cacheURL });
+                        // Header Avatar Güncelle
+                        const headerAvatar = document.getElementById('header-profile-avatar');
+                        if (headerAvatar) {
+                            headerAvatar.style.backgroundImage = `url('${cacheURL}')`;
+                            headerAvatar.style.backgroundSize = 'cover';
+                            headerAvatar.style.backgroundPosition = 'center';
+                            headerAvatar.innerHTML = '';
+                            console.error("🎨 DOM: Header avatar güncellendi.");
                         }
 
                         loadingMask.style.display = 'none';
@@ -1357,7 +1363,15 @@ function setupAvatarUploadEvents(user) {
                                                 unsubscribe();
                                                 const fallback = "https://ui-avatars.com/api/?name=" + (user.displayName || "A") + "&background=random";
                                                 await updateProfile(auth.currentUser, { photoURL: fallback });
-                                                window.showDashboard({ ...auth.currentUser, photoURL: fallback });
+
+                                                // Yasaklı durumda UI sıfırlama (Direct DOM) - Sayfa değişmemesi için
+                                                [mainAvatar, headerAvatar].forEach(el => {
+                                                    if (el) {
+                                                        el.style.backgroundImage = 'none';
+                                                        el.innerHTML = (user.displayName || "A").charAt(0).toUpperCase();
+                                                    }
+                                                });
+
                                                 Swal.fire({ icon: 'error', title: 'Yasaklı İçerik!', text: `Yapay zeka şunları tespit etti: ${bad.join(", ")}`, footer: `Rapor: ${all.join(", ")}` });
                                             } else {
                                                 console.error("✅ TEMİZ");

@@ -117,7 +117,7 @@ async function handleFriendSearch() {
                     ${avatarHtml}
                     <div>
                         <div style="color: var(--text-main); font-weight: bold; font-size: 16px;">${userData.name}</div>
-                        <div style="color: var(--text-muted); font-size: 12px;">Seviye ${userData.level || 1} • ${userData.xp || 0} XP</div>
+                        <div style="color: var(--text-muted); font-size: 12px;">Seviye ${userData.level || 1} • ${userData.total_xp || userData.xp || 0} XP</div>
                     </div>
                 </div>
                 <button class="btn add-friend-btn" data-uid="${targetUserId}" data-name="${userData.name}" style="padding: 8px 15px; font-size: 13px;">İstek Gönder</button>

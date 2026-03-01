@@ -2554,6 +2554,96 @@ window.showPublicProfile = async function (uid) {
                 avatarEl.innerHTML = escapeHTML(rawName.charAt(0).toUpperCase());
             }
 
+            // ARKADAŞLIK BUTONU MANTIĞI
+            const actionContainer = document.getElementById('public-profile-action-container');
+            const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
+
+            if (!currentUser || currentUser.isGuest || currentUser.uid === uid) {
+                actionContainer.innerHTML = ''; // Giriş yok, misafir veya kendisi ise buton gösterme
+            } else {
+                actionContainer.innerHTML = `<p style="color: var(--text-muted); font-size: 13px;">Kontrol ediliyor...</p>`;
+
+                // İlişki durumunu kontrol et
+                const relationId = [currentUser.uid, uid].sort().join('_');
+                const relationRef = doc(db, "friendships", relationId);
+                const relSnap = await getDoc(relationRef);
+
+                if (!relSnap.exists()) {
+                    // İstek yok, buton göster
+                    actionContainer.innerHTML = `
+                         <button class="btn" id="modal-add-friend-btn" style="width: 100%; padding: 12px; font-weight: bold;">
+                             <span style="font-size: 18px; margin-right: 8px;">👤+</span> Arkadaş Ekle
+                         </button>`;
+
+                    document.getElementById('modal-add-friend-btn').onclick = async function () {
+                        this.disabled = true;
+                        this.textContent = 'Gönderiliyor...';
+                        try {
+                            await setDoc(relationRef, {
+                                users: [currentUser.uid, uid],
+                                status: 'pending',
+                                senderId: currentUser.uid,
+                                senderName: currentUser.displayName || 'İsimsiz Kullanıcı',
+                                receiverId: uid,
+                                receiverName: rawName,
+                                createdAt: Timestamp.now()
+                            });
+                            actionContainer.innerHTML = `<p style="color: var(--success-color); font-weight: bold;">✓ İstek Gönderildi</p>`;
+                        } catch (e) {
+                            console.error(e);
+                            this.disabled = false;
+                            this.textContent = 'Hata! Tekrar Dene';
+                        }
+                    };
+                } else {
+                    const relData = relSnap.data();
+                    if (relData.status === 'accepted') {
+                        actionContainer.innerHTML = `
+                             <div style="display: flex; flex-direction: column; gap: 10px;">
+                                 <p style="color: var(--success-color); font-weight: bold; margin-bottom: 5px;">✓ Arkadaşsınız</p>
+                                 <button class="btn" id="modal-remove-friend-btn" style="background-color: var(--error-color); border-color: var(--error-color); padding: 8px; font-size: 13px; width: auto; align-self: center;">
+                                     Arkadaşlığı Bitir
+                                 </button>
+                             </div>`;
+
+                        document.getElementById('modal-remove-friend-btn').onclick = async function () {
+                            if (confirm("Bu kişiyi arkadaşlıktan çıkarmak istediğinize emin misiniz?")) {
+                                await deleteDoc(relationRef);
+                                window.showPublicProfile(uid); // Menüyü yenile
+                            }
+                        };
+                    } else if (relData.status === 'pending') {
+                        if (relData.senderId === currentUser.uid) {
+                            actionContainer.innerHTML = `
+                                 <p style="color: var(--primary-color); font-weight: bold; margin-bottom:10px;">⌛ İstek Gönderildi</p>
+                                 <button class="btn" id="modal-cancel-req-btn" style="background-color: var(--error-color); border-color: var(--error-color); padding: 8px; font-size: 13px;">
+                                     İsteği İptal Et
+                                 </button>`;
+                            document.getElementById('modal-cancel-req-btn').onclick = async function () {
+                                await deleteDoc(relationRef);
+                                window.showPublicProfile(uid);
+                            };
+                        } else {
+                            actionContainer.innerHTML = `
+                                 <p style="color: var(--primary-color); font-weight: bold; margin-bottom:10px;">👋 Size istek gönderdi</p>
+                                 <div style="display: flex; gap: 10px; justify-content: center;">
+                                     <button class="btn" id="modal-accept-req-btn" style="background-color: var(--success-color); border-color: var(--success-color); padding: 10px 20px;">Kabul Et</button>
+                                     <button class="btn" id="modal-reject-req-btn" style="background-color: var(--error-color); border-color: var(--error-color); padding: 10px 20px;">Reddet</button>
+                                 </div>`;
+
+                            document.getElementById('modal-accept-req-btn').onclick = async function () {
+                                await updateDoc(relationRef, { status: 'accepted' });
+                                window.showPublicProfile(uid);
+                            };
+                            document.getElementById('modal-reject-req-btn').onclick = async function () {
+                                await deleteDoc(relationRef);
+                                window.showPublicProfile(uid);
+                            };
+                        }
+                    }
+                }
+            }
+
         } else {
             document.getElementById('public-profile-name').textContent = 'Kullanıcı Bulunamadı';
             avatarEl.innerHTML = '?';

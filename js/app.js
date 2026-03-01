@@ -362,7 +362,7 @@ function setupForms() {
         }
 
         try {
-            // ... (Firebase create user)
+            console.log("Kayıt işlemi başlatılıyor: ", email);
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
@@ -390,11 +390,16 @@ function setupForms() {
             await setDoc(doc(db, "users_public", user.uid), publicData);
             await setDoc(doc(db, "users_private", user.uid), privateData);
 
-            console.log('Kayıt başarılı (Public/Private ayrışımı tamam):', user.email);
+            console.log('Kayıt başarılı, dökümanlar oluşturuldu. E-posta onayına geçiliyor...');
 
-            // Doğrulama e-postası gönder
-            await sendEmailVerification(user);
-            console.log('Doğrulama e-postası gönderildi.');
+            // DOĞRULAMA E-POSTASI GÖNDER (Sadece bir kere gönderilmesini sağla)
+            if (!window.initialVerificationSent) {
+                window.initialVerificationSent = true;
+                await sendEmailVerification(user);
+                console.log('Doğrulama e-postası başarıyla gönderildi (İlk Gönderim).');
+            } else {
+                console.warn('Doğrulama e-postası zaten gönderilmiş, tekrar gönderilmedi.');
+            }
 
             // Kayıt bitti bayrağı kaldır
             window.isRegistering = false;

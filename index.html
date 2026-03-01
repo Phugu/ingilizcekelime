@@ -55,7 +55,7 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20260301_v10">
     <!-- SweetAlert2 CSS (Yedek) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script type="module" src="js/firebase-init.js"></script>
@@ -210,6 +210,12 @@
             <button id="resend-verification-btn" class="btn" style="margin-bottom: 10px;" disabled>
                 Tekrar Gönder (Lütfen 60s bekleyin)
             </button>
+
+            <p style="font-size: 11px; margin-top: 10px; color: var(--text-muted);">
+                Doğrulama yaptıysanız ve hala buradaysanız <a href="javascript:void(0)"
+                    onclick="window.location.reload(true)" style="color: var(--primary-color);">sayfayı yenilemeyi</a>
+                veya butona basmayı deneyin.
+            </p>
 
             <div style="margin: 15px 0; text-align: center; position: relative;">
                 <hr style="border: none; border-top: 1px solid var(--border-color);">
@@ -427,10 +433,10 @@
         };
     </script>
 
-    <!-- Önce bağımlılıkları yükle -->
-    <script type="module" src="js/app.js?v=202602281922"></script>
-    <script type="module" src="js/learning.js?v=202602281922"></script>
-    <script type="module" src="js/friends.js?v=20260301"></script>
+    <!-- Bağımlılıkları yükle (Cache Busting Aktif) -->
+    <script type="module" src="js/app.js?v=20260301_v10"></script>
+    <script type="module" src="js/learning.js?v=20260301_v10"></script>
+    <script type="module" src="js/friends.js?v=20260301_v10"></script>
 
     <!-- Çerez Bildirimi -->
     <!-- Herkese Açık Profil Modalı (Liderlik) -->

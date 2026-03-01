@@ -246,8 +246,8 @@ function refreshFriendsData() {
                                 </div>
                             </div>
                             <div style="display: flex; gap: 8px;">
-                                <button class="btn btn-accept-req" data-id="${relId}" style="background-color: var(--success-color); border-color: var(--success-color); padding: 8px 12px; font-size: 13px;">Kabul Et</button>
-                                <button class="btn btn-reject-req" data-id="${relId}" style="background-color: var(--error-color); border-color: var(--error-color); padding: 8px 12px; font-size: 13px;">Reddet</button>
+                                <button class="btn btn-accept-req" data-id="${relId}" style="background-color: var(--success-color); border-color: var(--success-color); color: white; padding: 8px 12px; font-size: 13px;">Kabul Et</button>
+                                <button class="btn btn-reject-req" data-id="${relId}" style="background-color: var(--error-color); border-color: var(--error-color); color: white; padding: 8px 12px; font-size: 13px;">Reddet</button>
                             </div>
                         </div>
                     `;
@@ -294,11 +294,15 @@ function attachActionListeners() {
 
     // Sohbeti Aç
     document.querySelectorAll('.btn-chat-open').forEach(btn => {
-        btn.addEventListener('click', function () {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
             const id = this.getAttribute('data-id');
             const name = this.getAttribute('data-name');
-            // Avatar varsa URL çekilebilir, şimdilik isimden baş harf otomatik
-            openChatWindow(id, name);
+            if (window.openChatWindow) {
+                window.openChatWindow(id, name);
+            } else {
+                console.error("Chat engine not loaded yet!");
+            }
         });
     });
 

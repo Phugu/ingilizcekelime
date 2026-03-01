@@ -15,6 +15,9 @@
     --turkish-row-bg: #f9fff9;
     --xp-bar-bg: #e0e0e0;
     --xp-bar-fill: #f1c40f;
+    --success-color: #2ecc71;
+    --error-color: #e74c3c;
+    --secondary-color: #9b59b6;
 }
 
 .dark-theme {
@@ -32,6 +35,9 @@
     --turkish-row-bg: #050a05;
     --xp-bar-bg: #333333;
     --xp-bar-fill: #f39c12;
+    --success-color: #27ae60;
+    --error-color: #c0392b;
+    --secondary-color: #8e44ad;
 }
 
 .theme-toggle {

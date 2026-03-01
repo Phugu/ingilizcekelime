@@ -84,6 +84,7 @@ function hideAllContentSections() {
     document.getElementById('recent-words-content').classList.add('hide');
     document.getElementById('leaderboard-content')?.classList.add('hide');
     document.getElementById('settings-content')?.classList.add('hide');
+    document.getElementById('friends-content')?.classList.add('hide');
 }
 
 // Aktif navigasyon öğesini güncelle
@@ -222,6 +223,18 @@ function setupMainNavigation(userId) {
         document.getElementById('profile-content').classList.remove('hide');
         updateActiveNav(this);
         loadProfileContent();
+    });
+
+    document.getElementById('nav-friends').addEventListener('click', function (e) {
+        e.preventDefault();
+        hideAllContentSections();
+        document.getElementById('friends-content').classList.remove('hide');
+        updateActiveNav(this);
+
+        // friends.js'in global loadFriendsUI fonksiyonu çağrılır
+        if (window.loadFriendsUI) {
+            window.loadFriendsUI();
+        }
     });
 }
 

@@ -390,9 +390,20 @@ async function handleSendMessage() {
     try {
         await addDoc(messagesRef, {
             senderId: currentUser.uid,
+            senderName: currentUser.displayName || 'İsimsiz',
             text: text,
             timestamp: Timestamp.now()
         });
+
+        // Dostluk dökümanını güncelle (Bildirim motoru için)
+        const friendshipRef = doc(db, "friendships", chatId);
+        await updateDoc(friendshipRef, {
+            lastMessage: text,
+            lastMessageSenderId: currentUser.uid,
+            lastMessageTimestamp: Timestamp.now(),
+            ['unread_' + currentChatFriendId]: true // Alıcı için okunmadı işaretle
+        });
+
     } catch (err) {
         console.error("Mesaj gönderilemedi:", err);
     }
@@ -436,45 +447,90 @@ function listenForMessages(friendId) {
 
 
 // Global olarak public profile açma metodunu sızdır (Leaderboard veya Arkadaşlar listesi için)
-window.showPublicProfileModal = async function (userId) {
-    console.log("⌛ Profil modalı açılıyor:", userId);
-    // Eğer app.js'deki asıl fonksiyon varsa onu kullan
-    if (typeof window.showPublicProfile === 'function') {
-        window.showPublicProfile(userId);
-        return;
-    }
+// GLOBAL BİLDİRİM MOTORU
+let globalChatUnsubscribe = null;
 
-    // Yoksa (fallback)
-    const modal = document.getElementById('public-profile-modal');
-    if (!modal) return;
+window.setupGlobalChatListener = function () {
+    const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
+    if (!currentUser || currentUser.isGuest) return;
+
+    const db = window.firestore;
+    const q = query(
+        collection(db, "friendships"),
+        where("users", "array-contains", currentUser.uid),
+        where("status", "==", "accepted")
+    );
+
+    if (globalChatUnsubscribe) globalChatUnsubscribe();
+
+    globalChatUnsubscribe = onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "modified") {
+                const data = change.doc.data();
+
+                // Eğer son mesajı ben göndermediysem ve sohbet şu an açık değilse bildir
+                const isIncoming = data.lastMessageSenderId !== currentUser.uid;
+                const isChatActive = window.currentChatFriendId === data.lastMessageSenderId; // Yanlış mantık olabilir, friendId bulmalıyız
+
+                // Göndereni bul (ben olmayan kullanıcı)
+                const senderId = data.users.find(id => id !== currentUser.uid);
+                const isCurrentlyChatting = currentChatFriendId === senderId && document.getElementById('chat-widget-container').classList.contains('active');
+
+                if (isIncoming && !isCurrentlyChatting && data['unread_' + currentUser.uid]) {
+                    showGlobalNotification(data.senderName || data.receiverName || "Arkadaş", data.lastMessage, senderId);
+                }
+            }
+        });
+    });
+};
+
+function showGlobalNotification(name, text, uid) {
+    const bubble = document.getElementById('message-notification-bubble');
+    const bName = document.getElementById('bubble-name');
+    const bText = document.getElementById('bubble-text');
+    const bAvatar = document.getElementById('bubble-avatar');
+
+    if (!bubble) return;
+
+    bName.textContent = name;
+    bText.textContent = text;
+    bAvatar.textContent = name.charAt(0).toUpperCase();
+
+    // Dataset ayarla (tıklayınca doğru kişiyi açsın)
+    bubble.dataset.uid = uid;
+    bubble.dataset.name = name;
+
+    bubble.classList.replace('hide-bubble', 'show-bubble');
+
+    // 5 saniye sonra gizle
+    setTimeout(() => {
+        bubble.classList.replace('show-bubble', 'hide-bubble');
+    }, 5000);
+}
+
+// Global dökümandaki okunmadı bilgisini temizle
+async function markAsRead(friendId) {
+    const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
+    const db = window.firestore;
+    const chatId = [currentUser.uid, friendId].sort().join('_');
+    const friendshipRef = doc(db, "friendships", chatId);
 
     try {
-        const db = window.firestore;
-        const profileRef = doc(db, "users_public", userId);
-        const docSnap = await getDoc(profileRef);
+        await updateDoc(friendshipRef, {
+            ['unread_' + currentUser.uid]: false
+        });
+    } catch (e) { }
+}
 
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            document.getElementById('public-profile-name').textContent = data.name || 'İsimsiz';
-            document.getElementById('public-profile-level').textContent = `Seviye ${data.level || 1}`;
-            document.getElementById('public-profile-streak').textContent = data.streak || 0;
-            document.getElementById('public-profile-xp').textContent = data.xp || 0;
-
-            const avatarEl = document.getElementById('public-profile-avatar');
-            if (data.photoURL) {
-                avatarEl.style.backgroundImage = `url('${data.photoURL}')`;
-                avatarEl.textContent = '';
-            } else {
-                avatarEl.style.backgroundImage = 'none';
-                avatarEl.textContent = (data.name || 'M').charAt(0).toUpperCase();
-            }
-
-            modal.classList.remove('hide');
-            document.getElementById('close-public-profile-btn').onclick = () => {
-                modal.classList.add('hide');
-            };
-        }
-    } catch (err) {
-        console.error("Profil modalı hatası:", err);
-    }
+// openChatWindow içine temizleme ekleyelim
+const originalOpenChat = window.openChatWindow;
+window.openChatWindow = function (id, name) {
+    markAsRead(id);
+    if (originalOpenChat) originalOpenChat(id, name);
 };
+
+
+// Initialize global listener
+window.addEventListener('load', () => {
+    // Oturumun hazır olmasını beklemek için app.js setupVerificationScreen sonrası veya onAuthStateChanged sonrası daha iyi
+});

@@ -55,7 +55,7 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="css/style.css?v=20260301_v13">
+    <link rel="stylesheet" href="css/style.css?v=20260301_v14">
     <!-- SweetAlert2 CSS (Yedek) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script type="module" src="js/firebase-init.js"></script>
@@ -434,9 +434,9 @@
     </script>
 
     <!-- Bağımlılıkları yükle (Cache Busting Aktif) -->
-    <script type="module" src="js/app.js?v=20260301_v13"></script>
-    <script type="module" src="js/learning.js?v=20260301_v13"></script>
-    <script type="module" src="js/friends.js?v=20260301_v13"></script>
+    <script type="module" src="js/app.js?v=20260301_v14"></script>
+    <script type="module" src="js/learning.js?v=20260301_v14"></script>
+    <script type="module" src="js/friends.js?v=20260301_v14"></script>
 
     <!-- Çerez Bildirimi -->
     <!-- Herkese Açık Profil Modalı (Liderlik) -->
@@ -548,6 +548,18 @@
         </div>
     </div>
 
+    <!-- Mesaj Bildirim Balonu (Global) -->
+    <div id="message-notification-bubble" class="hide-bubble"
+        onclick="this.classList.replace('show-bubble', 'hide-bubble'); if(window.openChatWindow) window.openChatWindow(this.dataset.uid, this.dataset.name)">
+        <div class="bubble-content">
+            <div id="bubble-avatar" class="bubble-avatar">?</div>
+            <div class="bubble-info">
+                <div id="bubble-name" class="bubble-name">Yeni Mesaj</div>
+                <div id="bubble-text" class="bubble-text">Bir mesajınız var.</div>
+            </div>
+        </div>
+    </div>
+
     <style>
         #chat-widget-container {
             position: fixed;
@@ -644,6 +656,85 @@
             margin-top: 4px;
             display: block;
             text-align: right;
+        }
+
+        /* Bildirim Balonu Stilleri */
+        #message-notification-bubble {
+            position: fixed;
+            bottom: 85px;
+            /* Sohbet butonunun üstünde veya yanında */
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--primary-color);
+            border-radius: 50px;
+            padding: 8px 15px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+            z-index: 10002;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 250px;
+            overflow: hidden;
+        }
+
+        .bubble-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bubble-avatar {
+            width: 35px;
+            height: 35px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .bubble-info {
+            overflow: hidden;
+        }
+
+        .bubble-name {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--primary-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bubble-text {
+            font-size: 11px;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .show-bubble {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .hide-bubble {
+            transform: scale(0.5) translateY(20px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Dark Theme Bubble */
+        .dark-theme #message-notification-bubble {
+            background: #1a1a1a;
+            border-color: var(--primary-color);
         }
     </style>
     <div id="cookie-consent" class="cookie-consent">

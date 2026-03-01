@@ -511,6 +511,11 @@ async function initApp() {
         // Ana navigasyonu ayarla
         setupMainNavigation(userId);
 
+        // Global Chat Listener Başlat
+        if (window.setupGlobalChatListener) {
+            window.setupGlobalChatListener();
+        }
+
         // Dashboard'ı başlat
         const dashboard = new Dashboard('dashboard-content', userId);
         await dashboard.init();

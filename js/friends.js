@@ -335,21 +335,30 @@ function attachActionListeners() {
     });
 }
 
-// CHAT ENGINE
+// CHAT ENGINE SETTINGS
 let activeChatUnsubscribe = null;
 let currentChatFriendId = null;
 
+// Global as soon as possible
 window.openChatWindow = function (friendId, friendName) {
+    console.log("🚀 Sohbet açılıyor:", friendId, friendName);
     const widget = document.getElementById('chat-widget-container');
     const nameEl = document.getElementById('chat-friend-name');
     const avatarEl = document.getElementById('chat-friend-avatar');
 
+    if (!widget || !nameEl || !avatarEl) {
+        console.error("❌ Sohbet bileşenleri bulunamadı!");
+        return;
+    }
+
     currentChatFriendId = friendId;
     nameEl.textContent = friendName;
-    avatarEl.textContent = friendName.charAt(0).toUpperCase();
+    avatarEl.textContent = (friendName || "?").charAt(0).toUpperCase();
 
     widget.classList.remove('hide');
-    setTimeout(() => widget.classList.add('active'), 10);
+    // Force reflow
+    void widget.offsetWidth;
+    widget.classList.add('active');
 
     // Mesajları dinle
     listenForMessages(friendId);
@@ -361,6 +370,9 @@ window.openChatWindow = function (friendId, friendName) {
         if (e.key === 'Enter') handleSendMessage();
     };
 }
+
+window.closeChatWindow = closeChatWindow;
+window.handleSendMessage = handleSendMessage;
 
 function closeChatWindow() {
     const widget = document.getElementById('chat-widget-container');
@@ -437,49 +449,44 @@ function listenForMessages(friendId) {
 
 // Global olarak public profile açma metodunu sızdır (Leaderboard veya Arkadaşlar listesi için)
 window.showPublicProfileModal = async function (userId) {
-    if (typeof window._showPublicProfile === 'function') {
-        // Zaten app.js'de tanimlanan ayni mantigi cagirabiliriz ama yoksa buradan manuel cagirmaliyiz.
-        // Eger yoksa biz basitce profile modal'i gosteririz:
-        const modal = document.getElementById('public-profile-modal');
-        if (!modal) return;
+    console.log("⌛ Profil modalı açılıyor:", userId);
+    // Eğer app.js'deki asıl fonksiyon varsa onu kullan
+    if (typeof window.showPublicProfile === 'function') {
+        window.showPublicProfile(userId);
+        return;
+    }
 
-        try {
-            const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-            const db = window.firestore;
-            const profileRef = doc(db, "users_public", userId);
-            const docSnap = await getDoc(profileRef);
+    // Yoksa (fallback)
+    const modal = document.getElementById('public-profile-modal');
+    if (!modal) return;
 
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                document.getElementById('public-profile-name').textContent = data.name || 'İsimsiz';
-                document.getElementById('public-profile-level').textContent = `Seviye ${data.level || 1}`;
-                document.getElementById('public-profile-streak').textContent = data.streak || 0;
-                document.getElementById('public-profile-xp').textContent = data.xp || 0;
+    try {
+        const db = window.firestore;
+        const profileRef = doc(db, "users_public", userId);
+        const docSnap = await getDoc(profileRef);
 
-                // Profil resmi veya baş harf
-                const avatarEl = document.getElementById('public-profile-avatar');
-                if (data.photoURL) {
-                    avatarEl.style.backgroundImage = `url('${data.photoURL}')`;
-                    avatarEl.textContent = '';
-                } else {
-                    avatarEl.style.backgroundImage = 'none';
-                    avatarEl.textContent = (data.name || 'M').charAt(0).toUpperCase();
-                }
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            document.getElementById('public-profile-name').textContent = data.name || 'İsimsiz';
+            document.getElementById('public-profile-level').textContent = `Seviye ${data.level || 1}`;
+            document.getElementById('public-profile-streak').textContent = data.streak || 0;
+            document.getElementById('public-profile-xp').textContent = data.xp || 0;
 
-                // Diger istatistikleri cekmek icin efor (sade kullanim icin simdilik gizli veya 0)
-                document.getElementById('public-profile-quizzes').textContent = 'Gizli';
-                document.getElementById('public-profile-words').textContent = 'Gizli';
-
-                modal.classList.remove('hide');
-
-                document.getElementById('close-public-profile-btn').onclick = () => {
-                    modal.classList.add('hide');
-                };
+            const avatarEl = document.getElementById('public-profile-avatar');
+            if (data.photoURL) {
+                avatarEl.style.backgroundImage = `url('${data.photoURL}')`;
+                avatarEl.textContent = '';
+            } else {
+                avatarEl.style.backgroundImage = 'none';
+                avatarEl.textContent = (data.name || 'M').charAt(0).toUpperCase();
             }
-        } catch (err) {
-            console.error(err);
+
+            modal.classList.remove('hide');
+            document.getElementById('close-public-profile-btn').onclick = () => {
+                modal.classList.add('hide');
+            };
         }
-    } else {
-        window._showPublicProfile(userId);
+    } catch (err) {
+        console.error("Profil modalı hatası:", err);
     }
 };

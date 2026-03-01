@@ -202,6 +202,11 @@
             </div>
             <p style="color: var(--primary-color); font-weight: bold; margin-bottom: 20px;">Onayınız bekleniyor...</p>
 
+            <button id="check-verification-btn" class="btn"
+                style="margin-bottom: 10px; background-color: var(--success-color); border-color: var(--success-color);">
+                Onayladım, İçeri Al
+            </button>
+
             <button id="resend-verification-btn" class="btn" style="margin-bottom: 10px;" disabled>
                 Tekrar Gönder (Lütfen 60s bekleyin)
             </button>
@@ -304,12 +309,18 @@
                         if (!window.verificationInterval) {
                             window.verificationInterval = setInterval(async () => {
                                 try {
-                                    await user.reload(); // Firebase'den güncel user durumunu çek
-                                    if (user.emailVerified) {
-                                        clearInterval(window.verificationInterval);
-                                        window.verificationInterval = null;
-                                        // Sayfayı yenile veya doğrudan dashboard'a sok
-                                        window.location.reload();
+                                    // Firebase auth instance'ından güncel kullanıcıyı al
+                                    const currentUser = window.firebaseAuth.currentUser;
+                                    if (currentUser) {
+                                        await currentUser.reload();
+                                        if (currentUser.emailVerified) {
+                                            console.log("E-posta doğrulandı! Yönlendiriliyor...");
+                                            clearInterval(window.verificationInterval);
+                                            window.verificationInterval = null;
+                                            // Refresh login state in localStorage
+                                            localStorage.setItem('isLoggedIn', 'true');
+                                            window.location.reload();
+                                        }
                                     }
                                 } catch (e) {
                                     console.error("Otomatik kontrol hatası:", e);

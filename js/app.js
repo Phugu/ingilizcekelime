@@ -306,6 +306,10 @@ function setupForms() {
     document.getElementById('register-form')?.addEventListener('submit', async function (e) {
         e.preventDefault();
 
+        // ÇİFT KAYIT ENGELİ
+        if (window.isRegistering) return;
+        window.isRegistering = true;
+
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalBtnText = submitBtn.textContent;
         submitBtn.disabled = true;
@@ -391,6 +395,9 @@ function setupForms() {
             // Doğrulama e-postası gönder
             await sendEmailVerification(user);
             console.log('Doğrulama e-postası gönderildi.');
+
+            // Kayıt bitti bayrağı kaldır
+            window.isRegistering = false;
 
             // onAuthStateChanged (index.html içinde) auth durumunu fark edip
             // otomatik olarak bizi doğrulama sayfasına geçirecek. Yenilemeye gerek yok.
@@ -2919,28 +2926,29 @@ function setupVerificationScreen() {
     const checkBtn = document.getElementById('check-verification-btn');
     if (checkBtn) {
         checkBtn.addEventListener('click', async () => {
-            const user = auth.currentUser;
+            const user = window.firebaseAuth.currentUser;
             if (user) {
                 checkBtn.textContent = 'Kontrol ediliyor...';
                 checkBtn.disabled = true;
                 try {
                     await user.reload();
                     if (user.emailVerified) {
+                        localStorage.setItem('isLoggedIn', 'true');
                         window.location.reload();
                     } else {
-                        checkBtn.textContent = 'Henüz onaylanmamış! (Tekrar deneyin)';
+                        checkBtn.textContent = 'Henüz onaylanmamış! Tekrar deneyin';
                         setTimeout(() => {
                             checkBtn.textContent = 'Onayladım, İçeri Al';
                             checkBtn.disabled = false;
-                        }, 3000);
+                        }, 2000);
                     }
                 } catch (e) {
                     console.error('Yenileme hatası:', e);
-                    checkBtn.textContent = 'Bağlantı Hatası (Tekrar tıklayın)';
+                    checkBtn.textContent = 'Hata (Tekrar deneyin)';
                     setTimeout(() => {
                         checkBtn.textContent = 'Onayladım, İçeri Al';
                         checkBtn.disabled = false;
-                    }, 3000);
+                    }, 2000);
                 }
             }
         });

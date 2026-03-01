@@ -243,8 +243,8 @@
                                 class="nav-text">Liderlik</span></a></li>
                     <li><a href="#" id="nav-profile"><span class="nav-icon">👤</span><span
                                 class="nav-text">Profil</span></a></li>
-                    <li><a href="#" id="nav-friends"><span class="nav-icon">🤝</span><span
-                                class="nav-text">Arkadaşlar</span></a></li>
+                    <li><a href="#" id="nav-friends"><span class="nav-icon">🌐</span><span
+                                class="nav-text">Sosyal</span></a></li>
                 </ul>
             </nav>
 
@@ -484,6 +484,105 @@
             </div>
         </div>
     </div>
+
+    <!-- Sohbet Penceresi (Chat Widget) -->
+    <div id="chat-widget-container" class="hide"
+        style="position: fixed; bottom: 20px; right: 20px; width: 320px; height: 450px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); border: 1px solid rgba(255, 255, 255, 0.3); z-index: 10001; display: flex; flex-direction: column; overflow: hidden; transform: translateY(20px); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+        <!-- Sohbet Başlığı -->
+        <div id="chat-header"
+            style="padding: 15px; background: var(--primary-color); color: white; display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div id="chat-friend-avatar"
+                    style="width: 32px; height: 32px; border-radius: 50%; background-color: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; background-size: cover; background-position: center;">
+                    ?</div>
+                <div style="line-height: 1.2;">
+                    <div id="chat-friend-name" style="font-weight: bold; font-size: 14px;">Kullanıcı</div>
+                    <div style="font-size: 10px; opacity: 0.8;" id="chat-status">Çevrimiçi</div>
+                </div>
+            </div>
+            <button id="close-chat-btn"
+                style="background: none; border: none; color: white; cursor: pointer; padding: 5px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Mesaj Alanı -->
+        <div id="chat-messages"
+            style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; background: rgba(255,255,255,0.2);">
+            <!-- Mesajlar buraya gelecek -->
+        </div>
+
+        <!-- Mesaj Yazma Alanı -->
+        <div
+            style="padding: 12px; background: white; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border-color);">
+            <input type="text" id="chat-input" placeholder="Mesaj yaz..."
+                style="flex: 1; padding: 10px; border: none; background: var(--bg-color); border-radius: 20px; outline: none; font-size: 14px; color: var(--text-main);">
+            <button id="send-chat-btn"
+                style="background: var(--primary-color); border: none; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <style>
+        #chat-widget-container.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .chat-msg {
+            max-width: 80%;
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+            position: relative;
+            animation: msgFadeIn 0.3s ease-out;
+        }
+
+        @keyframes msgFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-msg.sent {
+            align-self: flex-end;
+            background: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .chat-msg.received {
+            align-self: flex-start;
+            background: white;
+            color: var(--text-main);
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .msg-time {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 4px;
+            display: block;
+            text-align: right;
+        }
+    </style>
     <div id="cookie-consent" class="cookie-consent">
         <div class="cookie-text">
             Bu web sitesi, deneyiminizi geliştirmek için çerezleri kullanmaktadır. Detaylı bilgi için

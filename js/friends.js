@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, updateDoc, Timestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, setDoc, deleteDoc, updateDoc, Timestamp, onSnapshot, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Global loading function for the UI
 window.loadFriendsUI = function () {
@@ -9,11 +9,11 @@ window.loadFriendsUI = function () {
         // Build the basic structural UI
         container.innerHTML = `
             <div class="friends-wrapper" style="max-width: 800px; margin: 0 auto; padding: 20px;">
-                <h1 style="color: var(--text-main); margin-bottom: 20px;">Arkadaşlar</h1>
+                <h1 style="color: var(--text-main); margin-bottom: 20px;">Sosyal Hub</h1>
                 
                 <!-- Arama Bölümü -->
                 <div class="card" style="background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px;">
-                    <h2 style="color: var(--primary-color); font-size: 18px; margin-bottom: 15px;">Arkadaş Bul</h2>
+                    <h2 style="color: var(--primary-color); font-size: 18px; margin-bottom: 15px;">Kullanıcı Bul</h2>
                     <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                         <input type="text" id="friend-search-input" placeholder="Tam kullanıcı adı ile ara..." 
                                style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-main); font-size: 15px;">
@@ -211,14 +211,23 @@ function refreshFriendsData() {
                 const friendId = data.senderId === currentUser.uid ? data.receiverId : data.senderId;
 
                 friendsHtml += `
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px;">
-                        <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="showPublicProfileModal('${friendId}')">
-                            <div style="width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px;">
-                                ${friendName.charAt(0).toUpperCase()}
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="if(window.showPublicProfile) window.showPublicProfile('${friendId}')">
+                            <div style="width: 45px; height: 45px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background-size: cover; background-position: center;" 
+                                 ${data.photoURL ? `style="background-image: url('${data.photoURL}')"` : ''}>
+                                ${!data.photoURL ? friendName.charAt(0).toUpperCase() : ''}
                             </div>
-                            <div style="color: var(--text-main); font-weight: bold; font-size: 16px;">${friendName}</div>
+                            <div>
+                                <div style="color: var(--text-main); font-weight: bold; font-size: 16px;">${friendName}</div>
+                                <div style="color: var(--text-muted); font-size: 12px;">Çevrimiçi</div>
+                            </div>
                         </div>
-                        <button class="btn btn-remove-friend" data-id="${relId}" style="background-color: var(--error-color); border-color: var(--error-color); padding: 8px 12px; font-size: 13px;">Çıkar</button>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-chat-open" data-id="${friendId}" data-name="${friendName}" style="background-color: var(--secondary-color); border-color: var(--secondary-color); padding: 8px 15px; font-size: 13px; border-radius: 20px;">
+                                💬 Mesaj
+                            </button>
+                            <button class="btn btn-remove-friend" data-id="${relId}" style="background-color: transparent; border-color: var(--border-color); color: var(--text-muted); padding: 8px 12px; font-size: 13px; border-radius: 20px;">Çıkar</button>
+                        </div>
                     </div>
                 `;
             }
@@ -283,6 +292,16 @@ function refreshFriendsData() {
 function attachActionListeners() {
     const db = window.firestore;
 
+    // Sohbeti Aç
+    document.querySelectorAll('.btn-chat-open').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const id = this.getAttribute('data-id');
+            const name = this.getAttribute('data-name');
+            // Avatar varsa URL çekilebilir, şimdilik isimden baş harf otomatik
+            openChatWindow(id, name);
+        });
+    });
+
     // Kabul Et
     document.querySelectorAll('.btn-accept-req').forEach(btn => {
         btn.addEventListener('click', async function () {
@@ -311,6 +330,106 @@ function attachActionListeners() {
         });
     });
 }
+
+// CHAT ENGINE
+let activeChatUnsubscribe = null;
+let currentChatFriendId = null;
+
+window.openChatWindow = function (friendId, friendName) {
+    const widget = document.getElementById('chat-widget-container');
+    const nameEl = document.getElementById('chat-friend-name');
+    const avatarEl = document.getElementById('chat-friend-avatar');
+
+    currentChatFriendId = friendId;
+    nameEl.textContent = friendName;
+    avatarEl.textContent = friendName.charAt(0).toUpperCase();
+
+    widget.classList.remove('hide');
+    setTimeout(() => widget.classList.add('active'), 10);
+
+    // Mesajları dinle
+    listenForMessages(friendId);
+
+    // Olayları bağla
+    document.getElementById('close-chat-btn').onclick = closeChatWindow;
+    document.getElementById('send-chat-btn').onclick = handleSendMessage;
+    document.getElementById('chat-input').onkeypress = (e) => {
+        if (e.key === 'Enter') handleSendMessage();
+    };
+}
+
+function closeChatWindow() {
+    const widget = document.getElementById('chat-widget-container');
+    widget.classList.remove('active');
+    setTimeout(() => widget.classList.add('hide'), 300);
+
+    if (activeChatUnsubscribe) {
+        activeChatUnsubscribe();
+        activeChatUnsubscribe = null;
+    }
+    currentChatFriendId = null;
+}
+
+async function handleSendMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || !currentChatFriendId) return;
+
+    const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
+    const db = window.firestore;
+
+    const chatId = [currentUser.uid, currentChatFriendId].sort().join('_');
+    const messagesRef = collection(db, "chats", chatId, "messages");
+
+    input.value = '';
+
+    try {
+        await addDoc(messagesRef, {
+            senderId: currentUser.uid,
+            text: text,
+            timestamp: Timestamp.now()
+        });
+    } catch (err) {
+        console.error("Mesaj gönderilemedi:", err);
+    }
+}
+
+function listenForMessages(friendId) {
+    const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
+    const db = window.firestore;
+    const chatId = [currentUser.uid, friendId].sort().join('_');
+    const messagesRef = collection(db, "chats", chatId, "messages");
+
+    const q = query(messagesRef, orderBy("timestamp", "asc"));
+
+    if (activeChatUnsubscribe) activeChatUnsubscribe();
+
+    const messagesContainer = document.getElementById('chat-messages');
+    messagesContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:var(--text-muted);">Sohbet başlatıldı</p>';
+
+    activeChatUnsubscribe = onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                const data = change.doc.data();
+                const isSent = data.senderId === currentUser.uid;
+
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `chat-msg ${isSent ? 'sent' : 'received'}`;
+
+                const time = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
+
+                msgDiv.innerHTML = `
+                    <div>${data.text}</div>
+                    <span class="msg-time">${time}</span>
+                `;
+
+                messagesContainer.appendChild(msgDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        });
+    });
+}
+
 
 // Global olarak public profile açma metodunu sızdır (Leaderboard veya Arkadaşlar listesi için)
 window.showPublicProfileModal = async function (userId) {

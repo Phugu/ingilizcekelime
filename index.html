@@ -55,7 +55,7 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="css/style.css?v=20260301_v12">
+    <link rel="stylesheet" href="css/style.css?v=20260301_v13">
     <!-- SweetAlert2 CSS (Yedek) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script type="module" src="js/firebase-init.js"></script>
@@ -434,9 +434,9 @@
     </script>
 
     <!-- Bağımlılıkları yükle (Cache Busting Aktif) -->
-    <script type="module" src="js/app.js?v=20260301_v12"></script>
-    <script type="module" src="js/learning.js?v=20260301_v12"></script>
-    <script type="module" src="js/friends.js?v=20260301_v12"></script>
+    <script type="module" src="js/app.js?v=20260301_v13"></script>
+    <script type="module" src="js/learning.js?v=20260301_v13"></script>
+    <script type="module" src="js/friends.js?v=20260301_v13"></script>
 
     <!-- Çerez Bildirimi -->
     <!-- Herkese Açık Profil Modalı (Liderlik) -->
@@ -503,8 +503,7 @@
     </div>
 
     <!-- Sohbet Penceresi (Chat Widget) -->
-    <div id="chat-widget-container" class="hide"
-        style="position: fixed; bottom: 20px; right: 20px; width: 320px; height: 450px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); border: 1px solid rgba(255, 255, 255, 0.3); z-index: 10001; display: flex; flex-direction: column; overflow: hidden; transform: translateY(20px); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+    <div id="chat-widget-container" class="hide" style="z-index: 10001; display: flex; flex-direction: column;">
         <!-- Sohbet Başlığı -->
         <div id="chat-header"
             style="padding: 15px; background: var(--primary-color); color: white; display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
@@ -534,10 +533,10 @@
         </div>
 
         <!-- Mesaj Yazma Alanı -->
-        <div
-            style="padding: 12px; background: white; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border-color);">
+        <div id="chat-footer"
+            style="padding: 12px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border-color);">
             <input type="text" id="chat-input" placeholder="Mesaj yaz..."
-                style="flex: 1; padding: 10px; border: none; background: var(--bg-color); border-radius: 20px; outline: none; font-size: 14px; color: var(--text-main);">
+                style="flex: 1; padding: 10px; border: none; border-radius: 20px; outline: none; font-size: 14px;">
             <button id="send-chat-btn"
                 style="background: var(--primary-color); border: none; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s;">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -550,19 +549,66 @@
     </div>
 
     <style>
+        #chat-widget-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 320px;
+            height: 450px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            overflow: hidden;
+            transform: translateY(30px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
         #chat-widget-container.active {
             transform: translateY(0);
             opacity: 1;
+            visibility: visible;
+        }
+
+        /* Dark Theme Chat Adjustments */
+        .dark-theme #chat-widget-container {
+            background: rgba(15, 15, 15, 0.85);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .dark-theme #chat-messages {
+            background: rgba(0, 0, 0, 0.2) !important;
+        }
+
+        .dark-theme #chat-footer {
+            background: rgba(20, 20, 20, 0.9) !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+        }
+
+        .dark-theme #chat-input {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: white !important;
+        }
+
+        .dark-theme .chat-msg.received {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            box-shadow: none;
         }
 
         .chat-msg {
             max-width: 80%;
-            padding: 8px 12px;
-            border-radius: 15px;
+            padding: 10px 14px;
+            border-radius: 18px;
             font-size: 14px;
             line-height: 1.4;
             position: relative;
-            animation: msgFadeIn 0.3s ease-out;
+            animation: msgFadeIn 0.3s ease-out forwards;
         }
 
         @keyframes msgFadeIn {
@@ -581,15 +627,15 @@
             align-self: flex-end;
             background: var(--primary-color);
             color: white;
-            border-bottom-right-radius: 5px;
+            border-bottom-right-radius: 4px;
         }
 
         .chat-msg.received {
             align-self: flex-start;
             background: white;
             color: var(--text-main);
-            border-bottom-left-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .msg-time {

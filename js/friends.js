@@ -223,7 +223,7 @@ function refreshFriendsData() {
                             </div>
                         </div>
                         <div style="display: flex; gap: 8px;">
-                            <button class="btn btn-chat-open" data-id="${friendId}" data-name="${friendName}" style="background-color: var(--secondary-color); border-color: var(--secondary-color); padding: 8px 15px; font-size: 13px; border-radius: 20px;">
+                            <button class="btn" onclick="window.openChatWindow('${friendId}', '${friendName}')" style="background-color: var(--secondary-color); border-color: var(--secondary-color); color: white; padding: 8px 15px; font-size: 13px; border-radius: 20px;">
                                 💬 Mesaj
                             </button>
                             <button class="btn btn-remove-friend" data-id="${relId}" style="background-color: transparent; border-color: var(--border-color); color: var(--text-muted); padding: 8px 12px; font-size: 13px; border-radius: 20px;">Çıkar</button>
@@ -292,19 +292,7 @@ function refreshFriendsData() {
 function attachActionListeners() {
     const db = window.firestore;
 
-    // Sohbeti Aç
-    document.querySelectorAll('.btn-chat-open').forEach(btn => {
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            const id = this.getAttribute('data-id');
-            const name = this.getAttribute('data-name');
-            if (window.openChatWindow) {
-                window.openChatWindow(id, name);
-            } else {
-                console.error("Chat engine not loaded yet!");
-            }
-        });
-    });
+    // Sohbet Dinleyicisi artik onclick ile yönetiliyor (Daha güvenilir)
 
     // Kabul Et
     document.querySelectorAll('.btn-accept-req').forEach(btn => {

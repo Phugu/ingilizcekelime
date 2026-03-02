@@ -695,6 +695,16 @@ async function initApp() {
         document.getElementById('dashboard-content').classList.remove('hide');
         document.getElementById('nav-dashboard').classList.add('active');
 
+        // Sağ üst istatistik paneline tıklama özelliği ekle (Profil açar)
+        const statsHeader = document.querySelector('.user-stats-header');
+        if (statsHeader) {
+            statsHeader.style.cursor = 'pointer';
+            statsHeader.addEventListener('click', () => {
+                const profileNav = document.getElementById('nav-profile');
+                if (profileNav) profileNav.click();
+            });
+        }
+
         // Çevrimiçi durum takibi (Presence) başlat
         setupPresence(userId);
 

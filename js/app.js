@@ -9,7 +9,6 @@ import {
     EmailAuthProvider,
     deleteUser as firebaseDeleteUser,
     updatePassword,
-    sendEmailVerification,
     GoogleAuthProvider,
     signInWithPopup
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -392,14 +391,36 @@ function setupForms() {
 
             console.log('Kayıt başarılı, dökümanlar oluşturuldu. E-posta onayına geçiliyor...');
 
-            // DOĞRULAMA E-POSTASI GÖNDER (Sadece bir kere gönderilmesini sağla)
-            if (!window.initialVerificationSent) {
-                window.initialVerificationSent = true;
-                await sendEmailVerification(user);
-                console.log('Doğrulama e-postası başarıyla gönderildi (İlk Gönderim).');
-            } else {
-                console.warn('Doğrulama e-postası zaten gönderilmiş, tekrar gönderilmedi.');
-            }
+            // KAYIT SONRASI - MODERN ONAY KODU SİSTEMİ (Yeni)
+            const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+            // Onay kodunu ve durumu Firestore'da sakla
+            await updateDoc(doc(db, "users_private", user.uid), {
+                verificationCode: verificationCode,
+                isVerified: false,
+                verificationSentAt: Timestamp.now()
+            });
+
+            // E-posta gönderim tetikleyicisi (Trigger Email extension için)
+            await setDoc(doc(db, "mail", user.uid + "_" + Date.now()), {
+                to: email,
+                message: {
+                    subject: 'İngilizce Kelime - Giriş Onay Kodunuz',
+                    html: `
+                        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                            <h2 style="color: #4CAF50;">Hoş Geldiniz!</h2>
+                            <p>Kayıt işleminizi tamamlamak için aşağıdaki 6 haneli onay kodunu uygulamaya giriniz:</p>
+                            <div style="background: #f4f4f4; padding: 15px; font-size: 24px; font-weight: bold; text-align: center; letter-spacing: 5px; border-radius: 8px;">
+                                ${verificationCode}
+                            </div>
+                            <p style="margin-top: 20px;">Bu kod tek kullanımlıktır. Eğer bu işlemi siz yapmadıysanız lütfen bu e-postayı dikkate almayınız.</p>
+                        </div>
+                    `
+                }
+            });
+
+            console.log('Kayıt başarılı, onay kodu gönderildi.');
+            window.initialVerificationSent = true;
 
             // Kayıt bitti bayrağı kaldır
             window.isRegistering = false;
@@ -434,6 +455,107 @@ function setupForms() {
             submitBtn.disabled = false;
             submitBtn.textContent = originalBtnText;
         }
+    });
+
+    // Kod Doğrulama Butonunu Dinle (Yeni)
+    document.getElementById('verify-code-btn')?.addEventListener('click', async function () {
+        const codeInput = document.getElementById('verification-code-input');
+        const errorDiv = document.getElementById('verification-error');
+        const code = codeInput.value.trim();
+
+        if (code.length !== 6 || isNaN(code)) {
+            errorDiv.textContent = 'Lütfen 6 haneli geçerli bir kod giriniz.';
+            errorDiv.classList.remove('hide');
+            return;
+        }
+
+        try {
+            this.disabled = true;
+            this.textContent = 'Doğrulanıyor...';
+            errorDiv.classList.add('hide');
+
+            const userId = auth.currentUser.uid;
+            const privateDoc = await getDoc(doc(db, "users_private", userId));
+            const pData = privateDoc.data();
+
+            if (pData && pData.verificationCode === code) {
+                // BAŞARILI
+                await updateDoc(doc(db, "users_private", userId), {
+                    isVerified: true,
+                    verificationCode: null // Kodu temizle
+                });
+
+                document.getElementById('verification-message').textContent = 'Başarıyla doğrulandı! Yönlendiriliyorsunuz...';
+                document.getElementById('verification-message').classList.remove('hide');
+
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                errorDiv.textContent = 'Hatalı kod girdiniz. Lütfen tekrar deneyin.';
+                errorDiv.classList.remove('hide');
+                this.disabled = false;
+                this.textContent = 'Kodu Doğrula ve Giriş Yap';
+            }
+        } catch (err) {
+            console.error('Doğrulama Hatası:', err);
+            errorDiv.textContent = 'Bir hata oluştu. Lütfen tekrar deneyin.';
+            errorDiv.classList.remove('hide');
+            this.disabled = false;
+            this.textContent = 'Kodu Doğrula ve Giriş Yap';
+        }
+    });
+
+    // Kod Tekrar Gönder Butonunu Dinle (Yeni)
+    document.getElementById('resend-verification-btn')?.addEventListener('click', async function () {
+        try {
+            this.disabled = true;
+            const originalText = this.textContent;
+            this.textContent = 'Gönderiliyor...';
+
+            const user = auth.currentUser;
+            const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+            await updateDoc(doc(db, "users_private", user.uid), {
+                verificationCode: newCode,
+                verificationSentAt: Timestamp.now()
+            });
+
+            await setDoc(doc(db, "mail", user.uid + "_" + Date.now()), {
+                to: user.email,
+                message: {
+                    subject: 'İngilizce Kelime - Yeni Onay Kodunuz',
+                    html: `<p>Yeni onay kodunuz: <b>${newCode}</b></p>`
+                }
+            });
+
+            document.getElementById('verification-message').textContent = 'Yeni kod e-posta adresinize gönderildi.';
+            document.getElementById('verification-message').classList.remove('hide');
+
+            // 60 saniye cooldown
+            let timeLeft = 60;
+            const timer = setInterval(() => {
+                timeLeft--;
+                this.textContent = `Tekrar Gönder (${timeLeft}s)`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    this.disabled = false;
+                    this.textContent = 'Kodu Tekrar Gönder';
+                }
+            }, 1000);
+
+        } catch (err) {
+            console.error('Kod tekrar gönderilemedi:', err);
+            alert('Kod gönderilirken bir hata oluştu.');
+            this.disabled = false;
+            this.textContent = 'Kodu Tekrar Gönder';
+        }
+    });
+
+    // Verification Logout
+    document.getElementById('verification-logout-btn')?.addEventListener('click', async function () {
+        await signOut(auth);
+        window.location.reload();
     });
 }
 
@@ -2867,108 +2989,25 @@ function filterWords() {
         }
     });
 }
-// Olay dinleyicilerini sayfa her yenilendiğinde tekrar kontrol et
+// [Yeni] Doğrulama Ekranı Yönetimi
 function setupVerificationScreen() {
     const resendBtn = document.getElementById('resend-verification-btn');
     const verifyLogoutBtn = document.getElementById('verification-logout-btn');
 
-    if (resendBtn) {
-        let countdown = 60;
-        resendBtn.disabled = true;
-
-        const timerInterval = setInterval(() => {
-            countdown--;
-            if (countdown > 0) {
-                resendBtn.textContent = `Tekrar Gönder (Lütfen ${countdown}s bekleyin)`;
-            } else {
-                clearInterval(timerInterval);
-                resendBtn.disabled = false;
-                resendBtn.textContent = 'Doğrulama e-postasını tekrar gönder';
-            }
-        }, 1000);
-
-        resendBtn.addEventListener('click', async () => {
-            const user = auth.currentUser;
-            if (user && !user.emailVerified) {
-                try {
-                    resendBtn.disabled = true;
-                    resendBtn.textContent = 'Gönderiliyor...';
-                    await sendEmailVerification(user);
-
-                    const msg = document.getElementById('verification-message');
-                    if (msg) {
-                        msg.textContent = 'Yeni doğrulama bağlantısı e-posta adresinize gönderildi!';
-                        msg.classList.remove('hide');
-                        setTimeout(() => msg.classList.add('hide'), 5000);
-                    }
-
-                    // Reset 60s countdown
-                    countdown = 60;
-                    const resendInterval = setInterval(() => {
-                        countdown--;
-                        if (countdown > 0) {
-                            resendBtn.textContent = `Tekrar Gönder (Lütfen ${countdown}s bekleyin)`;
-                        } else {
-                            clearInterval(resendInterval);
-                            resendBtn.disabled = false;
-                            resendBtn.textContent = 'Doğrulama e-postasını tekrar gönder';
-                        }
-                    }, 1000);
-                } catch (error) {
-                    console.error('Doğrulama e-postası gönderilemedi:', error);
-                    let errText = 'E-posta gönderilemedi. Lütfen daha sonra tekrar deneyin.';
-                    if (error.code === 'auth/too-many-requests') {
-                        errText = 'Çok fazla istek yapıldı. Lütfen biraz bekleyip tekrar deneyin.';
-                    }
-                    const errMsg = document.getElementById('verification-error');
-                    if (errMsg) {
-                        errMsg.textContent = errText;
-                        errMsg.classList.remove('hide');
-                        setTimeout(() => errMsg.classList.add('hide'), 4000);
-                    }
-                    resendBtn.disabled = false;
-                    resendBtn.textContent = 'Doğrulama e-postasını tekrar gönder';
-                }
-            }
-        });
-    }
-
-    const checkBtn = document.getElementById('check-verification-btn');
-    if (checkBtn) {
-        checkBtn.addEventListener('click', async () => {
-            const user = window.firebaseAuth.currentUser;
-            if (user) {
-                checkBtn.textContent = 'Kontrol ediliyor...';
-                checkBtn.disabled = true;
-                try {
-                    await user.reload();
-                    if (user.emailVerified) {
-                        localStorage.setItem('isLoggedIn', 'true');
-                        window.location.reload();
-                    } else {
-                        checkBtn.textContent = 'Henüz onaylanmamış! Tekrar deneyin';
-                        setTimeout(() => {
-                            checkBtn.textContent = 'Onayladım, İçeri Al';
-                            checkBtn.disabled = false;
-                        }, 2000);
-                    }
-                } catch (e) {
-                    console.error('Yenileme hatası:', e);
-                    checkBtn.textContent = 'Hata (Tekrar deneyin)';
-                    setTimeout(() => {
-                        checkBtn.textContent = 'Onayladım, İçeri Al';
-                        checkBtn.disabled = false;
-                    }, 2000);
-                }
-            }
-        });
+    // Eğer kod tekrar gönder butonu varsa, başlangıçta 5sn bekletelim (isteğe bağlı)
+    if (resendBtn && resendBtn.disabled) {
+        setTimeout(() => {
+            if (resendBtn.textContent.includes('(60s)')) return; // Zaten sayaç çalışıyorsa bozma
+            resendBtn.disabled = false;
+            resendBtn.textContent = 'Kodu Tekrar Gönder';
+        }, 5000);
     }
 
     if (verifyLogoutBtn) {
-        verifyLogoutBtn.addEventListener('click', async () => {
+        verifyLogoutBtn.onclick = async () => {
             await signOut(auth);
             window.location.reload();
-        });
+        };
     }
 }
 

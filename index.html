@@ -188,33 +188,37 @@
             <div id="register-message" class="success-message hide"></div>
         </div>
 
-        <!-- DOĞRULAMA BEKLEME EKRANI (YENİ EKLENDİ) -->
+        <!-- DOĞRULAMA BEKLEME EKRANI (ŞİFRE/KOD GİRİŞLİ) -->
         <div class="form-container hide" id="verification-section">
             <h2>E-postanızı Doğrulayın</h2>
-            <div style="margin-bottom: 20px; color: var(--text-main); line-height: 1.5;">
-                Kayıt işleminiz başarılı! Hesabınızı kullanmaya başlamak için e-posta adresinize
-                gönderdiğimiz şifreli doğrulama bağlantısına tıklamanız gerekmektedir.<br><br>
+            <div id="verification-instruction-text"
+                style="margin-bottom: 20px; color: var(--text-main); line-height: 1.5;">
+                Kayıt işleminiz başarılı! E-posta adresinize 6 haneli bir onay kodu gönderdik.
+                Lütfen kodu aşağıya girerek hesabınızı onaylayın.<br>
                 <small style="color: var(--text-muted);">(Spam veya Gereksiz klasörünü kontrol etmeyi unutmayın)</small>
             </div>
 
-            <div class="loader-spinner"
-                style="border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px auto;">
+            <div class="form-group" style="margin-bottom: 20px;">
+                <input type="text" id="verification-code-input" placeholder="6 Haneli Kod" maxlength="6"
+                    style="text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold; width: 100%; border: 2px solid var(--primary-color);">
             </div>
-            <p style="color: var(--primary-color); font-weight: bold; margin-bottom: 20px;">Onayınız bekleniyor...</p>
 
-            <button id="check-verification-btn" class="btn"
-                style="margin-bottom: 10px; background-color: var(--success-color); border-color: var(--success-color);">
-                Onayladım, İçeri Al
+            <button id="verify-code-btn" class="btn"
+                style="margin-bottom: 10px; background-color: var(--primary-color);">
+                Kodu Doğrula ve Giriş Yap
             </button>
 
-            <button id="resend-verification-btn" class="btn" style="margin-bottom: 10px;" disabled>
-                Tekrar Gönder (Lütfen 60s bekleyin)
-            </button>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 10px;">
+                <button id="resend-verification-btn" class="btn" style="flex: 1; font-size: 12px; padding: 10px;"
+                    disabled>
+                    Kodu Tekrar Gönder (60s)
+                </button>
+            </div>
 
-            <p style="font-size: 11px; margin-top: 10px; color: var(--text-muted);">
-                Doğrulama yaptıysanız ve hala buradaysanız <a href="javascript:void(0)"
+            <p style="font-size: 11px; margin-top: 15px; color: var(--text-muted);">
+                Kod gelmediyse veya bir hata oluştuysa <a href="javascript:void(0)"
                     onclick="window.location.reload(true)" style="color: var(--primary-color);">sayfayı yenilemeyi</a>
-                veya butona basmayı deneyin.
+                deneyin.
             </p>
 
             <div style="margin: 15px 0; text-align: center; position: relative;">
@@ -292,6 +296,7 @@
 
     <script type="module">
         import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // Oturum kontrolü
         window.checkSession = async function () {
@@ -299,8 +304,23 @@
                 const loader = document.getElementById('initial-loader');
 
                 if (user) {
-                    // E-posta doğrulama kontrolü
-                    if (!user.emailVerified) {
+                    // 1. Firebase Auth Doğrulama Kontrolü
+                    let isVerified = user.emailVerified;
+
+                    // 2. Eğer Firebase Auth doğrulanmamışsa, Firestore'daki manuel doğrulamaya bak (Onay Kodu Sistemi)
+                    if (!isVerified) {
+                        try {
+                            const db = window.firestore;
+                            const privateDoc = await getDoc(doc(db, "users_private", user.uid));
+                            if (privateDoc.exists()) {
+                                isVerified = privateDoc.data().isVerified === true;
+                            }
+                        } catch (e) {
+                            console.error("Firestore doğrulama kontrolü hatası:", e);
+                        }
+                    }
+
+                    if (!isVerified) {
                         console.log('E-posta doğrulanmamış: Doğrulama ekranı gösteriliyor');
 
                         localStorage.setItem('isLoggedIn', 'false');
@@ -311,36 +331,16 @@
                         document.getElementById('register-section').classList.add('hide');
                         document.getElementById('verification-section').classList.remove('hide');
 
-                        // Doğrulama periyodik kontrolü (Her 3 saniyede bir kontrol et)
-                        if (!window.verificationInterval) {
-                            window.verificationInterval = setInterval(async () => {
-                                try {
-                                    // Firebase auth instance'ından güncel kullanıcıyı al
-                                    const currentUser = window.firebaseAuth.currentUser;
-                                    if (currentUser) {
-                                        await currentUser.reload();
-                                        if (currentUser.emailVerified) {
-                                            console.log("E-posta doğrulandı! Yönlendiriliyor...");
-                                            clearInterval(window.verificationInterval);
-                                            window.verificationInterval = null;
-                                            // Refresh login state in localStorage
-                                            localStorage.setItem('isLoggedIn', 'true');
-                                            window.location.reload();
-                                        }
-                                    }
-                                } catch (e) {
-                                    console.error("Otomatik kontrol hatası:", e);
-                                }
-                            }, 3000);
+                        // Kod tekrar gönder butonu için bekleme süresi ayarı
+                        const resendBtn = document.getElementById('resend-verification-btn');
+                        if (resendBtn && resendBtn.disabled) {
+                            setTimeout(() => {
+                                resendBtn.disabled = false;
+                                resendBtn.textContent = 'Kodu Tekrar Gönder';
+                            }, 5000); // İlk açılışta 5sn sonra aktif olsun
                         }
                     } else {
-                        // Eğer interval açıksa kapat
-                        if (window.verificationInterval) {
-                            clearInterval(window.verificationInterval);
-                            window.verificationInterval = null;
-                        }
-
-                        console.log('Aktif kullanıcı:', user.email);
+                        console.log('Aktif kullanıcı (Doğrulanmış):', user.email);
                         localStorage.setItem('isLoggedIn', 'true');
                         window.showDashboard(user);
                     }
@@ -434,9 +434,9 @@
     </script>
 
     <!-- Bağımlılıkları yükle (Cache Busting Aktif) -->
-    <script type="module" src="js/app.js?v=20260301_v14"></script>
-    <script type="module" src="js/learning.js?v=20260301_v14"></script>
-    <script type="module" src="js/friends.js?v=20260301_v14"></script>
+    <script type="module" src="js/app.js?v=20260302_v1"></script>
+    <script type="module" src="js/learning.js?v=20260302_v1"></script>
+    <script type="module" src="js/friends.js?v=20260302_v1"></script>
 
     <!-- Çerez Bildirimi -->
     <!-- Herkese Açık Profil Modalı (Liderlik) -->

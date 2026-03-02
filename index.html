@@ -334,10 +334,17 @@
                         // Kod tekrar gönder butonu için bekleme süresi ayarı
                         const resendBtn = document.getElementById('resend-verification-btn');
                         if (resendBtn && resendBtn.disabled) {
-                            setTimeout(() => {
-                                resendBtn.disabled = false;
-                                resendBtn.textContent = 'Kodu Tekrar Gönder';
-                            }, 5000); // İlk açılışta 5sn sonra aktif olsun
+                            let initTime = 60;
+                            resendBtn.textContent = `Tekrar Gönder (${initTime}s)`;
+                            const itv = setInterval(() => {
+                                initTime--;
+                                resendBtn.textContent = `Tekrar Gönder (${initTime}s)`;
+                                if (initTime <= 0) {
+                                    clearInterval(itv);
+                                    resendBtn.disabled = false;
+                                    resendBtn.textContent = 'Kodu Tekrar Gönder';
+                                }
+                            }, 1000);
                         }
                     } else {
                         console.log('Aktif kullanıcı (Doğrulanmış):', user.email);

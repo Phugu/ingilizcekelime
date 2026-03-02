@@ -2994,13 +2994,24 @@ function setupVerificationScreen() {
     const resendBtn = document.getElementById('resend-verification-btn');
     const verifyLogoutBtn = document.getElementById('verification-logout-btn');
 
-    // Eğer kod tekrar gönder butonu varsa, başlangıçta 5sn bekletelim (isteğe bağlı)
+    // Eğer kod tekrar gönder butonu varsa, başlangıçta 60sn bekletelim
     if (resendBtn && resendBtn.disabled) {
-        setTimeout(() => {
-            if (resendBtn.textContent.includes('(60s)')) return; // Zaten sayaç çalışıyorsa bozma
-            resendBtn.disabled = false;
-            resendBtn.textContent = 'Kodu Tekrar Gönder';
-        }, 5000);
+        let timeLeft = 60;
+        resendBtn.textContent = `Tekrar Gönder (${timeLeft}s)`;
+
+        const initialTimer = setInterval(() => {
+            timeLeft--;
+            if (resendBtn.textContent.includes('(60s)')) { // Başka bir timer başlamışsa bunu durdur
+                clearInterval(initialTimer);
+                return;
+            }
+            resendBtn.textContent = `Tekrar Gönder (${timeLeft}s)`;
+            if (timeLeft <= 0) {
+                clearInterval(initialTimer);
+                resendBtn.disabled = false;
+                resendBtn.textContent = 'Kodu Tekrar Gönder';
+            }
+        }, 1000);
     }
 
     if (verifyLogoutBtn) {

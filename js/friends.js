@@ -448,10 +448,65 @@ function closeChatWindow() {
     currentChatFriendId = null;
 }
 
+// GÜVENLİK BOTU - KÜFÜR VE HAKARET FİLTRESİ
+function checkProfanity(text) {
+    if (!text) return false;
+
+    // Kapsamlı küfür/hakaret listesi (Turkish & English)
+    // Not: Bu liste daha da genişletilebilir ancak temel koruma sağlar.
+    const badWords = [
+        "amk", "aq", "orospu", "piç", "siktir", "sik", "ananı", "avradını", "got", "göt", "yavşak",
+        "amına", "pezevenk", "kahpe", "bok", "dalyarak", "gerizekalı", "aptal", "salak", "fuck",
+        "shit", "bitch", "asshole", "pussy", "dick", "cunt", "faggot", "bastard"
+    ];
+
+    // Temizlik: Noktalama işaretlerini ve boşlukları kaldırıp küçük harfe çevirelim
+    // semboller yerine harf koyanları da yakalamaya çalışalım
+    const cleanText = text.toLowerCase()
+        .replace(/[0-9]/g, '')
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
+        .replace(/\s+/g, '');
+
+    // Harf değişimlerini yakalamak için (a=@, s=5 vb.)
+    const normalizedText = cleanText
+        .replace(/@/g, 'a')
+        .replace(/0/g, 'o')
+        .replace(/1/g, 'i')
+        .replace(/3/g, 'e')
+        .replace(/4/g, 'a')
+        .replace(/5/g, 's')
+        .replace(/7/g, 't')
+        .replace(/!/g, 'i');
+
+    for (const word of badWords) {
+        if (normalizedText.includes(word)) return true;
+        // Orijinal kelime içinde parça olarak var mı? (Geniş eşleşme)
+        if (cleanText.includes(word)) return true;
+    }
+
+    return false;
+}
+
 async function handleSendMessage() {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
     if (!text || !currentChatFriendId) return;
+
+    // GÜVENLİK BOTU KONTROLÜ
+    if (checkProfanity(text)) {
+        if (window.Swal) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Güvenlik Botu!',
+                text: 'Mesajınız uygunsuz içerik barındırdığı için engellendi. Uygulama kurallarına uymaya özen gösterin.',
+                confirmButtonColor: 'var(--primary-color)'
+            });
+        } else {
+            alert('Güvenlik Botu: Mesajınız uygunsuz içerik barındırdığı için engellendi.');
+        }
+        input.value = '';
+        return;
+    }
 
     const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
     const db = window.firestore;

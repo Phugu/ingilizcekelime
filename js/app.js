@@ -62,6 +62,48 @@ function escapeHTML(str) {
     return div.innerHTML;
 }
 
+// Çevrimiçi Durum Takibi (Presence)
+let presenceInterval = null;
+async function setupPresence(userId) {
+    if (!userId || (currentUser && currentUser.isGuest)) return;
+
+    const db = window.firestore;
+    const userRef = doc(db, "users_public", userId);
+
+    const updateStatus = async (status) => {
+        try {
+            await updateDoc(userRef, {
+                onlineStatus: status,
+                lastSeen: Timestamp.now()
+            });
+        } catch (e) {
+            console.error("Durum güncellenemedi:", e);
+        }
+    };
+
+    // İlk giriş
+    await updateStatus('online');
+
+    // Kalp atışı (Heartbeat) - Her 3 dakikada bir
+    if (presenceInterval) clearInterval(presenceInterval);
+    presenceInterval = setInterval(() => updateStatus('online'), 3 * 60 * 1000);
+
+    // Sekme görünürlüğü değiştiğinde (Opsiyonel: Daha hassas takip için)
+    document.onvisibilitychange = () => {
+        if (document.visibilityState === 'visible') {
+            updateStatus('online');
+        } else {
+            // Görünür değilse heartbeat devam eder ama anlık güncellenebilir
+        }
+    };
+
+    // Çıkış yaparken veya pencere kapanırken
+    window.addEventListener('beforeunload', () => {
+        // Not: beforeunload içinde async işlemler garanti değildir ama denemekte fayda var
+        updateDoc(userRef, { onlineStatus: 'offline', lastSeen: Timestamp.now() });
+    });
+}
+
 
 
 // Tüm bölümleri gizle
@@ -615,6 +657,13 @@ async function initApp() {
                     if (user.isGuest) {
                         localStorage.removeItem('isGuest');
                     } else {
+                        // Offline yap
+                        try {
+                            await updateDoc(doc(db, "users_public", userId), {
+                                onlineStatus: 'offline',
+                                lastSeen: Timestamp.now()
+                            });
+                        } catch (e) { }
                         await signOut(auth);
                     }
                     localStorage.removeItem('isLoggedIn');
@@ -645,6 +694,9 @@ async function initApp() {
         // Dashboard'ı varsayılan olarak göster
         document.getElementById('dashboard-content').classList.remove('hide');
         document.getElementById('nav-dashboard').classList.add('active');
+
+        // Çevrimiçi durum takibi (Presence) başlat
+        setupPresence(userId);
 
         // Çerez uyarısını göster
         setTimeout(() => {

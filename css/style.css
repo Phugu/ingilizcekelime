@@ -20,6 +20,38 @@
     --secondary-color: #9b59b6;
 }
 
+/* Status Dots */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+    border: 1.5px solid white;
+}
+
+.status-online {
+    background-color: var(--success-color);
+    box-shadow: 0 0 5px var(--success-color);
+}
+
+.status-offline {
+    background-color: #95a5a6;
+}
+
+.status-text {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-text.online {
+    color: var(--success-color);
+}
+
+.status-text.offline {
+    color: var(--text-muted);
+}
+
 .dark-theme {
     --bg-color: #000000;
     --card-bg: #0a0a0a;

@@ -211,7 +211,7 @@ function refreshFriendsData() {
                 const friendId = data.senderId === currentUser.uid ? data.receiverId : data.senderId;
 
                 friendsHtml += `
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <div class="friend-card" data-friend-id="${friendId}" style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                         <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="if(window.showPublicProfile) window.showPublicProfile('${friendId}')">
                             <div style="width: 45px; height: 45px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background-size: cover; background-position: center;" 
                                  ${data.photoURL ? `style="background-image: url('${data.photoURL}')"` : ''}>
@@ -219,7 +219,10 @@ function refreshFriendsData() {
                             </div>
                             <div>
                                 <div style="color: var(--text-main); font-weight: bold; font-size: 16px;">${friendName}</div>
-                                <div style="color: var(--text-muted); font-size: 12px;">Çevrimiçi</div>
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <span class="status-dot status-offline"></span>
+                                    <span class="status-text offline">Yükleniyor...</span>
+                                </div>
                             </div>
                         </div>
                         <div style="display: flex; gap: 8px;">
@@ -278,6 +281,8 @@ function refreshFriendsData() {
 
         if (friendsHtml) {
             friendsList.innerHTML = friendsHtml;
+            // Arkadaşların durumlarını dinle (Presence)
+            setupFriendsStatusListeners();
         } else {
             friendsList.innerHTML = '<p style="color: var(--text-muted); font-size: 14px; text-align: center; padding: 20px 0;">Henüz arkadaş eklemediniz.</p>';
         }
@@ -286,6 +291,49 @@ function refreshFriendsData() {
         attachActionListeners();
     }, (error) => {
         console.error("Arkadaşlar listesini dinleme hatası:", error);
+    });
+}
+
+// Arkadaşların çevrimiçi durumlarını real-time takip et
+let statusListeners = {};
+function setupFriendsStatusListeners() {
+    const db = window.firestore;
+    const friendElements = document.querySelectorAll('.friend-card');
+
+    // Eski listener'ları temizle
+    Object.values(statusListeners).forEach(unsub => unsub());
+    statusListeners = {};
+
+    friendElements.forEach(card => {
+        const friendId = card.dataset.friendId;
+        if (!friendId) return;
+
+        const unsub = onSnapshot(doc(db, "users_public", friendId), (snap) => {
+            if (snap.exists()) {
+                const userData = snap.data();
+                const isOnline = userData.onlineStatus === 'online';
+
+                // Kalp atışını da kontrol edelim (Eğer 5 dakikadır ses gelmiyorsa offline say)
+                let reallyOnline = isOnline;
+                if (isOnline && userData.lastSeen) {
+                    const lastSeen = userData.lastSeen.toDate();
+                    const now = new Date();
+                    if ((now - lastSeen) > 5 * 60 * 1000) {
+                        reallyOnline = false;
+                    }
+                }
+
+                const dot = card.querySelector('.status-dot');
+                const text = card.querySelector('.status-text');
+
+                if (dot && text) {
+                    dot.className = `status-dot ${reallyOnline ? 'status-online' : 'status-offline'}`;
+                    text.textContent = reallyOnline ? 'Çevrimiçi' : 'Çevrimdışı';
+                    text.className = `status-text ${reallyOnline ? 'online' : 'offline'}`;
+                }
+            }
+        });
+        statusListeners[friendId] = unsub;
     });
 }
 
@@ -325,6 +373,7 @@ function attachActionListeners() {
 
 // CHAT ENGINE SETTINGS
 let activeChatUnsubscribe = null;
+let activeChatStatusUnsubscribe = null;
 let currentChatFriendId = null;
 
 // Global as soon as possible
@@ -333,6 +382,7 @@ window.openChatWindow = function (friendId, friendName) {
     const widget = document.getElementById('chat-widget-container');
     const nameEl = document.getElementById('chat-friend-name');
     const avatarEl = document.getElementById('chat-friend-avatar');
+    const statusEl = document.getElementById('chat-status');
 
     if (!widget || !nameEl || !avatarEl) {
         console.error("❌ Sohbet bileşenleri bulunamadı!");
@@ -342,6 +392,26 @@ window.openChatWindow = function (friendId, friendName) {
     currentChatFriendId = friendId;
     nameEl.textContent = friendName;
     avatarEl.textContent = (friendName || "?").charAt(0).toUpperCase();
+
+    // Durum dinleyiciyi başlat
+    if (activeChatStatusUnsubscribe) activeChatStatusUnsubscribe();
+    const db = window.firestore;
+    activeChatStatusUnsubscribe = onSnapshot(doc(db, "users_public", friendId), (snap) => {
+        if (snap.exists() && statusEl) {
+            const userData = snap.data();
+            const isOnline = userData.onlineStatus === 'online';
+
+            // 5dk kontrolü
+            let reallyOnline = isOnline;
+            if (isOnline && userData.lastSeen) {
+                const lastSeen = userData.lastSeen.toDate();
+                if ((new Date() - lastSeen) > 5 * 60 * 1000) reallyOnline = false;
+            }
+
+            statusEl.textContent = reallyOnline ? 'Çevrimiçi' : 'Çevrimdışı';
+            statusEl.style.opacity = reallyOnline ? '1' : '0.6';
+        }
+    });
 
     widget.classList.remove('hide');
     // Force reflow
@@ -370,6 +440,10 @@ function closeChatWindow() {
     if (activeChatUnsubscribe) {
         activeChatUnsubscribe();
         activeChatUnsubscribe = null;
+    }
+    if (activeChatStatusUnsubscribe) {
+        activeChatStatusUnsubscribe();
+        activeChatStatusUnsubscribe = null;
     }
     currentChatFriendId = null;
 }

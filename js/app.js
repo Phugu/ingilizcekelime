@@ -904,7 +904,14 @@ async function loadUserStats(userId) {
         let streak = publicData.streak || publicData.study_streak || 0;
         const lastActivity = publicData.last_activity_date?.toDate() || null;
 
-        if (lastActivity && !isToday(lastActivity) && !isYesterday(lastActivity)) {
+        // EĞER SERİ SIFIRLANDIYSA (Daha önce vardı ama bugün/dün etkinlik yoksa)
+        if ((publicData.streak > 0 || publicData.study_streak > 0) && lastActivity && !isToday(lastActivity) && !isYesterday(lastActivity)) {
+            streak = 0;
+            // Animasyonu login'den 2 saniye sonra başlat ki kullanıcı görsün
+            setTimeout(() => {
+                if (window.showStreakResetEffect) window.showStreakResetEffect();
+            }, 2000);
+        } else if (lastActivity && !isToday(lastActivity) && !isYesterday(lastActivity)) {
             streak = 0;
         }
 
@@ -1033,6 +1040,90 @@ function updateStreakUI(streak, lastActivity) {
         }
     }
 }
+
+// GÜVENLİK BOTU - GÜNLÜK SERİ SIFIRLANMA EFEKTİ (VİDEOLU POP-UP)
+window.showStreakResetEffect = function () {
+    // 1. Pop-up ve Video Hazırla
+    let alertBox = document.getElementById('streak-reset-alert');
+    if (!alertBox) {
+        alertBox = document.createElement('div');
+        alertBox.id = 'streak-reset-alert';
+        alertBox.className = 'streak-reset-alert';
+        // Video'yu pop-up içine ekliyoruz (Emoji yerine)
+        alertBox.innerHTML = `
+            <button id="close-streak-alert" class="streak-close-btn" style="opacity: 0; pointer-events: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <div id="streak-video-wrapper" style="width: 100%; margin-bottom: 20px; border-radius: 15px; overflow: hidden; background: #000;">
+                <video id="streak-reset-video" muted playsinline style="width: 100%; display: block;">
+                    <source src="assets/videos/streak-reset.mp4" type="video/mp4">
+                </video>
+            </div>
+            <h2>Günlük Serin Sıfırlandı!</h2>
+            <p>Dünü boş geçtiğin için serin kırıldı. Pes etme, hemen bugün bir başarı kazan ve yeniden başla!</p>
+        `;
+        document.body.appendChild(alertBox);
+    }
+
+    const video = alertBox.querySelector('#streak-reset-video');
+    const closeBtn = alertBox.querySelector('#close-streak-alert');
+
+    // 2. Arka planı karart
+    const overlay = document.createElement('div');
+    overlay.id = 'streak-reset-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;opacity:0;transition:opacity 0.5s;';
+    document.body.appendChild(overlay);
+
+    // Yardımcı kapatma fonksiyonu
+    const closePopup = () => {
+        alertBox.classList.remove('show');
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            overlay.remove();
+            alertBox.remove();
+        }, 1000);
+        // Otomatik kapatma zamanlayıcısı varsa temizle
+        if (window.streakAutoCloseTimer) {
+            clearTimeout(window.streakAutoCloseTimer);
+            window.streakAutoCloseTimer = null;
+        }
+    };
+
+    if (closeBtn) {
+        closeBtn.onclick = closePopup;
+    }
+
+    // 3. Göster ve Oynat
+    requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        alertBox.classList.add('show');
+        if (video) {
+            video.play().catch(err => console.error("Video oynatılamadı:", err));
+        }
+    });
+
+    // 3 saniye sonra kapatma butonunu göster
+    setTimeout(() => {
+        if (closeBtn) {
+            closeBtn.style.opacity = '1';
+            closeBtn.style.pointerEvents = 'auto';
+        }
+    }, 3000);
+
+    // 4. Otomatik Kapat ve Temizle (Video bitiminden sonra bir süre daha bekle)
+    if (video) {
+        video.onended = () => {
+            window.streakAutoCloseTimer = setTimeout(() => {
+                closePopup();
+            }, 5000); // Video bittikten sonra 5 saniye yazı kalsın (veya butonla kapatılsın)
+        };
+    } else {
+        window.streakAutoCloseTimer = setTimeout(closePopup, 7000);
+    }
+};
 
 // XP UI'ını güncelle
 function updateXPUI(xp, level) {

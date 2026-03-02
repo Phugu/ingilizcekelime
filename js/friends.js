@@ -453,17 +453,32 @@ function checkProfanity(text) {
     if (!text) return false;
 
     // Kapsamlı küfür/hakaret listesi (Turkish & English)
-    // Not: Bu liste daha da genişletilebilir ancak temel koruma sağlar.
     const badWords = [
-        "amk", "aq", "orospu", "piç", "siktir", "sik", "ananı", "avradını", "got", "göt", "yavşak",
-        "amına", "pezevenk", "kahpe", "bok", "dalyarak", "gerizekalı", "aptal", "salak", "fuck",
-        "shit", "bitch", "asshole", "pussy", "dick", "cunt", "faggot", "bastard"
+        // KISALTMA KÜFÜRLER
+        "amk", "a.m.k", "aq", "a.q", "mk", "oç", "o.c", "oc", "sg", "skt", "sktir", "siktir", "yrrk", "amq",
+        // CİNSEL İÇERİKLİ
+        "am", "sik", "yarak", "yarrak", "göt", "got", "sok", "koy", "sapla", "geçir", "girme", "çıkar",
+        "orospu", "piç", "yavşak", "amına", "pezevenk", "kahpe", "bok", "dalyarak",
+        // AİLE
+        "anan", "ana", "avrat", "bacı", "kardeşin", "sülale", "soyunu",
+        // AĞIR HAKARET
+        "şerefsiz", "namussuz", "haysiyetsiz", "karaktersiz", "adi", "rezil", "pislik", "terbiyesiz", "ahlaksız", "sapık", "manyak", "psikopat",
+        // ZEKA
+        "salak", "aptal", "gerizekal", "geri zekal", "embesil", "beyinsiz", "mal", "dangalak", "moron",
+        // KÜÇÜMSEME
+        "ezik", "zavallı", "çapsız", "vasıfsız", "aciz", "beceriksiz", "loser",
+        // HAYVAN
+        "it", "köpek", "eşek", "öküz", "domuz", "ayı", "maymun",
+        // TACİZ
+        "numaranıver", "fotoat", "çıplakat", "özeldenel", "dmgel", "görüşelimgizli", "evinegeliyim", "seniistiyorum", "yalnızmısın", "sevgilinvarmı", "gecebuluşalım", "kaçyaşındasın", "adresver", "kameraaç", "görüntülüaç",
+        // TEHDİT
+        "öldürürüm", "gebertirim", "keserim", "parçalarım", "yakacağım", "senibitiririm", "belanıveririm", "mahvederim", "senibulurum",
+        // İNGİLİZCE
+        "fuck", "fck", "shit", "bitch", "bastard", "asshole", "dick", "pussy", "cunt", "motherfucker", "mf", "retard", "slut", "whore", "killyou", "iwillkill", "sendnudes", "nude", "sexchat"
     ];
 
     // Temizlik: Noktalama işaretlerini ve boşlukları kaldırıp küçük harfe çevirelim
-    // semboller yerine harf koyanları da yakalamaya çalışalım
     const cleanText = text.toLowerCase()
-        .replace(/[0-9]/g, '')
         .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
         .replace(/\s+/g, '');
 
@@ -476,11 +491,11 @@ function checkProfanity(text) {
         .replace(/4/g, 'a')
         .replace(/5/g, 's')
         .replace(/7/g, 't')
-        .replace(/!/g, 'i');
+        .replace(/!/g, 'i')
+        .replace(/ı/g, 'i');
 
     for (const word of badWords) {
         if (normalizedText.includes(word)) return true;
-        // Orijinal kelime içinde parça olarak var mı? (Geniş eşleşme)
         if (cleanText.includes(word)) return true;
     }
 

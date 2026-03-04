@@ -651,7 +651,10 @@ async function handleSendMessage() {
     if (!text || !currentChatFriendId) return;
 
     // GÜVENLİK BOTU KONTROLÜ
-    if (checkProfanity(text)) {
+    const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
+    const WHITELISTED_UIDS = ['cjNcZvCFLvMSIywBScc11TQP1Vv2', '8qmKa6jVWLQevRpla9o00khN4tT2'];
+
+    if (!WHITELISTED_UIDS.includes(currentUser?.uid) && checkProfanity(text)) {
         if (window.Swal) {
             Swal.fire({
                 icon: 'error',
@@ -666,7 +669,6 @@ async function handleSendMessage() {
         return;
     }
 
-    const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
     const db = window.firestore;
 
     const chatId = [currentUser.uid, currentChatFriendId].sort().join('_');

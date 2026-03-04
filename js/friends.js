@@ -541,34 +541,42 @@ async function searchGifs(query, source = 'giphy') {
 
     try {
         const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
         const data = await resp.json();
 
         let gifs = [];
         if (source === 'giphy') {
-            gifs = (data.data || []).map(gif => ({
-                thumb: gif.images.fixed_height_small.url,
-                full: gif.images.fixed_height.url
-            }));
+            if (data.data) {
+                gifs = data.data.map(gif => ({
+                    thumb: gif.images.fixed_height_small.url,
+                    full: gif.images.fixed_height.url
+                }));
+            }
         } else {
-            gifs = (data.results || []).map(gif => ({
-                thumb: gif.media_formats.tinygif.url,
-                full: gif.media_formats.gif.url
-            }));
+            if (data.results) {
+                gifs = data.results.map(gif => {
+                    const formats = gif.media_formats || {};
+                    const thumb = (formats.tinygif || formats.gif || {}).url;
+                    const full = (formats.gif || formats.mediumgif || {}).url;
+                    return { thumb, full };
+                }).filter(g => g.thumb && g.full);
+            }
         }
 
         if (gifs.length > 0) {
             resultsDiv.innerHTML = gifs.map(gif => `
                 <img src="${gif.thumb}" 
                      onclick="sendGifMessage('${gif.full}')" 
-                     style="width: 100%; border-radius: 8px; cursor: pointer; transition: opacity 0.2s;"
-                     onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                     style="width: 100%; height: 100px; object-fit: cover; border-radius: 8px; cursor: pointer; transition: opacity 0.2s; background: #eee;"
+                     onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"
+                     onerror="this.style.display='none'">
             `).join('');
         } else {
-            resultsDiv.innerHTML = '<p style="grid-column: span 2; text-align: center; color: var(--text-muted); font-size: 12px;">Sonuç bulunamadı.</p>';
+            resultsDiv.innerHTML = `<p style="grid-column: span 2; text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px;">'${query}' için sonuç bulunamadı (${source}).</p>`;
         }
     } catch (err) {
         console.error(`${source} Hatası:`, err);
-        resultsDiv.innerHTML = `<p style="grid-column: span 2; text-align: center; color: var(--error-color); font-size: 12px;">GIF'ler yüklenemedi.</p>`;
+        resultsDiv.innerHTML = `<p style="grid-column: span 2; text-align: center; color: var(--error-color); font-size: 12px; padding: 20px;">GIF'ler yüklenemedi. Lütfen internetinizi veya API anahtarını kontrol edin.</p>`;
     }
 }
 
@@ -683,9 +691,10 @@ async function handleSendMessage() {
     const db = window.firestore;
     const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
 
-    // Yetki kontrolü (Kişisel dökümandan veya global currentUser nesnesinden)
-    // Not: Bu yetkiyi Firestore'daki users_public/{uid} dökümanına "canBypassFilter: true" ekleyerek yönetebilirsiniz.
-    if (!currentUser?.canBypassFilter && checkProfanity(text)) {
+    // Yetki kontrolü (Dinamik yetki)
+    const canBypass = (window.currentUser?.canBypassFilter === true) || (currentUser?.canBypassFilter === true);
+
+    if (!canBypass && checkProfanity(text)) {
         if (window.Swal) {
             Swal.fire({
                 icon: 'error',

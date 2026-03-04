@@ -906,16 +906,45 @@ async function loadUserStats(userId) {
 
         // EĞER SERİ SIFIRLANDIYSA (Daha önce vardı ama bugün/dün etkinlik yoksa)
         if ((publicData.streak > 0 || publicData.study_streak > 0) && lastActivity && !isToday(lastActivity) && !isYesterday(lastActivity)) {
-            streak = 0;
 
-            // KRİTİK: Veritabanını hemen güncelle ki sayfa yenilenince tekrar tetiklenmesin
-            const userPublicRef = doc(db, "users_public", userId);
-            updateDoc(userPublicRef, { streak: 0 }).catch(err => console.error("Streak reset update error:", err));
+            // Seri Dondurucu Kontrolü
+            let hasFreeze = false;
+            let inventory = privateData?.inventory || { streak_freeze: 0 };
 
-            // Animasyonu login'den 2 saniye sonra başlat ki kullanıcı görsün
-            setTimeout(() => {
-                if (window.showStreakResetEffect) window.showStreakResetEffect();
-            }, 2000);
+            if (inventory.streak_freeze > 0) {
+                hasFreeze = true;
+                inventory.streak_freeze -= 1;
+
+                // Envanteri güncelle ve son aktivite tarihini düne çek (böylece yarın devam edebilir)
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+
+                const userPrivateRef = doc(db, "users_private", userId);
+                const userPublicRef = doc(db, "users_public", userId);
+
+                Promise.all([
+                    updateDoc(userPrivateRef, { inventory: inventory }),
+                    updateDoc(userPublicRef, { last_activity_date: Timestamp.fromDate(yesterday) })
+                ]).catch(err => console.error("Seri dondurucu hatası:", err));
+
+                // Kullanıcıya bilgi ver
+                setTimeout(() => {
+                    alert("❄️ Seri Dondurucu Kullanıldı! Seriniz bozulmadı ancak dondurucunuzu tekrar mağazadan almayı unutmayın.");
+                }, 1500);
+            }
+
+            if (!hasFreeze) {
+                streak = 0;
+
+                // KRİTİK: Veritabanını hemen güncelle ki sayfa yenilenince tekrar tetiklenmesin
+                const userPublicRef = doc(db, "users_public", userId);
+                updateDoc(userPublicRef, { streak: 0 }).catch(err => console.error("Streak reset update error:", err));
+
+                // Animasyonu login'den 2 saniye sonra başlat ki kullanıcı görsün
+                setTimeout(() => {
+                    if (window.showStreakResetEffect) window.showStreakResetEffect();
+                }, 2000);
+            }
         } else if (lastActivity && !isToday(lastActivity) && !isYesterday(lastActivity)) {
             streak = 0;
         }
@@ -1415,7 +1444,7 @@ async function loadProfileContent() {
         }
 
         // Dashboard/Uygulama istatistiklerini alma mantığı
-        let stats = { totalWords: 0, totalQuizzes: 0, studyStreak: 1, level: 1, xp: 0, totalXP: 0 };
+        let stats = { totalWords: 0, totalQuizzes: 0, studyStreak: 1, level: 1, xp: 0, totalXP: 0, inventory: { streak_freeze: 0 } };
 
         if (!isGuest) {
             try {
@@ -1427,14 +1456,21 @@ async function loadProfileContent() {
                 const quizResultsQuery = query(collection(db, "quiz_results"), where("user_id", "==", user.uid));
                 stats.totalQuizzes = (await getDocs(quizResultsQuery)).size;
 
-                // Genel User Data (XP, Seviye, Streak)
-                const userDoc = await getDoc(doc(db, "users_public", user.uid));
+                // Genel User Data (XP, Seviye, Streak) ve Envanter
+                const userDocPromise = getDoc(doc(db, "users_public", user.uid));
+                const privateDocPromise = getDoc(doc(db, "users_private", user.uid));
+
+                const [userDoc, privateDoc] = await Promise.all([userDocPromise, privateDocPromise]);
+
                 const userData = userDoc.exists() ? userDoc.data() : { xp: 0, level: 1, total_xp: 0, streak: 0 };
+                const privateData = privateDoc.exists() ? privateDoc.data() : {};
 
                 stats.studyStreak = userData.streak || 0;
                 stats.level = userData.level || 1;
                 stats.xp = userData.xp || 0;
                 stats.totalXP = userData.total_xp || 0;
+                stats.inventory = privateData.inventory || { streak_freeze: 0 };
+
             } catch (err) {
                 console.error("Profil istatistikleri alınamadı:", err);
             }
@@ -1504,6 +1540,24 @@ async function loadProfileContent() {
                         <div class="stat-icon">⭐</div>
                         <div class="stat-val">${stats.totalXP}</div>
                         <div class="stat-label">Toplam XP</div>
+                    </div>
+                </div>
+                
+                <div class="profile-inventory-section" style="margin-top: 20px; text-align: left; background: rgba(52, 152, 219, 0.1); border: 1px solid rgba(52, 152, 219, 0.3); border-radius: 12px; padding: 15px;">
+                    <h3 style="margin-bottom: 10px; font-size: 18px; color: #3498db; display: flex; align-items: center; gap: 8px;">
+                        🎒 Envanterim
+                    </h3>
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-color); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 24px;">❄️</span>
+                            <div>
+                                <div style="font-weight: bold; color: var(--text-main);">Seri Dondurucu</div>
+                                <div style="font-size: 12px; color: var(--text-muted);">Miktar: ${stats.inventory.streak_freeze}</div>
+                            </div>
+                        </div>
+                        <button onclick="window.promptManualFreeze()" class="btn btn-sm" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; border: none;" ${stats.inventory.streak_freeze > 0 ? '' : 'disabled'}>
+                            Kullan
+                        </button>
                     </div>
                 </div>
                 
@@ -2331,10 +2385,11 @@ class Dashboard {
             const userDoc = await getDoc(doc(db, "users_public", this.userId));
             const userData = userDoc.exists() ? userDoc.data() : { xp: 0, level: 1, total_xp: 0, streak: 0 };
 
-            // Özel verileri al (Günlük Görevler için)
+            // Özel verileri al (Günlük Görevler ve Envanter için)
             const privateDoc = await getDoc(doc(db, "users_private", this.userId));
             const privateData = privateDoc.exists() ? privateDoc.data() : {};
             const dailyQuests = privateData.dailyQuests || null;
+            const inventory = privateData.inventory || { streak_freeze: 0 };
 
             return {
                 totalWords: learnedWordsCount,
@@ -2343,7 +2398,8 @@ class Dashboard {
                 level: userData.level || 1,
                 xp: userData.xp || 0,
                 totalXP: userData.total_xp || 0,
-                dailyQuests: dailyQuests
+                dailyQuests: dailyQuests,
+                inventory: inventory
             };
         } catch (error) {
             console.error('Dashboard yüklenirken hata:', error);
@@ -2357,7 +2413,12 @@ class Dashboard {
 
         container.innerHTML = `
             <div class="dashboard-container">
-                <h2>Hoş Geldiniz!</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">Hoş Geldiniz!</h2>
+                    <button onclick="window.openShopModal()" class="btn btn-secondary btn-sm" style="background: rgba(142, 68, 173, 0.2); color: #9b59b6; border: 1px solid #8e44ad; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                        <span>🛒 Mağaza</span>
+                    </button>
+                </div>
                 
                 <div class="stats-overview">
                     <div class="stat-card">
@@ -2381,10 +2442,13 @@ class Dashboard {
                         <div class="stat-number">${stats.totalQuizzes}</div>
                     </div>
                     
-                    <div class="stat-card">
+                    <div class="stat-card" style="${stats.inventory && stats.inventory.streak_freeze > 0 ? 'border: 2px solid #3498db; box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);' : ''}">
                         <h3>Günlük Seri</h3>
                         <div class="stat-number">${stats.studyStreak}</div>
-                        <div class="stat-label">🔥 Gün</div>
+                        <div class="stat-label">
+                            🔥 Gün 
+                            ${stats.inventory && stats.inventory.streak_freeze > 0 ? `<span style="font-size:12px; margin-left:5px; color:#3498db;" title="Seri Dondurucu Aktif">❄️ (${stats.inventory.streak_freeze})</span>` : ''}
+                        </div>
                     </div>
                 </div>
                 
@@ -2432,6 +2496,9 @@ class Dashboard {
                     <button onclick="document.getElementById('nav-quiz').click()" class="action-btn">
                         Quiz Çöz
                     </button>
+                    <button onclick="window.startSmartReview()" class="action-btn" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                        🧠 Eksiklerini Gider
+                    </button>
                 </div>
             </div>
         `;
@@ -2458,6 +2525,373 @@ window.updateDashboard = async function () {
     if (currentUser) {
         const dashboard = new Dashboard('dashboard-content', currentUser.uid);
         await dashboard.init();
+    }
+};
+
+let shopTimerInterval;
+
+// Mağaza Modalı Açma
+window.openShopModal = async function () {
+    if (!currentUser || currentUser.isGuest) {
+        showXPNotification("Mağazayı kullanmak için giriş yapmalısınız.", false);
+        return;
+    }
+
+    try {
+        const publicDoc = await getDoc(doc(db, "users_public", currentUser.uid));
+        const privateDoc = await getDoc(doc(db, "users_private", currentUser.uid));
+
+        const currentXp = publicDoc.exists() ? publicDoc.data().xp || 0 : 0;
+        document.getElementById('shop-current-xp').textContent = currentXp + " XP";
+
+        // Ücretsiz dondurucu mantığı (48 saatte bir)
+        const privateData = privateDoc.exists() ? privateDoc.data() : {};
+        const lastClaimTime = privateData.last_free_freeze_claim ? privateData.last_free_freeze_claim.toMillis() : 0;
+
+        const claimFreeBtn = document.getElementById('claim-free-freeze-btn');
+        const cooldownText = document.getElementById('free-freeze-cooldown-text');
+
+        if (cooldownText) cooldownText.style.display = 'none';
+
+        // Önceki intervali temizle
+        if (shopTimerInterval) clearInterval(shopTimerInterval);
+
+        function updateShopModalUI() {
+            const now = Date.now();
+            const timePassedMs = now - lastClaimTime;
+            const msIn48Hours = 48 * 60 * 60 * 1000;
+
+            if (!claimFreeBtn) return;
+
+            if (timePassedMs >= msIn48Hours) {
+                // 48 saat geçmiş, ücretsiz alımı aktifleştir
+                claimFreeBtn.disabled = false;
+                claimFreeBtn.style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)';
+                claimFreeBtn.style.cursor = 'pointer';
+                claimFreeBtn.style.opacity = '1';
+                claimFreeBtn.innerHTML = '🎁 Ücretsiz Al';
+                if (shopTimerInterval) clearInterval(shopTimerInterval);
+            } else {
+                // Henüz geçmemiş, butonu deaktif et ve süreyi göster
+                claimFreeBtn.disabled = true;
+                claimFreeBtn.style.background = '#95a5a6'; // Gri arkaplan
+                claimFreeBtn.style.cursor = 'not-allowed';
+                claimFreeBtn.style.opacity = '1';
+
+                const timeLeftMs = msIn48Hours - timePassedMs;
+                const hoursLeft = Math.floor(timeLeftMs / (1000 * 60 * 60));
+                const minutesLeft = Math.floor((timeLeftMs % (1000 * 60 * 60)) / (1000 * 60));
+                const secondsLeft = Math.floor((timeLeftMs % (1000 * 60)) / 1000);
+
+                // Saniyeyi ve dakikayı formatlayalım
+                const h = String(hoursLeft).padStart(2, '0');
+                const m = String(minutesLeft).padStart(2, '0');
+                const s = String(secondsLeft).padStart(2, '0');
+
+                claimFreeBtn.innerHTML = `⏳ Sonraki Hak: ${h}s ${m}d ${s}sn`;
+            }
+        }
+
+        // İlk çalıştır ve interval'e bağla
+        updateShopModalUI();
+        shopTimerInterval = setInterval(updateShopModalUI, 1000);
+
+        document.getElementById('shop-modal').classList.remove('hide');
+    } catch (error) {
+        console.error("Mağaza açılırken hata:", error);
+    }
+};
+
+// Ücretsiz Seri Dondurucu Alma (48 Saatte Bir)
+window.claimFreeFreeze = async function () {
+    if (!currentUser || currentUser.isGuest) return;
+
+    const claimBtn = document.getElementById('claim-free-freeze-btn');
+    const originalText = claimBtn.innerHTML;
+
+    try {
+        claimBtn.disabled = true;
+        claimBtn.innerHTML = 'Alınıyor...';
+
+        const privateRef = doc(db, "users_private", currentUser.uid);
+        const privateDoc = await getDoc(privateRef);
+
+        if (!privateDoc.exists()) throw new Error("Kullanıcı verisi bulunamadı");
+
+        const privateData = privateDoc.data();
+        const inventory = privateData.inventory || { streak_freeze: 0 };
+        const lastClaimTime = privateData.last_free_freeze_claim ? privateData.last_free_freeze_claim.toMillis() : 0;
+        const now = Date.now();
+        const hoursPassed = (now - lastClaimTime) / (1000 * 60 * 60);
+
+        // Sunucu/istemci zaman farkına karşı çift kontrol
+        if (hoursPassed < 48) {
+            showXPNotification("Henüz 48 saat dolmamış! Lütfen daha sonra tekrar deneyin.", false);
+            return;
+        }
+
+        if (inventory.streak_freeze >= 1) {
+            showXPNotification("Zaten 1 adet Seri Dondurucun var! Aynı anda en fazla 1 tane taşıyabilirsin.", false);
+            return;
+        }
+
+        // Envantere ekle ve zamanlayıcıyı sıfırla
+        inventory.streak_freeze += 1;
+
+        await updateDoc(privateRef, {
+            inventory: inventory,
+            last_free_freeze_claim: Timestamp.fromMillis(now)
+        });
+
+        // "Tamam" tıklandığında popup göster (Daha şık ve oyunlaştırılmış)
+        if (typeof showXPNotification === 'function') {
+            showXPNotification("+1 Dondurucu", true);
+        } else {
+            alert("🎁 Harika! Ücretsiz Seri Dondurucunuz envanterinize eklendi. (Sonraki ücretsiz hak 48 saat sonra)");
+        }
+
+        // UI Güncellemeleri
+        document.getElementById('shop-modal').classList.add('hide'); // Modalı kapat
+        window.openShopModal(); // Taze Timer ile yeniden aç
+
+        await window.updateDashboard(); // Dashboardı yenile (Seri rozetinde dondurucu gözüksün)
+        if (window.loadProfileContent && !document.getElementById('profile-content').classList.contains('hide')) {
+            await window.loadProfileContent(); // Profil sekmesindeyse envanteri güncelle
+        }
+
+    } catch (error) {
+        console.error("Bedava dondurucu alım hatası:", error);
+        showXPNotification("İşlem sırasında bir hata oluştu.", false);
+    } finally {
+        claimBtn.disabled = false;
+        claimBtn.innerHTML = originalText;
+    }
+};
+
+// Manuel Seri Dondurucu Kullanımı - Tetikleyici (önce envanter kontrolü, sonra modal)
+window.promptManualFreeze = async function () {
+    if (!currentUser || currentUser.isGuest) return;
+
+    try {
+        const privateRef = doc(db, "users_private", currentUser.uid);
+        const privateDoc = await getDoc(privateRef);
+
+        if (!privateDoc.exists()) throw new Error("Kullanıcı verisi bulunamadı");
+
+        const privateData = privateDoc.data();
+        const inventory = privateData.inventory || { streak_freeze: 0 };
+
+        if (inventory.streak_freeze < 1) {
+            if (typeof showXPNotification === 'function') {
+                showXPNotification("Seri Dondurucunuz yok! Mağazadan edinebilirsiniz.", false);
+            } else {
+                alert("Envanterinizde hiç Seri Dondurucu yok! Mağazadan edinebilirsiniz.");
+            }
+            return;
+        }
+
+        // Custom onay modalını göster
+        const modal = document.getElementById('freeze-confirm-modal');
+        if (modal) {
+            modal.classList.remove('hide');
+        } else {
+            // Fallback: tarayıcı confirm
+            const useIt = confirm("Seri Dondurucuyu ŞU ANKİ serinizi korumak için kullanmak istediğinize emin misiniz?");
+            if (useIt) window.executeManualFreeze();
+        }
+
+    } catch (error) {
+        console.error("Dondurucu kontrol hatası:", error);
+    }
+};
+
+// Manuel Seri Dondurucu Kullanımı - Onaylandıktan Sonra
+window.executeManualFreeze = async function () {
+    const btn = document.getElementById('confirm-freeze-btn');
+    if (btn) { btn.disabled = true; btn.textContent = "İşleniyor..."; }
+
+    try {
+        const privateRef = doc(db, "users_private", currentUser.uid);
+        const publicRef = doc(db, "users_public", currentUser.uid);
+
+        const privateDoc = await getDoc(privateRef);
+        if (!privateDoc.exists()) throw new Error("Kullanıcı verisi bulunamadı");
+
+        const privateData = privateDoc.data();
+        const inventory = privateData.inventory || { streak_freeze: 0 };
+
+        if (inventory.streak_freeze < 1) {
+            showXPNotification("Envanterinizde Seri Dondurucu kalmamış.", false);
+            if (document.getElementById('freeze-confirm-modal')) document.getElementById('freeze-confirm-modal').classList.add('hide');
+            return;
+        }
+
+        // Envanterden 1 düşür
+        inventory.streak_freeze -= 1;
+
+        // Son aktivite tarihini düne çek ki bugün dondurulmuş gibi olsun
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        await Promise.all([
+            updateDoc(privateRef, { inventory: inventory }),
+            updateDoc(publicRef, { last_activity_date: Timestamp.fromDate(yesterday) })
+        ]);
+
+        if (document.getElementById('freeze-confirm-modal')) document.getElementById('freeze-confirm-modal').classList.add('hide');
+
+        if (typeof showXPNotification === 'function') {
+            showXPNotification("❄️ Seriniz güvende! Dondurucu kullanıldı.", true);
+        }
+
+        // UI Güncellemeleri
+        await window.updateDashboard();
+        if (window.loadProfileContent && !document.getElementById('profile-content').classList.contains('hide')) {
+            await window.loadProfileContent();
+        }
+
+    } catch (error) {
+        console.error("Manuel dondurucu kullanım hatası:", error);
+        showXPNotification("İşlem sırasında bir hata oluştu.", false);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = "Evet, Kullan"; }
+    }
+};
+
+// Seri Dondurucu Satın Alma
+window.buyStreakFreeze = async function () {
+    if (!currentUser || currentUser.isGuest) return;
+
+    const COST = 500;
+    const buyBtn = document.getElementById('buy-freeze-btn');
+    const originalText = buyBtn.textContent;
+
+    try {
+        buyBtn.disabled = true;
+        buyBtn.textContent = 'İşleniyor...';
+
+        // 1. Kullanıcının XP ve envanterini kontrol et
+        const publicRef = doc(db, "users_public", currentUser.uid);
+        const privateRef = doc(db, "users_private", currentUser.uid);
+
+        const [publicDoc, privateDoc] = await Promise.all([
+            getDoc(publicRef),
+            getDoc(privateRef)
+        ]);
+
+        if (!publicDoc.exists() || !privateDoc.exists()) throw new Error("Kullanıcı verisi bulunamadı");
+
+        const xp = publicDoc.data().xp || 0;
+        const privateData = privateDoc.data();
+        const inventory = privateData.inventory || { streak_freeze: 0 };
+
+        // 2. Kontroller (Yeterli XP var mı? Zaten 1 tane var mı?)
+        if (inventory.streak_freeze >= 1) {
+            alert("Zaten 1 adet Seri Dondurucun var! Aynı anda en fazla 1 tane taşıyabilirsin.");
+            return;
+        }
+
+        if (xp < COST) {
+            alert(`Yetersiz XP! Seri Dondurucu almak için ${COST} XP gerekli, sende ${xp} XP var.`);
+            return;
+        }
+
+        // 3. Satın almayı gerçekleştir (XP düş, envantere ekle)
+        inventory.streak_freeze += 1;
+
+        await Promise.all([
+            updateDoc(publicRef, { xp: xp - COST }),
+            updateDoc(privateRef, { inventory: inventory })
+        ]);
+
+        // 4. UI Güncelleştirmeleri
+        document.getElementById('shop-current-xp').textContent = (xp - COST) + " XP";
+        updateXPUI(xp - COST, publicDoc.data().level || 1); // Sol üstteki menüyü güncelle
+        await window.updateDashboard(); // Dashboardı yenile (Seri rozetinde dondurucu gözüksün)
+
+        alert("Seri Dondurucu başarıyla satın alındı! Eğer bir gün çalışmayı unutursan, serin sıfırlanmayacak.");
+        document.getElementById('shop-modal').classList.add('hide'); // Modalı kapat
+
+    } catch (error) {
+        console.error("Satın alma hatası:", error);
+        alert("Satın alma işlemi başarısız oldu.");
+    } finally {
+        buyBtn.disabled = false;
+        buyBtn.textContent = originalText;
+    }
+};
+
+// Eksiklerini Gider (Smart Review) Başlatma
+window.startSmartReview = async function () {
+    if (!currentUser || currentUser.isGuest) {
+        alert("Bu özelliği kullanmak için giriş yapmalısınız.");
+        return;
+    }
+
+    const learnBtn = document.querySelector('button[onclick="window.startSmartReview()"]');
+    const originalText = learnBtn ? learnBtn.textContent : 'Eksiklerini Gider';
+
+    try {
+        if (learnBtn) { learnBtn.disabled = true; learnBtn.textContent = 'Yükleniyor...'; }
+
+        // Kullanıcının zayıf kelimelerini getir
+        // Sadece where ile çekip, orderBy ve limit kısmını JS'te yapalım (Firestore Composite Index hatasını önlemek için)
+        const weakQuery = query(
+            collection(db, "weak_words"),
+            where("user_id", "==", currentUser.uid)
+        );
+        const snapshot = await getDocs(weakQuery);
+
+        if (snapshot.empty) {
+            alert("🎉 Harika! Henüz zayıf olduğunuz bir kelime bulunmuyor. Düzenli olarak quiz çözmeye devam edin.");
+            return;
+        }
+
+        let weakWords = snapshot.docs.map(doc => ({
+            id: doc.id,
+            english: doc.data().word_english,
+            turkish: doc.data().word_turkish,
+            level: doc.data().level || 'A1',
+            category: doc.data().category || 'Eksik Kelimeler',
+            example: doc.data().example || '',
+            exampleTurkish: doc.data().exampleTurkish || '',
+            last_wrong: doc.data().last_wrong ? doc.data().last_wrong.toMillis() : 0
+        }));
+
+        // Javascript tarafında sırala ve listeyi sınırla
+        weakWords.sort((a, b) => b.last_wrong - a.last_wrong);
+        weakWords = weakWords.slice(0, 20);
+
+        // Ekranı Quiz'e ayarla
+        document.querySelector('.content > div:not(.hide)').classList.add('hide');
+        document.getElementById('quiz-content').classList.remove('hide');
+        const activeNav = document.querySelector('.main-nav ul li a.active');
+        if (activeNav) activeNav.classList.remove('active');
+        document.getElementById('nav-quiz').classList.add('active');
+
+        // WordLearning sınıfını başlat ve quizi tetikle
+        import('./learning.js').then(module => {
+            const wl = new module.WordLearning('quiz-content', currentUser.uid);
+            wl.words = wl.shuffleArray(weakWords);
+            wl.currentWordIndex = 0;
+            wl.correctAnswers = 0;
+            wl.userAnswers = [];
+            wl.currentLevel = 'MIXED'; // Karışık seviye belirteci
+            wl.renderWordTest();
+        }).catch(err => {
+            console.error("Modül yükleme hatası:", err);
+            alert("Quiz modülü yüklenirken bir hata oluştu.");
+        });
+
+    } catch (error) {
+        console.error("Smart Review başlatılamadı:", error);
+        alert("Zayıf kelimeler yüklenirken bir hata oluştu: " + error.message);
+    } finally {
+        // Hata olsa da olmasa da butonu eski haline getir
+        if (learnBtn) {
+            learnBtn.disabled = false;
+            learnBtn.textContent = originalText;
+        }
     }
 };
 

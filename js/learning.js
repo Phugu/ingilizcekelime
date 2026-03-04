@@ -9,7 +9,8 @@ import {
     where,
     getDocs,
     addDoc,
-    Timestamp
+    Timestamp,
+    increment
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { giveXP, updateQuestProgress } from './app.js';
@@ -22,6 +23,24 @@ import {
 } from './oxford_words_levels.js';
 
 const db = getFirestore();
+
+// Global Ses Çalma Yardımcısı
+window.playAudio = function (text) {
+    if (!('speechSynthesis' in window)) {
+        alert("Tarayıcınız sesli okuma özelliğini desteklemiyor.");
+        return;
+    }
+
+    // Varolan konuşmayı durdur
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US'; // VEYA en-GB
+    utterance.rate = 0.9; // Biraz yavaş daha anlaşılır
+    utterance.pitch = 1.0;
+
+    window.speechSynthesis.speak(utterance);
+};
 
 export class WordLearning {
     constructor(containerId, userId) {
@@ -756,7 +775,12 @@ export class WordLearning {
                             <table class="word-info-table">
                                 <tr style="--row-index: 1;">
                                     <td class="table-label">İngilizce:</td>
-                                    <td class="table-content english-word">${currentWord.english}</td>
+                                    <td class="table-content english-word" style="display: flex; align-items: center; gap: 10px;">
+                                        ${currentWord.english}
+                                        <button class="audio-btn" onclick="window.playAudio('${currentWord.english.replace(/'/g, "\\'")}')" title="Dinle" style="background: none; border: none; cursor: pointer; color: var(--primary-color); font-size: 1.2rem; padding: 5px; transition: transform 0.2s;">
+                                            <i class="fas fa-volume-up"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                                 <tr style="--row-index: 2;">
                                     <td class="table-label">Örnek:</td>
@@ -777,7 +801,12 @@ export class WordLearning {
                             <span class="word-level">${currentWord.level}</span>
                             <span class="word-category">${currentWord.category}</span>
                             <div class="word-card-number">${this.currentWordIndex + 1}/${this.words.length}</div>
-                            <div class="word-english">${currentWord.english}</div>
+                            <div class="word-english" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                                ${currentWord.english}
+                                <button class="audio-btn" onclick="window.playAudio('${currentWord.english.replace(/'/g, "\\'")}')" title="Dinle" style="background: none; border: none; cursor: pointer; color: var(--primary-color); font-size: 1.5rem; padding: 5px; transition: transform 0.2s;">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                            </div>
                             <div class="word-example">${currentWord.example || ''}</div>
                             <div class="word-example-turkish" id="example-turkish-translation-mobile" style="opacity:0; transform:translateY(20px);">${currentWord.exampleTurkish || ''}</div>
                             <div class="word-turkish" id="turkish-translation-mobile" style="opacity:0; transform:translateY(20px);">${currentWord.turkish}</div>
@@ -1482,12 +1511,39 @@ export class WordLearning {
             this.correctAnswers++;
         } else {
             optionButtons[selectedIndex].classList.add('wrong-option');
+            // Kullanıcının yanlış bildiği kelimeyi kaydet (Eksiklerini Gider özelliği için)
+            this.logWeakness(currentWord);
         }
 
         // Sonraki soruya geçmek için timeout ayarla
         setTimeout(() => {
             this.goToNextQuestion();
         }, 1500);
+    }
+
+    // Yanlış bilinen kelimeyi "Zayıf Noktalar" için veritabanına kaydet
+    async logWeakness(word) {
+        if (!this.userId || this.userId.startsWith('guest_')) return;
+
+        try {
+            const wordId = word.english.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+            const weakRef = doc(db, "weak_words", `${this.userId}_${wordId}`);
+
+            await setDoc(weakRef, {
+                user_id: this.userId,
+                word_english: word.english,
+                word_turkish: word.turkish,
+                level: word.level || 'A1',
+                category: word.category || 'General',
+                example: word.example || '',
+                exampleTurkish: word.exampleTurkish || '',
+                last_wrong: Timestamp.now(),
+                wrong_count: increment(1)
+            }, { merge: true });
+
+        } catch (e) {
+            console.error("Zayıf kelime kaydedilemedi:", e);
+        }
     }
 
     // Seçenekler oluştur

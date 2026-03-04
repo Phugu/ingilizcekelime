@@ -266,7 +266,8 @@
             <div class="user-info">
                 <div class="user-stats-header">
                     <div class="profile-avatar-small" id="header-profile-avatar" title="Profil"></div>
-                    <div class="streak-badge" id="user-streak" title="Günlük Seri">
+                    <div class="streak-badge" id="user-streak" title="Günlük Seriyi Dondur / İncele"
+                        onclick="window.promptManualFreeze()" style="cursor: pointer; transition: transform 0.2s;">
                         <span class="streak-icon">🔥</span>
                         <span class="streak-count" id="streak-count">0</span>
                     </div>
@@ -504,6 +505,70 @@
                             style="font-size: 20px; font-weight: bold; color: var(--text-main);">0</div>
                         <div style="font-size: 12px; color: var(--text-muted);">Öğrenilen Kelime</div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mağaza Modalı -->
+    <div id="shop-modal" class="modal hide" style="z-index: 10000; backdrop-filter: blur(5px);">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <button class="modal-close-icon" onclick="document.getElementById('shop-modal').classList.add('hide')"
+                title="Kapat">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+            </button>
+            <h2 style="margin-bottom: 20px; color: var(--text-main);">🛒 Mağaza</h2>
+            <div
+                style="background: var(--bg-color); border: 2px solid var(--border-color); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+                <div style="font-size: 40px; margin-bottom: 10px;">❄️</div>
+                <h3 style="margin-bottom: 5px; color: #3498db;">Seri Dondurucu</h3>
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">Günlük hedefinizi
+                    kaçırırsanız serinizin sıfırlanmasını engeller. (Aynı anda en fazla 1 adet stoklanabilir)</p>
+                <div id="freeze-buy-container" style="display: flex; flex-direction: column; gap: 10px;">
+                    <button onclick="window.claimFreeFreeze()" id="claim-free-freeze-btn" class="btn"
+                        style="width: 100%; font-weight: bold; background: linear-gradient(135deg, #2ecc71, #27ae60); border: none; color: white;">
+                        🎁 Ücretsiz Al
+                    </button>
+                    <!-- Cooldown text node is hidden here since the text is injected into the button directly -->
+                    <div id="free-freeze-cooldown-text" style="display: none;"></div>
+                    <button onclick="window.buyStreakFreeze()" id="buy-freeze-btn" class="btn"
+                        style="width: 100%; font-weight: bold; background: linear-gradient(135deg, #3498db, #2980b9); border: none; color: white;">
+                        500 XP ile Satın Al
+                    </button>
+                </div>
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted);">Mevcut XP: <span id="shop-current-xp"
+                    style="font-weight: bold; color: var(--primary-color);">0</span></p>
+        </div>
+    </div>
+
+    <!-- Dondurucu Onay Modalı -->
+    <div id="freeze-confirm-modal" class="modal hide" style="z-index: 10000; backdrop-filter: blur(5px);">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <button class="modal-close-icon"
+                onclick="document.getElementById('freeze-confirm-modal').classList.add('hide')" title="Kapat">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+            </button>
+            <h2 style="margin-bottom: 15px; color: var(--text-main);">❄️ Dondurucu Kullan</h2>
+            <div
+                style="background: var(--bg-color); border: 2px solid var(--border-color); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+                <p style="font-size: 15px; color: var(--text-main); line-height: 1.5; margin-bottom: 15px;">
+                    Envanterinizdeki <strong>1 adet Seri Dondurucuyu</strong> ŞU ANKİ serinizi korumak için kullanmak
+                    istediğinize emin misiniz? (Seriniz bugünlük korunur)
+                </p>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="document.getElementById('freeze-confirm-modal').classList.add('hide')" class="btn"
+                        style="flex: 1; background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border-color);">İptal</button>
+                    <button onclick="window.executeManualFreeze()" id="confirm-freeze-btn" class="btn"
+                        style="flex: 1; font-weight: bold; background: linear-gradient(135deg, #3498db, #2980b9); border: none; color: white;">
+                        Evet, Kullan
+                    </button>
                 </div>
             </div>
         </div>

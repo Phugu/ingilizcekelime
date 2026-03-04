@@ -464,8 +464,14 @@ window.toggleGifPicker = function () {
 
     container.innerHTML = `
         <div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; height: 100%;">
-            <input type="text" id="gif-search-input" placeholder="GIF Ara..." 
-                   style="width: 100%; padding: 8px 12px; border-radius: 15px; border: 1px solid var(--border-color); font-size: 13px; outline: none;">
+            <div style="display: flex; gap: 5px; align-items: center;">
+                <input type="text" id="gif-search-input" placeholder="GIF Ara..." 
+                       style="flex: 1; padding: 8px 12px; border-radius: 15px; border: 1px solid var(--border-color); font-size: 13px; outline: none;">
+                <select id="gif-source-select" style="padding: 7px; border-radius: 15px; border: 1px solid var(--border-color); font-size: 11px; outline: none; background: #f8f9fa; cursor: pointer;">
+                    <option value="giphy">Giphy</option>
+                    <option value="tenor">Tenor</option>
+                </select>
+            </div>
             <div id="gif-results" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; overflow-y: auto; flex: 1;">
                 <p style="grid-column: span 2; text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px;">Trend GIF'ler yükleniyor...</p>
             </div>
@@ -473,14 +479,17 @@ window.toggleGifPicker = function () {
     `;
 
     container.dataset.type = 'gif';
-    showChatTools(220);
+    showChatTools(280);
 
     const searchInput = document.getElementById('gif-search-input');
+    const sourceSelect = document.getElementById('gif-source-select');
+
     searchInput.focus();
-    searchInput.oninput = debounce(() => searchGifs(searchInput.value), 500);
+    searchInput.oninput = debounce(() => searchGifs(searchInput.value, sourceSelect.value), 500);
+    sourceSelect.onchange = () => searchGifs(searchInput.value, sourceSelect.value);
 
     // İlk trendleri yükle
-    searchGifs('');
+    searchGifs('', sourceSelect.value);
 };
 
 window.insertEmoji = function (emoji) {
@@ -514,23 +523,43 @@ function debounce(func, wait) {
     };
 }
 
-async function searchGifs(query) {
+async function searchGifs(query, source = 'giphy') {
     const resultsDiv = document.getElementById('gif-results');
     if (!resultsDiv) return;
 
-    // Giphy Beta Key (Public)
-    const apiKey = 'dc6zaTOxFJmzC';
-    const endpoint = query ? 'search' : 'trending';
-    const url = `https://api.giphy.com/v1/gifs/${endpoint}?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=20&rating=g`;
+    let url;
+    if (source === 'giphy') {
+        const apiKey = 'dc6zaTOxFJmzC'; // Public beta key
+        const endpoint = query ? 'search' : 'trending';
+        url = `https://api.giphy.com/v1/gifs/${endpoint}?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=20&rating=g`;
+    } else {
+        // Tenor API
+        const apiKey = 'LIVDSRZULELA'; // Public sample key
+        const endpoint = query ? 'search' : 'featured';
+        url = `https://tenor.googleapis.com/v2/${endpoint}?key=${apiKey}&q=${encodeURIComponent(query)}&limit=20&contentfilter=medium`;
+    }
 
     try {
         const resp = await fetch(url);
         const data = await resp.json();
 
-        if (data.data && data.data.length > 0) {
-            resultsDiv.innerHTML = data.data.map(gif => `
-                <img src="${gif.images.fixed_height_small.url}" 
-                     onclick="sendGifMessage('${gif.images.fixed_height.url}')" 
+        let gifs = [];
+        if (source === 'giphy') {
+            gifs = (data.data || []).map(gif => ({
+                thumb: gif.images.fixed_height_small.url,
+                full: gif.images.fixed_height.url
+            }));
+        } else {
+            gifs = (data.results || []).map(gif => ({
+                thumb: gif.media_formats.tinygif.url,
+                full: gif.media_formats.gif.url
+            }));
+        }
+
+        if (gifs.length > 0) {
+            resultsDiv.innerHTML = gifs.map(gif => `
+                <img src="${gif.thumb}" 
+                     onclick="sendGifMessage('${gif.full}')" 
                      style="width: 100%; border-radius: 8px; cursor: pointer; transition: opacity 0.2s;"
                      onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
             `).join('');
@@ -538,7 +567,7 @@ async function searchGifs(query) {
             resultsDiv.innerHTML = '<p style="grid-column: span 2; text-align: center; color: var(--text-muted); font-size: 12px;">Sonuç bulunamadı.</p>';
         }
     } catch (err) {
-        console.error("Giphy Hatası:", err);
+        console.error(`${source} Hatası:`, err);
         resultsDiv.innerHTML = `<p style="grid-column: span 2; text-align: center; color: var(--error-color); font-size: 12px;">GIF'ler yüklenemedi.</p>`;
     }
 }
@@ -651,10 +680,12 @@ async function handleSendMessage() {
     if (!text || !currentChatFriendId) return;
 
     // GÜVENLİK BOTU KONTROLÜ
+    const db = window.firestore;
     const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
-    const WHITELISTED_UIDS = ['cjNcZvCFLvMSIywBScc11TQP1Vv2', '8qmKa6jVWLQevRpla9o00khN4tT2'];
 
-    if (!WHITELISTED_UIDS.includes(currentUser?.uid) && checkProfanity(text)) {
+    // Yetki kontrolü (Kişisel dökümandan veya global currentUser nesnesinden)
+    // Not: Bu yetkiyi Firestore'daki users_public/{uid} dökümanına "canBypassFilter: true" ekleyerek yönetebilirsiniz.
+    if (!currentUser?.canBypassFilter && checkProfanity(text)) {
         if (window.Swal) {
             Swal.fire({
                 icon: 'error',
@@ -668,8 +699,6 @@ async function handleSendMessage() {
         input.value = '';
         return;
     }
-
-    const db = window.firestore;
 
     const chatId = [currentUser.uid, currentChatFriendId].sort().join('_');
     const messagesRef = collection(db, "chats", chatId, "messages");

@@ -1048,7 +1048,7 @@ function updateStreakUI(streak, lastActivity) {
 
 // GÜVENLİK BOTU - GÜNLÜK SERİ SIFIRLANMA EFEKTİ (VİDEOLU POP-UP)
 window.showStreakResetEffect = function () {
-    // 1. Pop-up ve Video Hazırla
+    // 1. Pop-up ve Video Hazırla (Başlangıçta gizli)
     let alertBox = document.getElementById('streak-reset-alert');
     if (!alertBox) {
         alertBox = document.createElement('div');
@@ -1061,9 +1061,8 @@ window.showStreakResetEffect = function () {
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
             </button>
-            <div id="streak-video-wrapper" style="width: 100%; min-height: 200px; margin-bottom: 20px; border-radius: 15px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center;">
-                <div id="streak-video-loader" style="color: var(--primary-color); font-size: 14px;">Video Hazırlanıyor...</div>
-                <video id="streak-reset-video" muted playsinline preload="auto" style="width: 100%; display: none;">
+            <div id="streak-video-wrapper" style="width: 100%; margin-bottom: 20px; border-radius: 15px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center;">
+                <video id="streak-reset-video" muted playsinline preload="auto" style="width: 100%; display: block;">
                     <source src="assets/videos/streak-reset.mp4" type="video/mp4">
                 </video>
             </div>
@@ -1074,19 +1073,22 @@ window.showStreakResetEffect = function () {
     }
 
     const video = alertBox.querySelector('#streak-reset-video');
-    const loader = alertBox.querySelector('#streak-video-loader');
     const closeBtn = alertBox.querySelector('#close-streak-alert');
 
-    // 2. Arka planı karart
-    const overlay = document.createElement('div');
-    overlay.id = 'streak-reset-overlay';
-    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;opacity:0;transition:opacity 0.5s;';
-    document.body.appendChild(overlay);
+    // 2. Arka planı karart (Başlangıçta görünmez)
+    let overlay = document.getElementById('streak-reset-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'streak-reset-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;opacity:0;transition:opacity 0.5s;pointer-events:none;';
+        document.body.appendChild(overlay);
+    }
 
     // Kapatma fonksiyonu
     const closePopup = () => {
         alertBox.classList.remove('show');
         overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
         setTimeout(() => {
             overlay.remove();
             alertBox.remove();
@@ -1096,43 +1098,52 @@ window.showStreakResetEffect = function () {
 
     if (closeBtn) closeBtn.onclick = closePopup;
 
-    // 3. Göster ve Video Hazır Olduğunda Oynat
-    requestAnimationFrame(() => {
-        overlay.style.opacity = '1';
-        alertBox.classList.add('show');
+    // 3. Video tamamen yüklendiğinde her şeyi göster
+    const showEverything = () => {
+        if (alertBox.classList.contains('show')) return; // Zaten gösterildiyse tekrar etme
 
-        if (video) {
-            // Video tamamen yüklendiğinde ve akıcı oynatılabileceğinde başlat
-            video.oncanplaythrough = () => {
-                if (loader) loader.style.display = 'none';
-                video.style.display = 'block';
-                video.play().catch(err => console.error("Video play error:", err));
-            };
+        requestAnimationFrame(() => {
+            overlay.style.opacity = '1';
+            overlay.style.pointerEvents = 'auto';
+            alertBox.classList.add('show');
+            video.play().catch(err => console.error("Video play error:", err));
+        });
 
-            // Eğer video zaten önbellekten yüklendiyse hemen başlat
-            if (video.readyState >= 4) {
-                if (loader) loader.style.display = 'none';
-                video.style.display = 'block';
-                video.play().catch(err => console.error("Video play error cached:", err));
+        // 3 saniye sonra kapatma butonunu göster
+        setTimeout(() => {
+            if (closeBtn) {
+                closeBtn.style.opacity = '1';
+                closeBtn.style.pointerEvents = 'auto';
             }
-        }
-    });
+        }, 3000);
 
-    // 3 saniye sonra kapatma butonunu göster
-    setTimeout(() => {
-        if (closeBtn) {
-            closeBtn.style.opacity = '1';
-            closeBtn.style.pointerEvents = 'auto';
-        }
-    }, 3000);
-
-    // 4. Otomatik Kapatma
-    if (video) {
+        // Otomatik Kapatma
         video.onended = () => {
             window.streakAutoCloseTimer = setTimeout(closePopup, 5000);
         };
-    } else {
-        window.streakAutoCloseTimer = setTimeout(closePopup, 7000);
+    };
+
+    if (video) {
+        // Video hazır olduğunda göster
+        video.oncanplaythrough = showEverything;
+
+        // Eğer zaten hazırsa hemen göster
+        if (video.readyState >= 4) {
+            showEverything();
+        }
+
+        // Güvenlik: Eğer 10 saniye içinde video yüklenmezse yine de göster veya hata ver
+        setTimeout(() => {
+            if (!alertBox.classList.contains('show')) {
+                console.warn("Video yüklenmesi gecikti, popup yine de gösteriliyor.");
+                showEverything();
+            }
+        }, 15000);
+
+        video.onerror = () => {
+            console.error("Video hatası, popup video olmadan gösteriliyor.");
+            showEverything();
+        };
     }
 };
 

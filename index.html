@@ -604,11 +604,35 @@
             <!-- Mesajlar buraya gelecek -->
         </div>
 
+        <!-- Emoji/GIF Panel Alanı -->
+        <div id="chat-tools-container" class="hide"
+            style="height: 0; background: white; border-top: 1px solid var(--border-color); overflow: hidden; transition: height 0.3s ease;">
+            <!-- İçerik JavaScript ile yüklenecek -->
+        </div>
+
         <!-- Mesaj Yazma Alanı -->
         <div id="chat-footer"
-            style="padding: 12px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border-color);">
+            style="padding: 12px; display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--border-color); background: white;">
+
+            <button id="chat-emoji-btn" title="Emoji"
+                style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: color 0.2s;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                </svg>
+            </button>
+
+            <button id="chat-gif-btn" title="GIF"
+                style="background: none; border: none; font-size: 11px; font-weight: bold; cursor: pointer; border: 2px solid var(--text-muted); border-radius: 4px; width: 26px; height: 20px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.2s;">
+                GIF
+            </button>
+
             <input type="text" id="chat-input" placeholder="Mesaj yaz..."
-                style="flex: 1; padding: 10px; border: none; border-radius: 20px; outline: none; font-size: 14px;">
+                style="flex: 1; padding: 8px 15px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; font-size: 14px; background: var(--bg-color);">
+
             <button id="send-chat-btn"
                 style="background: var(--primary-color); border: none; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s;">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"

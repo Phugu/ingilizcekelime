@@ -424,10 +424,153 @@ window.openChatWindow = function (friendId, friendName) {
     // Olayları bağla
     document.getElementById('close-chat-btn').onclick = closeChatWindow;
     document.getElementById('send-chat-btn').onclick = handleSendMessage;
+    document.getElementById('chat-emoji-btn').onclick = toggleEmojiPicker;
+    document.getElementById('chat-gif-btn').onclick = toggleGifPicker;
+
     document.getElementById('chat-input').onkeypress = (e) => {
         if (e.key === 'Enter') handleSendMessage();
     };
 }
+
+// EMOJI & GIF LOGIC
+const COMMON_EMOJIS = ['😀', '😂', '😍', '😊', '🥰', '😎', '🤔', '😢', '🔥', '👍', '🙏', '❤️', '🎉', '✨', '💯', '🚀', '🙌', '💪', '😜', '🤩', '😭', '😡', '😱', '👀', '💡', '✅', '❌', '👋'];
+
+window.toggleEmojiPicker = function () {
+    const container = document.getElementById('chat-tools-container');
+    const input = document.getElementById('chat-input');
+
+    if (container.dataset.type === 'emoji' && !container.classList.contains('hide')) {
+        hideChatTools();
+        return;
+    }
+
+    container.innerHTML = `
+        <div style="padding: 10px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; max-height: 180px; overflow-y: auto;">
+            ${COMMON_EMOJIS.map(e => `<span onclick="insertEmoji('${e}')" style="font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 5px; transition: transform 0.1s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">${e}</span>`).join('')}
+        </div>
+    `;
+
+    container.dataset.type = 'emoji';
+    showChatTools(200);
+};
+
+window.toggleGifPicker = function () {
+    const container = document.getElementById('chat-tools-container');
+
+    if (container.dataset.type === 'gif' && !container.classList.contains('hide')) {
+        hideChatTools();
+        return;
+    }
+
+    container.innerHTML = `
+        <div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; height: 100%;">
+            <input type="text" id="gif-search-input" placeholder="GIF Ara..." 
+                   style="width: 100%; padding: 8px 12px; border-radius: 15px; border: 1px solid var(--border-color); font-size: 13px; outline: none;">
+            <div id="gif-results" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; overflow-y: auto; flex: 1;">
+                <p style="grid-column: span 2; text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px;">Trend GIF'ler yükleniyor...</p>
+            </div>
+        </div>
+    `;
+
+    container.dataset.type = 'gif';
+    showChatTools(220);
+
+    const searchInput = document.getElementById('gif-search-input');
+    searchInput.focus();
+    searchInput.oninput = debounce(() => searchGifs(searchInput.value), 500);
+
+    // İlk trendleri yükle
+    searchGifs('');
+};
+
+window.insertEmoji = function (emoji) {
+    const input = document.getElementById('chat-input');
+    input.value += emoji;
+    input.focus();
+};
+
+function showChatTools(height) {
+    const container = document.getElementById('chat-tools-container');
+    container.classList.remove('hide');
+    // Force reflow
+    void container.offsetWidth;
+    container.style.height = height + 'px';
+}
+
+function hideChatTools() {
+    const container = document.getElementById('chat-tools-container');
+    container.style.height = '0';
+    setTimeout(() => {
+        if (container.style.height === '0px') container.classList.add('hide');
+    }, 300);
+}
+
+// Debounce helper
+function debounce(func, wait) {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+async function searchGifs(query) {
+    const resultsDiv = document.getElementById('gif-results');
+    if (!resultsDiv) return;
+
+    // Giphy Beta Key (Public)
+    const apiKey = 'dc6zaTOxFJmzC';
+    const endpoint = query ? 'search' : 'trending';
+    const url = `https://api.giphy.com/v1/gifs/${endpoint}?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=20&rating=g`;
+
+    try {
+        const resp = await fetch(url);
+        const data = await resp.json();
+
+        if (data.data && data.data.length > 0) {
+            resultsDiv.innerHTML = data.data.map(gif => `
+                <img src="${gif.images.fixed_height_small.url}" 
+                     onclick="sendGifMessage('${gif.images.fixed_height.url}')" 
+                     style="width: 100%; border-radius: 8px; cursor: pointer; transition: opacity 0.2s;"
+                     onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+            `).join('');
+        } else {
+            resultsDiv.innerHTML = '<p style="grid-column: span 2; text-align: center; color: var(--text-muted); font-size: 12px;">Sonuç bulunamadı.</p>';
+        }
+    } catch (err) {
+        console.error("Giphy Hatası:", err);
+        resultsDiv.innerHTML = `<p style="grid-column: span 2; text-align: center; color: var(--error-color); font-size: 12px;">GIF'ler yüklenemedi.</p>`;
+    }
+}
+
+window.sendGifMessage = async function (url) {
+    const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
+    const db = window.firestore;
+    const chatId = [currentUser.uid, currentChatFriendId].sort().join('_');
+    const messagesRef = collection(db, "chats", chatId, "messages");
+
+    hideChatTools();
+
+    try {
+        await addDoc(messagesRef, {
+            senderId: currentUser.uid,
+            senderName: currentUser.displayName || 'İsimsiz',
+            text: `[GIF] ${url}`,
+            timestamp: Timestamp.now()
+        });
+
+        const friendshipRef = doc(db, "friendships", chatId);
+        await updateDoc(friendshipRef, {
+            lastMessage: '📷 GIF Gönderildi',
+            lastMessageSenderId: currentUser.uid,
+            lastMessageTimestamp: Timestamp.now(),
+            ['unread_' + currentChatFriendId]: true
+        });
+
+    } catch (err) {
+        console.error("GIF gönderilemedi:", err);
+    }
+};
 
 window.closeChatWindow = closeChatWindow;
 window.handleSendMessage = handleSendMessage;
@@ -577,8 +720,15 @@ function listenForMessages(friendId) {
 
                 const time = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
 
+                // GIF kontrolü
+                let contentHtml = data.text;
+                if (data.text && data.text.startsWith('[GIF] ')) {
+                    const url = data.text.replace('[GIF] ', '');
+                    contentHtml = `<img src="${url}" style="max-width: 100%; border-radius: 12px; display: block; margin: 5px 0;">`;
+                }
+
                 msgDiv.innerHTML = `
-                    <div>${data.text}</div>
+                    <div style="word-break: break-word;">${contentHtml}</div>
                     <span class="msg-time">${time}</span>
                 `;
 

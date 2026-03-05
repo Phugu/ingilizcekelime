@@ -420,23 +420,37 @@ window.openChatWindow = function (friendId, friendName) {
     nameEl.textContent = friendName;
     avatarEl.textContent = (friendName || "?").charAt(0).toUpperCase();
 
-    // Durum dinleyiciyi başlat
+    // Durum ve Profil Resmi dinleyiciyi başlat
     if (activeChatStatusUnsubscribe) activeChatStatusUnsubscribe();
     const db = window.firestore;
     activeChatStatusUnsubscribe = onSnapshot(doc(db, "users_public", friendId), (snap) => {
-        if (snap.exists() && statusEl) {
+        if (snap.exists()) {
             const userData = snap.data();
-            const isOnline = userData.onlineStatus === 'online';
 
-            // 5dk kontrolü
-            let reallyOnline = isOnline;
-            if (isOnline && userData.lastSeen) {
-                const lastSeen = userData.lastSeen.toDate();
-                if ((new Date() - lastSeen) > 5 * 60 * 1000) reallyOnline = false;
+            // Profil resmini güncelle
+            if (userData.photoURL) {
+                avatarEl.textContent = '';
+                avatarEl.style.backgroundImage = `url('${userData.photoURL}')`;
+                avatarEl.style.backgroundSize = 'cover';
+                avatarEl.style.backgroundPosition = 'center';
+                avatarEl.style.color = 'transparent';
+            } else {
+                avatarEl.textContent = (friendName || "?").charAt(0).toUpperCase();
+                avatarEl.style.backgroundImage = 'none';
+                avatarEl.style.color = 'white';
             }
 
-            statusEl.textContent = reallyOnline ? 'Çevrimiçi' : 'Çevrimdışı';
-            statusEl.style.opacity = reallyOnline ? '1' : '0.6';
+            if (statusEl) {
+                const isOnline = userData.onlineStatus === 'online';
+                // 5dk kontrolü
+                let reallyOnline = isOnline;
+                if (isOnline && userData.lastSeen) {
+                    const lastSeen = userData.lastSeen.toDate();
+                    if ((new Date() - lastSeen) > 5 * 60 * 1000) reallyOnline = false;
+                }
+                statusEl.textContent = reallyOnline ? 'Çevrimiçi' : 'Çevrimdışı';
+                statusEl.style.opacity = reallyOnline ? '1' : '0.6';
+            }
         }
     });
 
@@ -1091,21 +1105,32 @@ window.setupGlobalChatListener = function () {
     if (globalChatUnsubscribe) globalChatUnsubscribe();
 
     globalChatUnsubscribe = onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
+        snapshot.docChanges().forEach(async (change) => {
             if (change.type === "modified") {
                 const data = change.doc.data();
 
                 // Eğer son mesajı ben göndermediysem ve sohbet şu an açık değilse bildir
                 const isIncoming = data.lastMessageSenderId !== currentUser.uid;
-                const isChatActive = window.currentChatFriendId === data.lastMessageSenderId; // Yanlış mantık olabilir, friendId bulmalıyız
 
                 // Göndereni bul (ben olmayan kullanıcı)
                 const senderId = data.users.find(id => id !== currentUser.uid);
                 const isCurrentlyChatting = currentChatFriendId === senderId && document.getElementById('chat-widget-container').classList.contains('active');
 
                 if (isIncoming && !isCurrentlyChatting && data['unread_' + currentUser.uid]) {
-                    const senderName = (data.senderId === currentUser.uid ? data.receiverName : data.senderName) || "Arkadaş";
-                    const senderPhoto = data.senderId === currentUser.uid ? data.receiverPhotoURL : data.senderPhotoURL;
+                    let senderName = (data.senderId === currentUser.uid ? data.receiverName : data.senderName) || "Arkadaş";
+                    let senderPhoto = data.senderId === currentUser.uid ? data.receiverPhotoURL : data.senderPhotoURL;
+
+                    // Yedek kontrol: Eğer dökümanda resim yoksa users_public'ten çek
+                    if (!senderPhoto) {
+                        try {
+                            const publicDoc = await getDoc(doc(db, 'users_public', senderId));
+                            if (publicDoc.exists()) {
+                                senderPhoto = publicDoc.data().photoURL;
+                                if (!senderName || senderName === 'Arkadaş') senderName = publicDoc.data().displayName || publicDoc.data().name;
+                            }
+                        } catch (e) { }
+                    }
+
                     showGlobalNotification(senderName, data.lastMessage, senderId, senderPhoto);
                 }
             }

@@ -240,7 +240,7 @@ function refreshFriendsData() {
                                 ${!photoURL ? friendName.charAt(0).toUpperCase() : ''}
                             </div>
                             <div>
-                                <div style="color: var(--text-main); font-weight: bold; font-size: 16px;">${friendName}</div>
+                                <div class="friend-name-text" style="color: var(--text-main); font-weight: bold; font-size: 16px;">${friendName}</div>
                                 <div style="display: flex; align-items: center; gap: 5px;">
                                     <span class="status-dot status-offline"></span>
                                     <span class="status-text offline">Yükleniyor...</span>
@@ -345,6 +345,14 @@ function setupFriendsStatusListeners() {
 
                 const dot = card.querySelector('.status-dot');
                 const text = card.querySelector('.status-text');
+                const nameText = card.querySelector('.friend-name-text');
+                const avatar = card.querySelector('.friend-card .friend-card-avatar') || card.querySelector('div[style*="width: 45px"]');
+
+                if (nameText && userData.displayName) nameText.textContent = userData.displayName;
+                if (avatar && userData.photoURL) {
+                    avatar.style.backgroundImage = `url('${userData.photoURL}')`;
+                    avatar.textContent = '';
+                }
 
                 if (dot && text) {
                     dot.className = `status-dot ${reallyOnline ? 'status-online' : 'status-offline'}`;
@@ -426,6 +434,10 @@ window.openChatWindow = function (friendId, friendName) {
     activeChatStatusUnsubscribe = onSnapshot(doc(db, "users_public", friendId), (snap) => {
         if (snap.exists()) {
             const userData = snap.data();
+            const latestName = userData.displayName || userData.name || friendName;
+
+            // İsmi güncelle
+            nameEl.textContent = latestName;
 
             // Profil resmini güncelle
             if (userData.photoURL) {
@@ -435,7 +447,7 @@ window.openChatWindow = function (friendId, friendName) {
                 avatarEl.style.backgroundPosition = 'center';
                 avatarEl.style.color = 'transparent';
             } else {
-                avatarEl.textContent = (friendName || "?").charAt(0).toUpperCase();
+                avatarEl.textContent = latestName.charAt(0).toUpperCase();
                 avatarEl.style.backgroundImage = 'none';
                 avatarEl.style.color = 'white';
             }
@@ -1305,7 +1317,7 @@ window.addEventListener('load', () => {
                 const safeName = friendName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
 
                 return `
-                    <div class="qchat-friend-row" onclick="setTimeout(() => { window.toggleQuickChatPopup(); if(window.openChatWindow) window.openChatWindow('${friendUid}', '${safeName}'); }, 50);">
+                    <div class="qchat-friend-row" data-friend-id="${friendUid}" onclick="setTimeout(() => { window.toggleQuickChatPopup(); if(window.openChatWindow) window.openChatWindow('${friendUid}', '${safeName}'); }, 50);">
                         <div class="qchat-avatar" style="${avatarStyle}">
                             ${photoURL ? '' : initial}
                         </div>

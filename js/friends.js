@@ -866,6 +866,7 @@ async function handleSendMessage() {
         await addDoc(messagesRef, {
             senderId: currentUser.uid,
             senderName: currentUser.displayName || 'İsimsiz',
+            senderPhotoURL: currentUser.photoURL || window.currentUser?.photoURL || null,
             text: text,
             timestamp: Timestamp.now()
         });
@@ -917,12 +918,33 @@ function listenForMessages(friendId) {
                     msgDiv.classList.add('has-gif');
                 }
 
+                // Avatar (profil fotoğrafı veya harf)
+                const avatarPhotoURL = data.senderPhotoURL;
+                const avatarInitial = (data.senderName || '?').charAt(0).toUpperCase();
+                const avatarHtml = `
+                    <div style="
+                        width: 28px; height: 28px; min-width: 28px;
+                        border-radius: 50%;
+                        background-color: var(--primary-color);
+                        ${avatarPhotoURL ? `background-image: url('${avatarPhotoURL}'); background-size: cover; background-position: center;` : ''}
+                        display: flex; align-items: center; justify-content: center;
+                        font-size: 11px; font-weight: bold; color: white;
+                        align-self: flex-end; flex-shrink: 0;
+                    ">${avatarPhotoURL ? '' : avatarInitial}</div>
+                `;
+
+                // Mesaj + avatar yatay düzen
+                const wrapperDiv = document.createElement('div');
+                wrapperDiv.style.cssText = `display:flex; align-items:flex-end; gap:6px; ${isSent ? 'flex-direction:row-reverse;' : 'flex-direction:row;'}`;
+                wrapperDiv.innerHTML = avatarHtml;
+                wrapperDiv.appendChild(msgDiv);
+
                 msgDiv.innerHTML = `
                     <div style="word-break: break-word;">${contentHtml}</div>
                     ${isGif ? '' : '<span class="msg-time">' + time + '</span>'}
                 `;
 
-                messagesContainer.appendChild(msgDiv);
+                messagesContainer.appendChild(wrapperDiv);
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
         });

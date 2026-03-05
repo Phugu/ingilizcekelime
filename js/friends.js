@@ -348,10 +348,24 @@ function setupFriendsStatusListeners() {
                 const nameText = card.querySelector('.friend-name-text');
                 const avatar = card.querySelector('.friend-card .friend-card-avatar') || card.querySelector('div[style*="width: 45px"]');
 
-                if (nameText && userData.displayName) nameText.textContent = userData.displayName;
+                const latestName = userData.displayName || userData.name;
+
+                if (nameText && latestName) nameText.textContent = latestName;
                 if (avatar && userData.photoURL) {
                     avatar.style.backgroundImage = `url('${userData.photoURL}')`;
                     avatar.textContent = '';
+                }
+
+                // HIZLI MESAJ POPUP GÜNCELLEME
+                const qchatRow = document.querySelector(`.qchat-friend-row[data-friend-id="${friendId}"]`);
+                if (qchatRow) {
+                    const qName = qchatRow.querySelector('.qchat-name');
+                    const qAvatar = qchatRow.querySelector('.qchat-avatar');
+                    if (qName && latestName) qName.textContent = latestName;
+                    if (qAvatar && userData.photoURL) {
+                        qAvatar.style.backgroundImage = `url('${userData.photoURL}')`;
+                        qAvatar.textContent = '';
+                    }
                 }
 
                 if (dot && text) {

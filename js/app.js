@@ -3211,9 +3211,8 @@ async function loadLeaderboard(container) {
         const rows = snapshot.docs.map((docSnap, i) => {
             const d = docSnap.data();
             // GÜVENLİK: E-posta adresi ASLA gösterilmez, sadece isim kullanılır
-            const rawName = d.name || 'Anonim';
+            const rawName = d.displayName || d.name || 'Anonim';
             const isMe = docSnap.id === currentUser?.uid;
-            // Diğer kullanıcıların isimlerini artık maskelemiyoruz, doğrudan XSS'den temizleyip gösteriyoruz
             const displayName = escapeHTML(rawName);
             const xp = d.total_xp || d.xp || 0;
             const medal = medals[i] || `${i + 1}.`;
@@ -3268,7 +3267,7 @@ window.showPublicProfile = async function (uid) {
         if (userDoc.exists()) {
             const data = userDoc.data();
 
-            const rawName = data.name || 'Anonim';
+            const rawName = data.displayName || data.name || 'Anonim';
             document.getElementById('public-profile-name').textContent = escapeHTML(rawName);
             document.getElementById('public-profile-level').textContent = `Seviye ${data.level || 1}`;
 

@@ -628,6 +628,20 @@ window.toggleExpandChat = function () {
     const btn = document.getElementById('expand-chat-btn');
     const isExpanded = widget.classList.toggle('expanded');
 
+    // Expand edilince her zaman sağ üste konumlandır (tam ekran gibi)
+    if (isExpanded) {
+        widget.style.top = '0px';
+        widget.style.left = '';
+        widget.style.bottom = '';
+        widget.style.right = '0px';
+    } else {
+        // Küçülürken sağ alt köşeye dön
+        widget.style.top = '';
+        widget.style.left = '';
+        widget.style.bottom = '20px';
+        widget.style.right = '20px';
+    }
+
     // İkon: büyüt = ok dışarı, küçült = ok içeri
     btn.innerHTML = isExpanded
         ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -644,10 +658,12 @@ window.toggleExpandChat = function () {
            </svg>`;
 };
 
-// ─── SÜRÜKLENEBILIR CHAT WIDGET ───────────────────────────────
+// ─── SÜRÜKLENEBILIR CHAT WIDGET (GPU-hızlandırmalı, 60fps) ────
 (function initDraggableChat() {
     let isDragging = false;
-    let startX, startY, origLeft, origTop;
+    let pendingX = 0, pendingY = 0;
+    let rafId = null;
+    let curLeft = 0, curTop = 0;
 
     function setupDrag() {
         const header = document.getElementById('chat-header');
@@ -655,76 +671,85 @@ window.toggleExpandChat = function () {
         if (!header || !widget) return;
 
         header.style.cursor = 'grab';
+        widget.style.willChange = 'left, top';
 
-        // Mouse olayları
         header.addEventListener('mousedown', onDragStart);
         document.addEventListener('mousemove', onDragMove);
         document.addEventListener('mouseup', onDragEnd);
 
-        // Dokunmatik olaylar (mobil)
-        header.addEventListener('touchstart', onDragStart, { passive: true });
+        header.addEventListener('touchstart', onDragStart, { passive: false });
         document.addEventListener('touchmove', onDragMove, { passive: false });
         document.addEventListener('touchend', onDragEnd);
     }
 
     function getPos(e) {
-        return e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
-            : { x: e.clientX, y: e.clientY };
+        const src = e.touches ? e.touches[0] : e;
+        return { x: src.clientX, y: src.clientY };
     }
 
     function onDragStart(e) {
-        // Eğer tıklanan yer buton ise sürükleme
         if (e.target.closest('button')) return;
+        e.preventDefault();
 
         const widget = document.getElementById('chat-widget-container');
         const rect = widget.getBoundingClientRect();
 
-        // İlk sürüklemede fixed pozisyona geç (bottom/right → top/left)
+        // bottom/right → top/left geçişini bir kez yap
         widget.style.bottom = 'auto';
         widget.style.right = 'auto';
         widget.style.left = rect.left + 'px';
         widget.style.top = rect.top + 'px';
 
-        isDragging = true;
-        const pos = getPos(e);
-        startX = pos.x;
-        startY = pos.y;
-        origLeft = rect.left;
-        origTop = rect.top;
+        curLeft = rect.left;
+        curTop = rect.top;
 
+        const pos = getPos(e);
+        pendingX = pos.x;
+        pendingY = pos.y;
+        isDragging = true;
         document.getElementById('chat-header').style.cursor = 'grabbing';
-        if (e.cancelable) e.preventDefault();
     }
 
     function onDragMove(e) {
         if (!isDragging) return;
-        const widget = document.getElementById('chat-widget-container');
+        e.preventDefault();
+
         const pos = getPos(e);
+        const dx = pos.x - pendingX;
+        const dy = pos.y - pendingY;
+        pendingX = pos.x;
+        pendingY = pos.y;
 
-        let newLeft = origLeft + (pos.x - startX);
-        let newTop = origTop + (pos.y - startY);
+        curLeft += dx;
+        curTop += dy;
 
-        // Ekran sınırları içinde tut
-        const minLeft = 0;
-        const minTop = 0;
+        if (!rafId) {
+            rafId = requestAnimationFrame(applyPosition);
+        }
+    }
+
+    function applyPosition() {
+        rafId = null;
+        if (!isDragging) return;
+
+        const widget = document.getElementById('chat-widget-container');
         const maxLeft = window.innerWidth - widget.offsetWidth;
         const maxTop = window.innerHeight - widget.offsetHeight;
 
-        newLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
-        newTop = Math.max(minTop, Math.min(maxTop, newTop));
+        const clampedLeft = Math.max(0, Math.min(maxLeft, curLeft));
+        const clampedTop = Math.max(0, Math.min(maxTop, curTop));
 
-        widget.style.left = newLeft + 'px';
-        widget.style.top = newTop + 'px';
-        if (e.cancelable) e.preventDefault();
+        widget.style.left = clampedLeft + 'px';
+        widget.style.top = clampedTop + 'px';
     }
 
     function onDragEnd() {
         if (!isDragging) return;
         isDragging = false;
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
         document.getElementById('chat-header').style.cursor = 'grab';
     }
 
-    // Widget aktif olunca drag'i kur (DOM hazır olmayabilir, MutationObserver kullan)
     const observer = new MutationObserver(() => {
         if (document.getElementById('chat-header')) {
             setupDrag();
@@ -732,23 +757,21 @@ window.toggleExpandChat = function () {
         }
     });
     observer.observe(document.body, { childList: true, subtree: true });
-
-    // Zaten varsa hemen kur
     if (document.getElementById('chat-header')) setupDrag();
 
-    // Pencere boyutu değişince sınır dışı kalmasın
     window.addEventListener('resize', () => {
         const widget = document.getElementById('chat-widget-container');
-        if (!widget || !widget.style.left) return;
+        if (!widget || widget.style.left === '') return;
         const maxLeft = window.innerWidth - widget.offsetWidth;
         const maxTop = window.innerHeight - widget.offsetHeight;
-        const curLeft = parseFloat(widget.style.left) || 0;
-        const curTop = parseFloat(widget.style.top) || 0;
-        widget.style.left = Math.max(0, Math.min(maxLeft, curLeft)) + 'px';
-        widget.style.top = Math.max(0, Math.min(maxTop, curTop)) + 'px';
+        curLeft = Math.max(0, Math.min(maxLeft, parseFloat(widget.style.left) || 0));
+        curTop = Math.max(0, Math.min(maxTop, parseFloat(widget.style.top) || 0));
+        widget.style.left = curLeft + 'px';
+        widget.style.top = curTop + 'px';
     });
 })();
 // ───────────────────────────────────────────────────────────────
+
 
 // GÜVENLİK BOTU - KÜFÜR VE HAKARET FİLTRESİ
 function checkProfanity(text) {

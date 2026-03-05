@@ -784,18 +784,18 @@
         .chat-msg.sent>div>img,
         .chat-msg.received>div>img {
             display: block;
-            max-width: 100%;
+            max-width: 220px;
             border-radius: 12px;
-            margin: -10px -14px;
-            /* padding'i sıfırla */
         }
 
-        /* GIF içeren mesaj baloncuğunun arka planını şeffaf yap */
+        /* GIF içeren mesaj baloncuğu – şeffaf, boyutu içeriğe göre küçülsün */
         .chat-msg.has-gif {
             background: transparent !important;
             box-shadow: none !important;
             padding: 0 !important;
             border-radius: 12px !important;
+            max-width: fit-content !important;
+            width: fit-content !important;
         }
 
         .chat-msg.received {

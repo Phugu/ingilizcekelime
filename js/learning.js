@@ -812,11 +812,11 @@ export class WordLearning {
                                     <td class="table-content english-word" style="display: flex; align-items: center; gap: 6px;">
                                         ${currentWord.english}
                                         <span class="audio-controls">
-                                            <button class="audio-btn" onclick="window.playAudio('${currentWord.english.replace(/'/g, "\\'")}')" title="Dinle">
-                                                🔊
+                                            <button class="audio-btn" onclick="window.playAudio('${currentWord.english.replace(/'/g, "\\\\'")}')" title="Dinle">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                                             </button>
-                                            <button class="audio-btn audio-btn-slow" onclick="window.playAudioSlow('${currentWord.english.replace(/'/g, "\\'")}')" title="Yavaş Dinle">
-                                                🐢
+                                            <button class="audio-btn audio-btn-slow" onclick="window.playAudioSlow('${currentWord.english.replace(/'/g, "\\\\'")}')" title="Yavaş Dinle">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/></svg>
                                             </button>
                                         </span>
                                     </td>
@@ -825,7 +825,7 @@ export class WordLearning {
                                     <td class="table-label">Örnek:</td>
                                     <td class="table-content" style="display: flex; align-items: center; gap: 6px;">
                                         ${currentWord.example || ''}
-                                        ${currentWord.example ? `<button class="audio-btn" onclick="window.playAudio('${(currentWord.example || '').replace(/'/g, "\\'")}')" title="Örneği Dinle" style="font-size: 1rem;">🔊</button>` : ''}
+                                        ${currentWord.example ? `<button class="audio-btn" onclick="window.playAudio('${(currentWord.example || '').replace(/'/g, "\\\\'")}')" title="Örneği Dinle" style="font-size: 0.9rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>` : ''}
                                     </td>
                                 </tr>
                                 <tr class="turkish-row" style="--row-index: 3;">
@@ -840,23 +840,27 @@ export class WordLearning {
                         </div>
                         
                         <div class="word-card-mobile">
-                            <span class="word-level">${currentWord.level}</span>
-                            <span class="word-category">${currentWord.category}</span>
-                            <div class="word-card-number">${this.currentWordIndex + 1}/${this.words.length}</div>
+                            <div class="mobile-card-header">
+                                <div class="mobile-card-badges">
+                                    <span class="word-level">${currentWord.level}</span>
+                                    <span class="word-category">${currentWord.category}</span>
+                                </div>
+                                <div class="word-card-number">${this.currentWordIndex + 1}/${this.words.length}</div>
+                            </div>
                             <div class="word-english" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
                                 ${currentWord.english}
                                 <span class="audio-controls">
                                     <button class="audio-btn" onclick="window.playAudio('${currentWord.english.replace(/'/g, "\\'")}')" title="Dinle" style="font-size: 1.5rem;">
-                                        🔊
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                                     </button>
                                     <button class="audio-btn audio-btn-slow" onclick="window.playAudioSlow('${currentWord.english.replace(/'/g, "\\'")}')" title="Yavaş Dinle">
-                                        🐢
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/></svg>
                                     </button>
                                 </span>
                             </div>
                             <div class="word-example" style="display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
                                 ${currentWord.example || ''}
-                                ${currentWord.example ? `<button class="audio-btn" onclick="window.playAudio('${(currentWord.example || '').replace(/'/g, "\\'")}')" title="Örneği Dinle" style="font-size: 1rem;">🔊</button>` : ''}
+                                ${currentWord.example ? `<button class="audio-btn" onclick="window.playAudio('${(currentWord.example || '').replace(/'/g, "\\'")}')" title="Örneği Dinle" style="font-size: 0.9rem;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>` : ''}
                             </div>
                             <div class="word-example-turkish" id="example-turkish-translation-mobile" style="opacity:0; transform:translateY(20px);">${currentWord.exampleTurkish || ''}</div>
                             <div class="word-turkish" id="turkish-translation-mobile" style="opacity:0; transform:translateY(20px);">${currentWord.turkish}</div>

@@ -879,6 +879,21 @@ a {
     display: block;
 }
 
+.mobile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 8px;
+}
+
+.mobile-card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
 .word-info-header {
     display: flex;
     justify-content: flex-start;

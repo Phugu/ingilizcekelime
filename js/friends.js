@@ -527,22 +527,11 @@ async function searchGifs(query, source = 'giphy') {
     const resultsDiv = document.getElementById('gif-results');
     if (!resultsDiv) return;
 
-    let url;
-    if (source === 'giphy') {
-        // Obfuscated Giphy Key (Base64)
-        const encodedKey = 'THlmS0EwUTVTaDQyNTg2dlpybmdCTjUzYnI3Z2MxSEw=';
-        const apiKey = atob(encodedKey);
-        const endpoint = query ? 'search' : 'trending';
-        url = `https://api.giphy.com/v1/gifs/${endpoint}?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=20&rating=g`;
-    } else {
-        // Tenor API (Public Sample Key)
-        const apiKey = 'LIVDSRZULELA';
-        const endpoint = query ? 'search' : 'featured';
-        url = `https://tenor.googleapis.com/v2/${endpoint}?key=${apiKey}&q=${encodeURIComponent(query)}&limit=20&contentfilter=medium`;
-    }
+    // Netlify proxy üzerinden çağır (Türkiye'deki ISP engeline karşı)
+    const proxyUrl = `/.netlify/functions/gif-proxy?query=${encodeURIComponent(query)}&source=${source}&limit=20`;
 
     try {
-        const resp = await fetch(url);
+        const resp = await fetch(proxyUrl);
         if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
         const data = await resp.json();
 

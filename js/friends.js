@@ -617,7 +617,32 @@ function closeChatWindow() {
         activeChatStatusUnsubscribe = null;
     }
     currentChatFriendId = null;
+
+    // Expanded moddan çık
+    widget.classList.remove('expanded');
 }
+
+// Instagram gibi chat büyüt / küçült
+window.toggleExpandChat = function () {
+    const widget = document.getElementById('chat-widget-container');
+    const btn = document.getElementById('expand-chat-btn');
+    const isExpanded = widget.classList.toggle('expanded');
+
+    // İkon: büyüt = ok dışarı, küçült = ok içeri
+    btn.innerHTML = isExpanded
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 14 4 20 10 20"></polyline>
+            <polyline points="20 10 20 4 14 4"></polyline>
+            <line x1="14" y1="10" x2="21" y2="3"></line>
+            <line x1="3" y1="21" x2="10" y2="14"></line>
+           </svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line>
+            <line x1="3" y1="21" x2="10" y2="14"></line>
+           </svg>`;
+};
 
 // GÜVENLİK BOTU - KÜFÜR VE HAKARET FİLTRESİ
 function checkProfanity(text) {
@@ -753,14 +778,16 @@ function listenForMessages(friendId) {
 
                 // GIF kontrolü
                 let contentHtml = data.text;
-                if (data.text && data.text.startsWith('[GIF] ')) {
+                const isGif = data.text && data.text.startsWith('[GIF] ');
+                if (isGif) {
                     const url = data.text.replace('[GIF] ', '');
-                    contentHtml = `<img src="${url}" style="max-width: 100%; border-radius: 12px; display: block; margin: 5px 0;">`;
+                    contentHtml = `<img src="${url}" style="max-width: 220px; border-radius: 12px; display: block;" onclick="this.style.maxWidth=this.style.maxWidth==='220px'?'100%':'220px'">`;
+                    msgDiv.classList.add('has-gif');
                 }
 
                 msgDiv.innerHTML = `
                     <div style="word-break: break-word;">${contentHtml}</div>
-                    <span class="msg-time">${time}</span>
+                    ${isGif ? '' : '<span class="msg-time">' + time + '</span>'}
                 `;
 
                 messagesContainer.appendChild(msgDiv);

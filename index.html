@@ -588,14 +588,30 @@
                     <div style="font-size: 10px; opacity: 0.8;" id="chat-status">Çevrimiçi</div>
                 </div>
             </div>
-            <button id="close-chat-btn"
-                style="background: none; border: none; color: white; cursor: pointer; padding: 5px;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <!-- Büyüt Butonu (Instagram gibi) -->
+                <button id="expand-chat-btn" title="Büyüt"
+                    style="background: none; border: none; color: white; cursor: pointer; padding: 5px; opacity: 0.85; transition: opacity 0.2s;"
+                    onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'"
+                    onclick="window.toggleExpandChat && window.toggleExpandChat()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <!-- Ok ikonları - köşelere uzat -->
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <polyline points="9 21 3 21 3 15"></polyline>
+                        <line x1="21" y1="3" x2="14" y2="10"></line>
+                        <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                </button>
+                <button id="close-chat-btn"
+                    style="background: none; border: none; color: white; cursor: pointer; padding: 5px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <!-- Mesaj Alanı -->
@@ -682,6 +698,32 @@
             visibility: visible;
         }
 
+        /* Expanded (büyütülmüş) chat modu - Instagram gibi */
+        #chat-widget-container.expanded {
+            bottom: 0 !important;
+            right: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            border-radius: 0 !important;
+            max-width: 100vw !important;
+        }
+
+        /* Masaüstünde genişletilmiş mod biraz daha elegant olsun */
+        @media (min-width: 768px) {
+            #chat-widget-container.expanded {
+                bottom: 0 !important;
+                right: 0 !important;
+                width: 480px !important;
+                height: 100vh !important;
+                border-radius: 0 !important;
+            }
+        }
+
+        /* Büyüt butonunu küçül ikonuyla değiştir */
+        #chat-widget-container.expanded #expand-chat-btn svg polyline:nth-child(1) {
+            d: path('M4 14 L4 20 L10 20');
+        }
+
         /* Dark Theme Chat Adjustments */
         .dark-theme #chat-widget-container {
             background: rgba(15, 15, 15, 0.85);
@@ -736,6 +778,24 @@
             background: var(--primary-color);
             color: white;
             border-bottom-right-radius: 4px;
+        }
+
+        /* GIF mesajlarda çerçeve ve padding olmasın, bubble gibi görünmesin */
+        .chat-msg.sent>div>img,
+        .chat-msg.received>div>img {
+            display: block;
+            max-width: 100%;
+            border-radius: 12px;
+            margin: -10px -14px;
+            /* padding'i sıfırla */
+        }
+
+        /* GIF içeren mesaj baloncuğunun arka planını şeffaf yap */
+        .chat-msg.has-gif {
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            border-radius: 12px !important;
         }
 
         .chat-msg.received {

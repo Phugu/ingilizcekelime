@@ -1051,34 +1051,41 @@ export class WordLearning {
                         opacity: 1;
                     }
                 }
-                /* Audio Button Styles */
+                /* Audio Button Styles - Theme Compatible */
                 .audio-btn {
-                    background: none;
-                    border: none;
+                    background: var(--input-bg);
+                    border: 1.5px solid var(--border-color);
                     cursor: pointer;
                     color: var(--primary-color);
-                    font-size: 1.2rem;
-                    padding: 6px 8px;
-                    border-radius: 50%;
+                    padding: 5px 7px;
+                    border-radius: 8px;
                     transition: all 0.2s ease;
                     display: inline-flex;
                     align-items: center;
                     justify-content: center;
+                    line-height: 1;
+                }
+                .audio-btn svg {
+                    display: block;
                 }
                 .audio-btn:hover {
-                    background: rgba(52, 152, 219, 0.15);
-                    transform: scale(1.15);
+                    background: var(--primary-color);
+                    color: white;
+                    border-color: var(--primary-color);
+                    transform: scale(1.1);
                 }
                 .audio-btn:active {
                     transform: scale(0.95);
                 }
                 .audio-btn.audio-playing {
                     animation: audioPulse 0.8s ease-in-out infinite;
-                    color: var(--success-color);
+                    background: var(--primary-color);
+                    color: white;
+                    border-color: var(--primary-color);
                 }
                 .audio-btn-slow {
-                    font-size: 0.85rem !important;
-                    opacity: 0.7;
+                    opacity: 0.6;
+                    padding: 4px 6px;
                 }
                 .audio-btn-slow:hover {
                     opacity: 1;
@@ -1086,12 +1093,13 @@ export class WordLearning {
                 .audio-controls {
                     display: inline-flex;
                     align-items: center;
-                    gap: 2px;
-                    margin-left: 5px;
+                    gap: 4px;
+                    margin-left: 6px;
+                    flex-shrink: 0;
                 }
                 @keyframes audioPulse {
                     0%, 100% { transform: scale(1); }
-                    50% { transform: scale(1.2); }
+                    50% { transform: scale(1.1); }
                 }
             `;
         }

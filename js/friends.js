@@ -983,7 +983,8 @@ window.setupGlobalChatListener = function () {
                 const isCurrentlyChatting = currentChatFriendId === senderId && document.getElementById('chat-widget-container').classList.contains('active');
 
                 if (isIncoming && !isCurrentlyChatting && data['unread_' + currentUser.uid]) {
-                    showGlobalNotification(data.senderName || data.receiverName || "Arkadaş", data.lastMessage, senderId);
+                    const senderName = data['name_' + senderId] || "Arkadaş";
+                    showGlobalNotification(senderName, data.lastMessage, senderId);
                 }
             }
         });
@@ -1063,6 +1064,8 @@ window.addEventListener('load', () => {
     setTimeout(updateFabVisibility, 500);
     window.addEventListener('hashchange', updateFabVisibility);
 
+    let quickChatUnsubscribe = null;
+
     window.toggleQuickChatPopup = async function () {
         const popup = document.getElementById('quick-chat-popup');
         const list = document.getElementById('quick-chat-list');
@@ -1071,7 +1074,13 @@ window.addEventListener('load', () => {
         popupOpen = !popupOpen;
         popup.style.display = popupOpen ? 'flex' : 'none';
 
-        if (!popupOpen) return;
+        if (!popupOpen) {
+            if (quickChatUnsubscribe) {
+                quickChatUnsubscribe();
+                quickChatUnsubscribe = null;
+            }
+            return;
+        }
 
         // Arkadaş listesini yükle
         const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
@@ -1083,20 +1092,26 @@ window.addEventListener('load', () => {
 
         list.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">Yükleniyor...</p>';
 
-        try {
-            const q = query(collection(db, 'friendships'),
-                where('status', '==', 'accepted'),
-                where('users', 'array-contains', currentUser.uid));
-            const snap = await getDocs(q);
+        const q = query(collection(db, 'friendships'),
+            where('status', '==', 'accepted'),
+            where('users', 'array-contains', currentUser.uid));
 
+        quickChatUnsubscribe = onSnapshot(q, async (snap) => {
             if (snap.empty) {
                 list.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">Henüz arkadaşın yok.</p>';
                 return;
             }
 
+            let docsData = snap.docs.map(d => d.data());
+            // Son mesaja göre sırala (en yeni en üstte)
+            docsData.sort((a, b) => {
+                const tA = (a.lastMessageTimestamp && a.lastMessageTimestamp.seconds) || 0;
+                const tB = (b.lastMessageTimestamp && b.lastMessageTimestamp.seconds) || 0;
+                return tB - tA;
+            });
+
             // Her arkadaş için satır oluştur
-            const rows = await Promise.all(snap.docs.map(async (docSnap) => {
-                const data = docSnap.data();
+            const rows = await Promise.all(docsData.map(async (data) => {
                 const friendUid = data.users.find(u => u !== currentUser.uid);
                 const friendName = data['name_' + friendUid] || 'Kullanıcı';
                 const lastMsg = data.lastMessage || '';
@@ -1116,6 +1131,9 @@ window.addEventListener('load', () => {
                     ? `background-image:url('${photoURL}'); background-size:cover; background-position:center;`
                     : '';
 
+                // Okunmadı kırmızı nokta
+                const isUnread = data['unread_' + currentUser.uid] ? `<div style="width:8px;height:8px;background:#ff3b30;border-radius:50%;margin-left:auto;"></div>` : '';
+
                 return `
                     <div class="qchat-friend-row" onclick="
                         window.toggleQuickChatPopup();
@@ -1124,20 +1142,19 @@ window.addEventListener('load', () => {
                         <div class="qchat-avatar" style="${avatarStyle}">
                             ${photoURL ? '' : initial}
                         </div>
-                        <div style="min-width:0;">
-                            <div class="qchat-name">${friendName}</div>
-                            <div class="qchat-last">${lastMsg || 'Sohbet başlat'}</div>
+                        <div style="min-width:0; flex:1;">
+                            <div class="qchat-name" style="${isUnread ? 'font-weight:bold;' : ''}">${friendName}</div>
+                            <div class="qchat-last" style="${isUnread ? 'color:var(--text-main); font-weight:bold;' : ''}">${lastMsg || 'Sohbet başlat'}</div>
                         </div>
+                        ${isUnread}
                     </div>
                 `;
             }));
 
             list.innerHTML = rows.join('');
-        } catch (err) {
-            console.error('Quick chat popup error:', err);
-            list.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">Yüklenemedi.</p>';
-        }
+        });
     };
+
 
     // Popup dışına tıklayınca kapat
     document.addEventListener('click', (e) => {

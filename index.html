@@ -57,7 +57,8 @@
     </script>
     <link rel="stylesheet" href="css/style.css?v=20260301_v14">
     <!-- SweetAlert2 CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.1/sweetalert2.min.css">
     <script type="module" src="js/firebase-init.js"></script>
     <script src="js/config.js"></script>
 
@@ -1189,8 +1190,27 @@
     </div>
 
     <!-- Konfeti Efekti İçin Kütüphane -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.6.0/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.1/sweetalert2.all.min.js"></script>
+
+    <!-- CDN Fallback (Kütüphaneler yüklenmezse uygulamanın çökmesini engeller) -->
+    <script>
+        if (typeof confetti === 'undefined') {
+            window.confetti = function () { console.log('Confetti CDN error: fallback to no-op'); };
+        }
+        if (typeof Swal === 'undefined') {
+            window.Swal = {
+                fire: function (opts) {
+                    console.log('Swal CDN error: fallback to alert');
+                    if (opts.title || opts.text) {
+                        alert((opts.title ? opts.title + ' ' : '') + (opts.text || ''));
+                    }
+                    return Promise.resolve({ isConfirmed: true });
+                },
+                close: function () { console.log('Swal.close fallback'); }
+            };
+        }
+    </script>
 
     <!-- Çerez Yönetimi Script -->
     <script src="js/cookie-consent.js"></script>

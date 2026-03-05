@@ -120,7 +120,7 @@ async function handleFriendSearch() {
                         <div style="color: var(--text-muted); font-size: 12px;">Seviye ${userData.level || 1} • ${userData.total_xp || userData.xp || 0} XP</div>
                     </div>
                 </div>
-                <button class="btn add-friend-btn" data-uid="${targetUserId}" data-name="${userData.name}" style="padding: 8px 15px; font-size: 13px;">İstek Gönder</button>
+                <button class="btn add-friend-btn" data-uid="${targetUserId}" data-name="${userData.name}" data-photo="${userData.photoURL || ''}" style="padding: 8px 15px; font-size: 13px;">İstek Gönder</button>
             `;
 
             resultsContainer.appendChild(userCard);
@@ -134,7 +134,7 @@ async function handleFriendSearch() {
                 btn.addEventListener('click', async function () {
                     this.disabled = true;
                     this.textContent = 'Gönderiliyor...';
-                    await sendFriendRequest(this.getAttribute('data-uid'), this.getAttribute('data-name'), this);
+                    await sendFriendRequest(this.getAttribute('data-uid'), this.getAttribute('data-name'), this.getAttribute('data-photo'), this);
                 });
             });
         }
@@ -145,7 +145,7 @@ async function handleFriendSearch() {
     }
 }
 
-async function sendFriendRequest(targetUid, targetName, btnElement) {
+async function sendFriendRequest(targetUid, targetName, targetPhoto, btnElement) {
     const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
     const db = window.firestore;
 
@@ -160,8 +160,10 @@ async function sendFriendRequest(targetUid, targetName, btnElement) {
             status: 'pending',
             senderId: currentUser.uid,
             senderName: currentUser.displayName || 'İsimsiz Kullanıcı',
+            senderPhotoURL: currentUser.photoURL || window.currentUser?.photoURL || null,
             receiverId: targetUid,
             receiverName: targetName,
+            receiverPhotoURL: targetPhoto || null,
             createdAt: Timestamp.now()
         });
 
@@ -984,14 +986,15 @@ window.setupGlobalChatListener = function () {
 
                 if (isIncoming && !isCurrentlyChatting && data['unread_' + currentUser.uid]) {
                     const senderName = (data.senderId === currentUser.uid ? data.receiverName : data.senderName) || "Arkadaş";
-                    showGlobalNotification(senderName, data.lastMessage, senderId);
+                    const senderPhoto = data.senderId === currentUser.uid ? data.receiverPhotoURL : data.senderPhotoURL;
+                    showGlobalNotification(senderName, data.lastMessage, senderId, senderPhoto);
                 }
             }
         });
     });
 };
 
-function showGlobalNotification(name, text, uid) {
+function showGlobalNotification(name, text, uid, photoURL) {
     const bubble = document.getElementById('message-notification-bubble');
     const bName = document.getElementById('bubble-name');
     const bText = document.getElementById('bubble-text');
@@ -1001,7 +1004,17 @@ function showGlobalNotification(name, text, uid) {
 
     bName.textContent = name;
     bText.textContent = text;
-    bAvatar.textContent = name.charAt(0).toUpperCase();
+
+    if (photoURL && bAvatar) {
+        bAvatar.textContent = '';
+        bAvatar.style.backgroundImage = `url('${photoURL}')`;
+        bAvatar.style.backgroundSize = 'cover';
+        bAvatar.style.backgroundPosition = 'center';
+    } else if (bAvatar) {
+        bAvatar.textContent = name.charAt(0).toUpperCase();
+        bAvatar.style.backgroundImage = 'none';
+        bAvatar.style.backgroundColor = 'var(--secondary-color)';
+    }
 
     // Dataset ayarla (tıklayınca doğru kişiyi açsın)
     bubble.dataset.uid = uid;
@@ -1115,10 +1128,10 @@ window.addEventListener('load', () => {
                 const friendUid = data.users.find(u => u !== currentUser.uid);
                 let friendName = data.senderId === currentUser.uid ? data.receiverName : data.senderName;
                 const lastMsg = data.lastMessage || '';
-                const photo = data['photo_' + friendUid] || null;
+                const photoURL_doc = data.senderId === currentUser.uid ? data.receiverPhotoURL : data.senderPhotoURL;
 
                 // Fotoğraf ve İsim eksikse users_public'ten al
-                let photoURL = photo;
+                let photoURL = photoURL_doc;
                 if (!photoURL || !friendName) {
                     try {
                         const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');

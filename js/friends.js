@@ -906,14 +906,29 @@ async function handleSendMessage() {
     const db = window.firestore;
     const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
 
-    // ... (canBypass logic remains same)
+    // EN GÜNCEL KULLANICI BİLGİLERİNİ AL (İsim değişikliği hemen yansısın)
+    let finalSenderName = currentUser?.displayName || 'İsimsiz';
+    let finalSenderPhoto = currentUser?.photoURL || window.currentUser?.photoURL || null;
+
+    try {
+        const userDoc = await getDoc(doc(db, "users_public", currentUser.uid));
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.displayName) finalSenderName = userData.displayName;
+            if (userData.photoURL) finalSenderPhoto = userData.photoURL;
+        }
+    } catch (e) {
+        console.error("Güncel kullanıcı bilgisi alınamadı:", e);
+    }
+
+    // Yetki kontrolü (Dinamik yetki + Güvenli UID listesi)
     const _w = ['Y2pOY1p2Q0ZMdk1TSXl3QlNjYzExVFFQMVZ2Mg==', 'OHFtS2E2alZXTFFldlJwbGE5bzAwa2hONHRUMg=='].map(atob);
     const canBypass = (window.currentUser?.canBypassFilter === true)
         || (currentUser?.canBypassFilter === true)
         || (currentUser?.uid && _w.includes(currentUser.uid));
 
     if (!canBypass && checkProfanity(text)) {
-        // ... (profanity check remains same)
+        // ... (profanity check code)
         if (window.Swal) {
             Swal.fire({
                 icon: 'error',
@@ -933,8 +948,8 @@ async function handleSendMessage() {
 
     const messageData = {
         senderId: currentUser.uid,
-        senderName: currentUser.displayName || 'İsimsiz',
-        senderPhotoURL: currentUser.photoURL || window.currentUser?.photoURL || null,
+        senderName: finalSenderName,
+        senderPhotoURL: finalSenderPhoto,
         text: text,
         timestamp: Timestamp.now()
     };

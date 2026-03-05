@@ -1144,15 +1144,16 @@ window.setupGlobalChatListener = function () {
                     let senderName = (data.senderId === currentUser.uid ? data.receiverName : data.senderName) || "Arkadaş";
                     let senderPhoto = data.senderId === currentUser.uid ? data.receiverPhotoURL : data.senderPhotoURL;
 
-                    // Yedek kontrol: Eğer dökümanda resim yoksa users_public'ten çek
-                    if (!senderPhoto) {
-                        try {
-                            const publicDoc = await getDoc(doc(db, 'users_public', senderId));
-                            if (publicDoc.exists()) {
-                                senderPhoto = publicDoc.data().photoURL;
-                                if (!senderName || senderName === 'Arkadaş') senderName = publicDoc.data().displayName || publicDoc.data().name;
-                            }
-                        } catch (e) { }
+                    // En güncel bilgileri HER ZAMAN users_public'ten çek (İsim/Resim değişikliği anında yansısın)
+                    try {
+                        const publicDoc = await getDoc(doc(db, 'users_public', senderId));
+                        if (publicDoc.exists()) {
+                            const pData = publicDoc.data();
+                            if (pData.photoURL) senderPhoto = pData.photoURL;
+                            if (pData.displayName || pData.name) senderName = pData.displayName || pData.name;
+                        }
+                    } catch (e) {
+                        console.error("Global notification identity sync error:", e);
                     }
 
                     showGlobalNotification(senderName, data.lastMessage, senderId, senderPhoto);

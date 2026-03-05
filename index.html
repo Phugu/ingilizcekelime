@@ -266,6 +266,8 @@
             <div class="user-info">
                 <div class="user-stats-header">
                     <div class="profile-avatar-small" id="header-profile-avatar" title="Profil"></div>
+                    <span id="user-name"
+                        style="font-size: 13px; font-weight: 600; color: var(--text-main); margin-right: 5px; display: none;"></span>
                     <div class="streak-badge" id="user-streak" title="Günlük Seriyi Dondur / İncele"
                         onclick="window.promptManualFreeze()" style="cursor: pointer; transition: transform 0.2s;">
                         <span class="streak-icon">🔥</span>
@@ -396,7 +398,10 @@
             const userName = user.displayName || user.email;
             console.log('Kullanıcı adı ayarlanıyor:', userName);
             const userNameEl = document.getElementById('user-name');
-            if (userNameEl) userNameEl.textContent = userName;
+            if (userNameEl) {
+                userNameEl.textContent = userName;
+                userNameEl.style.display = 'inline-block';
+            }
 
             // Header Avatarını Ayarla
             const headerAvatar = document.getElementById('header-profile-avatar');

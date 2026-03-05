@@ -813,7 +813,7 @@ export class WordLearning {
                                         ${currentWord.english}
                                         <span class="audio-controls">
                                             <button class="audio-btn" onclick="window.playAudio('${currentWord.english.replace(/'/g, "\\'")}')" title="Dinle">
-                                                <i class="fas fa-volume-up"></i>
+                                                🔊
                                             </button>
                                             <button class="audio-btn audio-btn-slow" onclick="window.playAudioSlow('${currentWord.english.replace(/'/g, "\\'")}')" title="Yavaş Dinle">
                                                 🐢
@@ -825,7 +825,7 @@ export class WordLearning {
                                     <td class="table-label">Örnek:</td>
                                     <td class="table-content" style="display: flex; align-items: center; gap: 6px;">
                                         ${currentWord.example || ''}
-                                        ${currentWord.example ? `<button class="audio-btn" onclick="window.playAudio('${(currentWord.example || '').replace(/'/g, "\\'")}')" title="Örneği Dinle" style="font-size: 1rem;"><i class="fas fa-volume-up"></i></button>` : ''}
+                                        ${currentWord.example ? `<button class="audio-btn" onclick="window.playAudio('${(currentWord.example || '').replace(/'/g, "\\'")}')" title="Örneği Dinle" style="font-size: 1rem;">🔊</button>` : ''}
                                     </td>
                                 </tr>
                                 <tr class="turkish-row" style="--row-index: 3;">
@@ -847,7 +847,7 @@ export class WordLearning {
                                 ${currentWord.english}
                                 <span class="audio-controls">
                                     <button class="audio-btn" onclick="window.playAudio('${currentWord.english.replace(/'/g, "\\'")}')" title="Dinle" style="font-size: 1.5rem;">
-                                        <i class="fas fa-volume-up"></i>
+                                        🔊
                                     </button>
                                     <button class="audio-btn audio-btn-slow" onclick="window.playAudioSlow('${currentWord.english.replace(/'/g, "\\'")}')" title="Yavaş Dinle">
                                         🐢
@@ -856,7 +856,7 @@ export class WordLearning {
                             </div>
                             <div class="word-example" style="display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
                                 ${currentWord.example || ''}
-                                ${currentWord.example ? `<button class="audio-btn" onclick="window.playAudio('${(currentWord.example || '').replace(/'/g, "\\'")}')" title="Örneği Dinle" style="font-size: 1rem;"><i class="fas fa-volume-up"></i></button>` : ''}
+                                ${currentWord.example ? `<button class="audio-btn" onclick="window.playAudio('${(currentWord.example || '').replace(/'/g, "\\'")}')" title="Örneği Dinle" style="font-size: 1rem;">🔊</button>` : ''}
                             </div>
                             <div class="word-example-turkish" id="example-turkish-translation-mobile" style="opacity:0; transform:translateY(20px);">${currentWord.exampleTurkish || ''}</div>
                             <div class="word-turkish" id="turkish-translation-mobile" style="opacity:0; transform:translateY(20px);">${currentWord.turkish}</div>

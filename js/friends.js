@@ -213,18 +213,16 @@ function refreshFriendsData() {
                 let friendName = data.senderId === currentUser.uid ? data.receiverName : data.senderName;
                 let photoURL = data.senderId === currentUser.uid ? data.receiverPhotoURL : data.senderPhotoURL;
 
-                // Fotoğraf veya İsim eksikse users_public'ten al (Legacy veriler için)
-                if (!photoURL || !friendName) {
-                    try {
-                        const publicDoc = await getDoc(doc(db, 'users_public', friendUid));
-                        if (publicDoc.exists()) {
-                            const pData = publicDoc.data();
-                            if (!photoURL) photoURL = pData.photoURL;
-                            if (!friendName) friendName = pData.displayName || pData.name;
-                        }
-                    } catch (e) {
-                        console.error("Refresh friends data fallback error:", e);
+                // Fotoğraf ve İsim için users_public'ten en güncel halini al
+                try {
+                    const publicDoc = await getDoc(doc(db, 'users_public', friendUid));
+                    if (publicDoc.exists()) {
+                        const pData = publicDoc.data();
+                        if (pData.photoURL) photoURL = pData.photoURL;
+                        if (pData.displayName || pData.name) friendName = pData.displayName || pData.name;
                     }
+                } catch (e) {
+                    console.error("Refresh friends data fallback error:", e);
                 }
 
                 if (!friendName) friendName = 'Kullanıcı';
@@ -1300,19 +1298,17 @@ window.addEventListener('load', () => {
                 const lastMsg = data.lastMessage || '';
                 const photoURL_doc = data.senderId === currentUser.uid ? data.receiverPhotoURL : data.senderPhotoURL;
 
-                // Fotoğraf ve İsim eksikse users_public'ten al
+                // Fotoğraf ve İsim için users_public'ten en güncel halini al
                 let photoURL = photoURL_doc;
-                if (!photoURL || !friendName) {
-                    try {
-                        const publicDoc = await getDoc(doc(db, 'users_public', friendUid));
-                        if (publicDoc.exists()) {
-                            const pData = publicDoc.data();
-                            if (!photoURL && pData.photoURL) photoURL = pData.photoURL;
-                            if (!friendName && pData.displayName) friendName = pData.displayName;
-                        }
-                    } catch (err) {
-                        console.error("Public doc fetch error:", err);
+                try {
+                    const publicDoc = await getDoc(doc(db, 'users_public', friendUid));
+                    if (publicDoc.exists()) {
+                        const pData = publicDoc.data();
+                        if (pData.photoURL) photoURL = pData.photoURL;
+                        if (pData.displayName || pData.name) friendName = pData.displayName || pData.name;
                     }
+                } catch (err) {
+                    console.error("Public doc fetch error:", err);
                 }
 
                 if (!friendName || friendName.trim() === '') {

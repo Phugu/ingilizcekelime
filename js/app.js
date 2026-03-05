@@ -1831,7 +1831,6 @@ async function loadSettingsContent() {
             return;
         }
 
-        console.log('Kullanıcı bilgileri:', user);
 
         // Kullanıcı XP ve Level bilgisini al
         let userData = { xp: 0, level: 1, total_xp: 0 };

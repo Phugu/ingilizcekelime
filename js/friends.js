@@ -425,7 +425,6 @@ let activeReply = null; // { id, name, text }
 
 // Global as soon as possible
 window.openChatWindow = function (friendId, friendName) {
-    console.log("🚀 Sohbet açılıyor:", friendId, friendName);
     const widget = document.getElementById('chat-widget-container');
     const nameEl = document.getElementById('chat-friend-name');
     const avatarEl = document.getElementById('chat-friend-avatar');

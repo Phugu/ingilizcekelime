@@ -672,6 +672,115 @@
         </div>
     </div>
 
+    <!-- ── SABİT MESAJ BUTONU (Her sayfada görünür) ────────── -->
+    <div id="quick-chat-fab" onclick="window.toggleQuickChatPopup && window.toggleQuickChatPopup()" title="Mesajlar"
+        style="
+            position: fixed; bottom: 24px; right: 24px; z-index: 10003;
+            width: 56px; height: 56px; border-radius: 50%;
+            background: var(--primary-color);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+        " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 6px 28px rgba(0,0,0,0.35)'"
+        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.25)'">
+        <!-- Unread badge -->
+        <div id="qchat-badge" style="display:none; position:absolute; top:4px; right:4px;
+            background:#ff3b30; color:white; border-radius:50%; width:18px; height:18px;
+            font-size:10px; font-weight:bold; align-items:center; justify-content:center;"></div>
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+    </div>
+
+    <!-- ── MİNİ ARKADAŞ POPUP ─────────────────────────────── -->
+    <div id="quick-chat-popup" style="
+        display: none; position: fixed; bottom: 90px; right: 24px; z-index: 10002;
+        width: 280px; max-height: 380px;
+        background: var(--card-bg, white);
+        border-radius: 20px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+        border: 1px solid var(--border-color, #eee);
+        overflow: hidden; flex-direction: column;
+        animation: popupSlideIn 0.25s cubic-bezier(0.175,0.885,0.32,1.275);
+    ">
+        <div style="padding: 14px 16px; border-bottom: 1px solid var(--border-color, #eee);
+            display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-weight:700; font-size:15px;">💬 Mesajlar</span>
+            <span onclick="window.toggleQuickChatPopup()" style="cursor:pointer; font-size:18px; opacity:0.5;">✕</span>
+        </div>
+        <div id="quick-chat-list" style="overflow-y:auto; flex:1; padding: 8px 0;">
+            <p style="text-align:center; color:var(--text-muted); font-size:13px; padding:20px;">Yükleniyor...</p>
+        </div>
+    </div>
+
+    <style>
+        @keyframes popupSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .dark-theme #quick-chat-popup {
+            background: rgba(20, 20, 20, 0.95) !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        .qchat-friend-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .qchat-friend-row:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .dark-theme .qchat-friend-row:hover {
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .qchat-avatar {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 15px;
+            color: white;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .qchat-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .qchat-last {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 160px;
+        }
+    </style>
+
     <style>
         #chat-widget-container {
             position: fixed;

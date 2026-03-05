@@ -1040,3 +1040,120 @@ window.openChatWindow = function (id, name) {
 window.addEventListener('load', () => {
     // Oturumun hazır olmasını beklemek için app.js setupVerificationScreen sonrası veya onAuthStateChanged sonrası daha iyi
 });
+
+// ── HIZLI MESAJ BUTONU (FAB) MANTIĞI ──────────────────────────
+(function setupQuickChatFab() {
+    let popupOpen = false;
+
+    // Sosyal sayfada FAB'ı gizle (orada zaten arkadaş listesi var)
+    function updateFabVisibility() {
+        const fab = document.getElementById('quick-chat-fab');
+        if (!fab) return;
+        const socialSection = document.getElementById('social-section');
+        const isOnSocial = socialSection && !socialSection.classList.contains('hide')
+            && !socialSection.classList.contains('hidden')
+            && socialSection.style.display !== 'none';
+        fab.style.display = isOnSocial ? 'none' : 'flex';
+    }
+
+    // Sayfa değişimlerini izle
+    const navObserver = new MutationObserver(updateFabVisibility);
+    navObserver.observe(document.body, { childList: true, subtree: false, attributes: true, attributeFilter: ['class', 'style'] });
+
+    setTimeout(updateFabVisibility, 500);
+    window.addEventListener('hashchange', updateFabVisibility);
+
+    window.toggleQuickChatPopup = async function () {
+        const popup = document.getElementById('quick-chat-popup');
+        const list = document.getElementById('quick-chat-list');
+        if (!popup) return;
+
+        popupOpen = !popupOpen;
+        popup.style.display = popupOpen ? 'flex' : 'none';
+
+        if (!popupOpen) return;
+
+        // Arkadaş listesini yükle
+        const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
+        const db = window.firestore;
+        if (!currentUser || !db) {
+            list.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">Giriş yapmanız gerekiyor.</p>';
+            return;
+        }
+
+        list.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">Yükleniyor...</p>';
+
+        try {
+            const { collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const q = query(collection(db, 'friendships'),
+                where('status', '==', 'accepted'),
+                where('users', 'array-contains', currentUser.uid));
+            const snap = await getDocs(q);
+
+            if (snap.empty) {
+                list.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">Henüz arkadaşın yok.</p>';
+                return;
+            }
+
+            // Her arkadaş için satır oluştur
+            const rows = await Promise.all(snap.docs.map(async (docSnap) => {
+                const data = docSnap.data();
+                const friendUid = data.users.find(u => u !== currentUser.uid);
+                const friendName = data['name_' + friendUid] || 'Kullanıcı';
+                const lastMsg = data.lastMessage || '';
+                const photo = data['photo_' + friendUid] || null;
+
+                // Fotoğrafı users_public'ten al
+                let photoURL = photo;
+                if (!photoURL) {
+                    try {
+                        const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                        const publicDoc = await getDoc(doc(db, 'users_public', friendUid));
+                        if (publicDoc.exists()) photoURL = publicDoc.data().photoURL || null;
+                    } catch { }
+                }
+
+                const initial = friendName.charAt(0).toUpperCase();
+                const avatarStyle = photoURL
+                    ? `background-image:url('${photoURL}'); background-size:cover; background-position:center;`
+                    : '';
+
+                return `
+                    <div class="qchat-friend-row" onclick="
+                        window.toggleQuickChatPopup();
+                        window.openChatWindow && window.openChatWindow('${friendUid}', '${friendName.replace(/'/g, "\\'")}')
+                    ">
+                        <div class="qchat-avatar" style="${avatarStyle}">
+                            ${photoURL ? '' : initial}
+                        </div>
+                        <div style="min-width:0;">
+                            <div class="qchat-name">${friendName}</div>
+                            <div class="qchat-last">${lastMsg || 'Sohbet başlat'}</div>
+                        </div>
+                    </div>
+                `;
+            }));
+
+            list.innerHTML = rows.join('');
+        } catch (err) {
+            console.error('Quick chat popup error:', err);
+            list.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">Yüklenemedi.</p>';
+        }
+    };
+
+    // Popup dışına tıklayınca kapat
+    document.addEventListener('click', (e) => {
+        if (!popupOpen) return;
+        const fab = document.getElementById('quick-chat-fab');
+        const popup = document.getElementById('quick-chat-popup');
+        if (fab && popup && !fab.contains(e.target) && !popup.contains(e.target)) {
+            popupOpen = false;
+            popup.style.display = 'none';
+        }
+    });
+
+    // Sayfa yüklendiğinde chat penceresi z-index yükselt (popup ile çakışmasın)
+    const chatWidget = document.getElementById('chat-widget-container');
+    if (chatWidget) chatWidget.style.zIndex = '10005';
+})();
+// ──────────────────────────────────────────────────────────────

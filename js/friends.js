@@ -644,6 +644,112 @@ window.toggleExpandChat = function () {
            </svg>`;
 };
 
+// ─── SÜRÜKLENEBILIR CHAT WIDGET ───────────────────────────────
+(function initDraggableChat() {
+    let isDragging = false;
+    let startX, startY, origLeft, origTop;
+
+    function setupDrag() {
+        const header = document.getElementById('chat-header');
+        const widget = document.getElementById('chat-widget-container');
+        if (!header || !widget) return;
+
+        header.style.cursor = 'grab';
+
+        // Mouse olayları
+        header.addEventListener('mousedown', onDragStart);
+        document.addEventListener('mousemove', onDragMove);
+        document.addEventListener('mouseup', onDragEnd);
+
+        // Dokunmatik olaylar (mobil)
+        header.addEventListener('touchstart', onDragStart, { passive: true });
+        document.addEventListener('touchmove', onDragMove, { passive: false });
+        document.addEventListener('touchend', onDragEnd);
+    }
+
+    function getPos(e) {
+        return e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+            : { x: e.clientX, y: e.clientY };
+    }
+
+    function onDragStart(e) {
+        // Eğer tıklanan yer buton ise sürükleme
+        if (e.target.closest('button')) return;
+
+        const widget = document.getElementById('chat-widget-container');
+        const rect = widget.getBoundingClientRect();
+
+        // İlk sürüklemede fixed pozisyona geç (bottom/right → top/left)
+        widget.style.bottom = 'auto';
+        widget.style.right = 'auto';
+        widget.style.left = rect.left + 'px';
+        widget.style.top = rect.top + 'px';
+
+        isDragging = true;
+        const pos = getPos(e);
+        startX = pos.x;
+        startY = pos.y;
+        origLeft = rect.left;
+        origTop = rect.top;
+
+        document.getElementById('chat-header').style.cursor = 'grabbing';
+        if (e.cancelable) e.preventDefault();
+    }
+
+    function onDragMove(e) {
+        if (!isDragging) return;
+        const widget = document.getElementById('chat-widget-container');
+        const pos = getPos(e);
+
+        let newLeft = origLeft + (pos.x - startX);
+        let newTop = origTop + (pos.y - startY);
+
+        // Ekran sınırları içinde tut
+        const minLeft = 0;
+        const minTop = 0;
+        const maxLeft = window.innerWidth - widget.offsetWidth;
+        const maxTop = window.innerHeight - widget.offsetHeight;
+
+        newLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+        newTop = Math.max(minTop, Math.min(maxTop, newTop));
+
+        widget.style.left = newLeft + 'px';
+        widget.style.top = newTop + 'px';
+        if (e.cancelable) e.preventDefault();
+    }
+
+    function onDragEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        document.getElementById('chat-header').style.cursor = 'grab';
+    }
+
+    // Widget aktif olunca drag'i kur (DOM hazır olmayabilir, MutationObserver kullan)
+    const observer = new MutationObserver(() => {
+        if (document.getElementById('chat-header')) {
+            setupDrag();
+            observer.disconnect();
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Zaten varsa hemen kur
+    if (document.getElementById('chat-header')) setupDrag();
+
+    // Pencere boyutu değişince sınır dışı kalmasın
+    window.addEventListener('resize', () => {
+        const widget = document.getElementById('chat-widget-container');
+        if (!widget || !widget.style.left) return;
+        const maxLeft = window.innerWidth - widget.offsetWidth;
+        const maxTop = window.innerHeight - widget.offsetHeight;
+        const curLeft = parseFloat(widget.style.left) || 0;
+        const curTop = parseFloat(widget.style.top) || 0;
+        widget.style.left = Math.max(0, Math.min(maxLeft, curLeft)) + 'px';
+        widget.style.top = Math.max(0, Math.min(maxTop, curTop)) + 'px';
+    });
+})();
+// ───────────────────────────────────────────────────────────────
+
 // GÜVENLİK BOTU - KÜFÜR VE HAKARET FİLTRESİ
 function checkProfanity(text) {
     if (!text) return false;

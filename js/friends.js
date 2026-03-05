@@ -530,7 +530,7 @@ async function searchGifs(query, source = 'giphy') {
     let url;
     if (source === 'giphy') {
         // Obfuscated Giphy Key (Base64)
-        const encodedKey = 'THlmS0EwUTVTaDQyNTg2dlpybmdCTjUzYnI3Z2MxS0w=';
+        const encodedKey = 'THlmS0EwUTVTaDQyNTg2dlpybmdCTjUzYnI3Z2MxSEw=';
         const apiKey = atob(encodedKey);
         const endpoint = query ? 'search' : 'trending';
         url = `https://api.giphy.com/v1/gifs/${endpoint}?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=20&rating=g`;

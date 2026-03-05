@@ -1113,18 +1113,23 @@ window.addEventListener('load', () => {
             // Her arkadaş için satır oluştur
             const rows = await Promise.all(docsData.map(async (data) => {
                 const friendUid = data.users.find(u => u !== currentUser.uid);
-                const friendName = data['name_' + friendUid] || 'Kullanıcı';
+                let friendName = data['name_' + friendUid];
                 const lastMsg = data.lastMessage || '';
                 const photo = data['photo_' + friendUid] || null;
 
-                // Fotoğrafı users_public'ten al
+                // Fotoğraf ve İsim eksikse users_public'ten al
                 let photoURL = photo;
-                if (!photoURL) {
+                if (!photoURL || !friendName) {
                     try {
                         const publicDoc = await getDoc(doc(db, 'users_public', friendUid));
-                        if (publicDoc.exists()) photoURL = publicDoc.data().photoURL || null;
+                        if (publicDoc.exists()) {
+                            if (!photoURL) photoURL = publicDoc.data().photoURL || null;
+                            if (!friendName) friendName = publicDoc.data().displayName || 'Kullanıcı';
+                        }
                     } catch { }
                 }
+
+                if (!friendName) friendName = 'Kullanıcı';
 
                 const initial = friendName.charAt(0).toUpperCase();
                 const avatarStyle = photoURL
@@ -1134,11 +1139,11 @@ window.addEventListener('load', () => {
                 // Okunmadı kırmızı nokta
                 const isUnread = data['unread_' + currentUser.uid] ? `<div style="width:8px;height:8px;background:#ff3b30;border-radius:50%;margin-left:auto;"></div>` : '';
 
+                // Güvenli escape
+                const safeName = friendName.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
                 return `
-                    <div class="qchat-friend-row" onclick="
-                        window.toggleQuickChatPopup();
-                        window.openChatWindow && window.openChatWindow('${friendUid}', '${friendName.replace(/'/g, "\\'")}')
-                    ">
+                    <div class="qchat-friend-row" onclick="setTimeout(() => { window.toggleQuickChatPopup(); if(window.openChatWindow) window.openChatWindow('${friendUid}', '${safeName}'); }, 50);">
                         <div class="qchat-avatar" style="${avatarStyle}">
                             ${photoURL ? '' : initial}
                         </div>

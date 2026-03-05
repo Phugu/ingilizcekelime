@@ -194,7 +194,7 @@ function refreshFriendsData() {
     const q = query(friendshipsRef, where("users", "array-contains", currentUser.uid));
 
     // Real-time listener
-    activeUnsubscribe = onSnapshot(q, (snapshot) => {
+    activeUnsubscribe = onSnapshot(q, async (snapshot) => {
         const requestsList = document.getElementById('friend-requests-list');
         const friendsList = document.getElementById('friends-list');
 
@@ -203,21 +203,41 @@ function refreshFriendsData() {
         let requestsHtml = '';
         let friendsHtml = '';
 
-        snapshot.forEach((docSnap) => {
+        for (const docSnap of snapshot.docs) {
             const data = docSnap.data();
             const relId = docSnap.id;
 
             // Eğer kabul edilidiyse, arkadaşlar listesine gider
             if (data.status === 'accepted') {
-                const friendName = data.senderId === currentUser.uid ? data.receiverName : data.senderName;
-                const friendId = data.senderId === currentUser.uid ? data.receiverId : data.senderId;
+                const friendUid = data.users.find(u => u !== currentUser.uid);
+                let friendName = data.senderId === currentUser.uid ? data.receiverName : data.senderName;
+                let photoURL = data.senderId === currentUser.uid ? data.receiverPhotoURL : data.senderPhotoURL;
+
+                // Fotoğraf veya İsim eksikse users_public'ten al (Legacy veriler için)
+                if (!photoURL || !friendName) {
+                    try {
+                        const publicDoc = await getDoc(doc(db, 'users_public', friendUid));
+                        if (publicDoc.exists()) {
+                            const pData = publicDoc.data();
+                            if (!photoURL) photoURL = pData.photoURL;
+                            if (!friendName) friendName = pData.displayName || pData.name;
+                        }
+                    } catch (e) {
+                        console.error("Refresh friends data fallback error:", e);
+                    }
+                }
+
+                if (!friendName) friendName = 'Kullanıcı';
+
+                const avatarStyle = photoURL
+                    ? `background-image: url('${photoURL}'); background-size: cover; background-position: center;`
+                    : '';
 
                 friendsHtml += `
-                    <div class="friend-card" data-friend-id="${friendId}" style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                        <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="if(window.showPublicProfile) window.showPublicProfile('${friendId}')">
-                            <div style="width: 45px; height: 45px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; background-size: cover; background-position: center;" 
-                                 ${data.photoURL ? `style="background-image: url('${data.photoURL}')"` : ''}>
-                                ${!data.photoURL ? friendName.charAt(0).toUpperCase() : ''}
+                    <div class="friend-card" data-friend-id="${friendUid}" style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="if(window.showPublicProfile) window.showPublicProfile('${friendUid}')">
+                            <div style="width: 45px; height: 45px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; ${avatarStyle}">
+                                ${!photoURL ? friendName.charAt(0).toUpperCase() : ''}
                             </div>
                             <div>
                                 <div style="color: var(--text-main); font-weight: bold; font-size: 16px;">${friendName}</div>
@@ -228,10 +248,8 @@ function refreshFriendsData() {
                             </div>
                         </div>
                         <div style="display: flex; gap: 8px;">
-                            <button class="btn" onclick="window.openChatWindow('${friendId}', '${friendName}')" style="background-color: var(--secondary-color); border-color: var(--secondary-color); color: white; padding: 8px 15px; font-size: 13px; border-radius: 20px;">
-                                💬 Mesaj
-                            </button>
-                            <button class="btn btn-remove-friend" data-id="${relId}" style="background-color: transparent; border-color: var(--border-color); color: var(--text-muted); padding: 8px 12px; font-size: 13px; border-radius: 20px;">Çıkar</button>
+                            <button class="btn" style="padding: 8px 12px; font-size: 13px;" onclick="if(window.openChatWindow) window.openChatWindow('${friendUid}', '${friendName.replace(/'/g, "\\'")}')">Mesaj</button>
+                            <button class="btn btn-danger btn-remove-friend" data-id="${relId}" style="padding: 8px 12px; font-size: 13px; background: none; color: var(--text-muted); border: 1px solid var(--border-color);">Kaldır</button>
                         </div>
                     </div>
                 `;
@@ -273,7 +291,7 @@ function refreshFriendsData() {
                     `;
                 }
             }
-        });
+        }
 
         if (requestsHtml) {
             requestsList.innerHTML = requestsHtml;
@@ -1220,7 +1238,6 @@ window.addEventListener('load', () => {
                 let photoURL = photoURL_doc;
                 if (!photoURL || !friendName) {
                     try {
-                        const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
                         const publicDoc = await getDoc(doc(db, 'users_public', friendUid));
                         if (publicDoc.exists()) {
                             const pData = publicDoc.data();

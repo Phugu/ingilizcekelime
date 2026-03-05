@@ -954,7 +954,7 @@ async function handleSendMessage() {
         const userDoc = await getDoc(doc(db, "users_public", currentUser.uid));
         if (userDoc.exists()) {
             const userData = userDoc.data();
-            if (userData.displayName) finalSenderName = userData.displayName;
+            finalSenderName = userData.displayName || userData.name || finalSenderName;
             if (userData.photoURL) finalSenderPhoto = userData.photoURL;
         }
     } catch (e) {

@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, updateDoc, Timestamp, onSnapshot, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, setDoc, deleteDoc, updateDoc, Timestamp, onSnapshot, addDoc, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Global loading function for the UI
 window.loadFriendsUI = function () {
@@ -1084,7 +1084,6 @@ window.addEventListener('load', () => {
         list.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">Yükleniyor...</p>';
 
         try {
-            const { collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
             const q = query(collection(db, 'friendships'),
                 where('status', '==', 'accepted'),
                 where('users', 'array-contains', currentUser.uid));
@@ -1107,7 +1106,6 @@ window.addEventListener('load', () => {
                 let photoURL = photo;
                 if (!photoURL) {
                     try {
-                        const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                         const publicDoc = await getDoc(doc(db, 'users_public', friendUid));
                         if (publicDoc.exists()) photoURL = publicDoc.data().photoURL || null;
                     } catch { }

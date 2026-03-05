@@ -26,7 +26,8 @@ import {
     orderBy,
     limit,
     Timestamp,
-    onSnapshot
+    onSnapshot,
+    writeBatch
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // AI Moderasyon Kara Listesi (Hassas İçerik Filtresi)
@@ -2002,21 +2003,70 @@ async function loadSettingsContent() {
             };
         }
 
-        // İsim değiştirme formu
         const nameChangeForm = document.getElementById('name-change-form');
         if (nameChangeForm) {
             nameChangeForm.onsubmit = async (e) => {
                 e.preventDefault();
                 if (user.isGuest) return;
-                const newName = document.getElementById('new-name').value;
-                try {
-                    await updateProfile(auth.currentUser, { displayName: newName });
-                    await updateDoc(doc(db, "users", auth.currentUser.uid), { name: newName });
 
+                const newName = document.getElementById('new-name').value.trim();
+
+                // GÜVENLİK: İsim doğrulama (Registration ile aynı kurallar)
+                if (newName.length < 2 || newName.length > 50) {
+                    alert('İsim 2-50 karakter arasında olmalıdır.');
+                    return;
+                }
+
+                const submitBtn = nameChangeForm.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.textContent;
+
+                try {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Kaydediliyor...';
+
+                    // 1. Auth Profilini Güncelle
+                    await updateProfile(auth.currentUser, { displayName: newName });
+
+                    // 2. Veritabanını Güncelle (Hem Public hem Private/Eski)
+                    const batch = writeBatch(db);
+
+                    const publicRef = doc(db, "users_public", auth.currentUser.uid);
+                    const privateRef = doc(db, "users_private", auth.currentUser.uid);
+                    const oldUserRef = doc(db, "users", auth.currentUser.uid);
+
+                    batch.update(publicRef, {
+                        displayName: newName,
+                        name: newName // cross-compatibility için ikisini de tutuyoruz
+                    });
+
+                    // Eski koleksiyonu da senkronize tut (Bazı eski kodlar buradan okuyor olabilir)
+                    batch.update(oldUserRef, { name: newName });
+
+                    await batch.commit();
+
+                    // 3. UI Başarı Geri Bildirimi
                     document.getElementById('name-modal').classList.add('hide');
-                    window.location.reload();
+
+                    // Header'daki ismi anında güncelle (Sayfa yenilemeye gerek kalmasın)
+                    const userNameEl = document.getElementById('user-name');
+                    if (userNameEl) userNameEl.textContent = newName;
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Başarılı!',
+                        text: 'Profil isminiz güncellendi.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.reload(); // Diğer komponentlerin de yenilenmesi için güvenli yol
+                    });
+
                 } catch (err) {
+                    console.error('İsim değiştirme hatası:', err);
                     alert('İsim değiştirme başarısız: ' + err.message);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalBtnText;
                 }
             };
         }

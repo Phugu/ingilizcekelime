@@ -25,7 +25,7 @@ import {
 const db = getFirestore();
 
 // Global Ses Çalma Yardımcısı
-window.playAudio = function (text) {
+window.playAudio = function (text, speed = 0.9) {
     if (!('speechSynthesis' in window)) {
         alert("Tarayıcınız sesli okuma özelliğini desteklemiyor.");
         return;
@@ -35,12 +35,46 @@ window.playAudio = function (text) {
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US'; // VEYA en-GB
-    utterance.rate = 0.9; // Biraz yavaş daha anlaşılır
+    utterance.lang = 'en-US';
+    utterance.rate = speed;
     utterance.pitch = 1.0;
+
+    // En iyi İngilizce sesi seçmeye çalış (Google veya Microsoft sesleri daha doğal)
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v =>
+        (v.lang === 'en-US' || v.lang === 'en-GB') &&
+        (v.name.includes('Google') || v.name.includes('Microsoft') || v.name.includes('Samantha') || v.name.includes('Daniel'))
+    ) || voices.find(v => v.lang.startsWith('en'));
+
+    if (preferredVoice) {
+        utterance.voice = preferredVoice;
+    }
+
+    // Tüm ses butonlarına animasyon ver
+    const allAudioBtns = document.querySelectorAll('.audio-btn');
+    allAudioBtns.forEach(btn => btn.classList.add('audio-playing'));
+
+    utterance.onend = () => {
+        allAudioBtns.forEach(btn => btn.classList.remove('audio-playing'));
+    };
+    utterance.onerror = () => {
+        allAudioBtns.forEach(btn => btn.classList.remove('audio-playing'));
+    };
 
     window.speechSynthesis.speak(utterance);
 };
+
+// Yavaş ses çalma (kelimeleri daha net duyabilmek için)
+window.playAudioSlow = function (text) {
+    window.playAudio(text, 0.6);
+};
+
+// Sesler yüklenene kadar bekle (bazı tarayıcılar geç yüklüyor)
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices(); // Cache voices
+    };
+}
 
 export class WordLearning {
     constructor(containerId, userId) {
@@ -775,16 +809,24 @@ export class WordLearning {
                             <table class="word-info-table">
                                 <tr style="--row-index: 1;">
                                     <td class="table-label">İngilizce:</td>
-                                    <td class="table-content english-word" style="display: flex; align-items: center; gap: 10px;">
+                                    <td class="table-content english-word" style="display: flex; align-items: center; gap: 6px;">
                                         ${currentWord.english}
-                                        <button class="audio-btn" onclick="window.playAudio('${currentWord.english.replace(/'/g, "\\'")}')" title="Dinle" style="background: none; border: none; cursor: pointer; color: var(--primary-color); font-size: 1.2rem; padding: 5px; transition: transform 0.2s;">
-                                            <i class="fas fa-volume-up"></i>
-                                        </button>
+                                        <span class="audio-controls">
+                                            <button class="audio-btn" onclick="window.playAudio('${currentWord.english.replace(/'/g, "\\'")}')" title="Dinle">
+                                                <i class="fas fa-volume-up"></i>
+                                            </button>
+                                            <button class="audio-btn audio-btn-slow" onclick="window.playAudioSlow('${currentWord.english.replace(/'/g, "\\'")}')" title="Yavaş Dinle">
+                                                🐢
+                                            </button>
+                                        </span>
                                     </td>
                                 </tr>
                                 <tr style="--row-index: 2;">
                                     <td class="table-label">Örnek:</td>
-                                    <td class="table-content">${currentWord.example || ''}</td>
+                                    <td class="table-content" style="display: flex; align-items: center; gap: 6px;">
+                                        ${currentWord.example || ''}
+                                        ${currentWord.example ? `<button class="audio-btn" onclick="window.playAudio('${(currentWord.example || '').replace(/'/g, "\\'")}')" title="Örneği Dinle" style="font-size: 1rem;"><i class="fas fa-volume-up"></i></button>` : ''}
+                                    </td>
                                 </tr>
                                 <tr class="turkish-row" style="--row-index: 3;">
                                     <td class="table-label">Örnek Türkçe:</td>
@@ -801,13 +843,21 @@ export class WordLearning {
                             <span class="word-level">${currentWord.level}</span>
                             <span class="word-category">${currentWord.category}</span>
                             <div class="word-card-number">${this.currentWordIndex + 1}/${this.words.length}</div>
-                            <div class="word-english" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                            <div class="word-english" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
                                 ${currentWord.english}
-                                <button class="audio-btn" onclick="window.playAudio('${currentWord.english.replace(/'/g, "\\'")}')" title="Dinle" style="background: none; border: none; cursor: pointer; color: var(--primary-color); font-size: 1.5rem; padding: 5px; transition: transform 0.2s;">
-                                    <i class="fas fa-volume-up"></i>
-                                </button>
+                                <span class="audio-controls">
+                                    <button class="audio-btn" onclick="window.playAudio('${currentWord.english.replace(/'/g, "\\'")}')" title="Dinle" style="font-size: 1.5rem;">
+                                        <i class="fas fa-volume-up"></i>
+                                    </button>
+                                    <button class="audio-btn audio-btn-slow" onclick="window.playAudioSlow('${currentWord.english.replace(/'/g, "\\'")}')" title="Yavaş Dinle">
+                                        🐢
+                                    </button>
+                                </span>
                             </div>
-                            <div class="word-example">${currentWord.example || ''}</div>
+                            <div class="word-example" style="display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
+                                ${currentWord.example || ''}
+                                ${currentWord.example ? `<button class="audio-btn" onclick="window.playAudio('${(currentWord.example || '').replace(/'/g, "\\'")}')" title="Örneği Dinle" style="font-size: 1rem;"><i class="fas fa-volume-up"></i></button>` : ''}
+                            </div>
                             <div class="word-example-turkish" id="example-turkish-translation-mobile" style="opacity:0; transform:translateY(20px);">${currentWord.exampleTurkish || ''}</div>
                             <div class="word-turkish" id="turkish-translation-mobile" style="opacity:0; transform:translateY(20px);">${currentWord.turkish}</div>
                         </div>
@@ -996,6 +1046,48 @@ export class WordLearning {
                         transform: translateX(0);
                         opacity: 1;
                     }
+                }
+                /* Audio Button Styles */
+                .audio-btn {
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    color: var(--primary-color);
+                    font-size: 1.2rem;
+                    padding: 6px 8px;
+                    border-radius: 50%;
+                    transition: all 0.2s ease;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .audio-btn:hover {
+                    background: rgba(52, 152, 219, 0.15);
+                    transform: scale(1.15);
+                }
+                .audio-btn:active {
+                    transform: scale(0.95);
+                }
+                .audio-btn.audio-playing {
+                    animation: audioPulse 0.8s ease-in-out infinite;
+                    color: var(--success-color);
+                }
+                .audio-btn-slow {
+                    font-size: 0.85rem !important;
+                    opacity: 0.7;
+                }
+                .audio-btn-slow:hover {
+                    opacity: 1;
+                }
+                .audio-controls {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 2px;
+                    margin-left: 5px;
+                }
+                @keyframes audioPulse {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.2); }
                 }
             `;
         }

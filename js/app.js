@@ -3395,15 +3395,15 @@ window.showPublicProfile = async function (uid) {
                     const relData = relSnap.data();
                     if (relData.status === 'accepted') {
                         actionContainer.innerHTML = `
-                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-                            <span style="color: var(--success-color); font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 4px;">
+                        <div class="profile-actions-inner">
+                            <span class="friendship-status-accepted">
                                 <span style="font-size: 16px;">✓</span> Arkadaşsınız
                             </span>
                             <div style="display: flex; gap: 6px;">
-                                <button class="btn" id="modal-chat-btn" style="background-color: var(--secondary-color); border-color: var(--secondary-color); padding: 6px 15px; font-size: 12px; border-radius: 15px;">
+                                <button class="btn" id="modal-chat-btn" style="background-color: var(--secondary-color); border-color: var(--secondary-color); padding: 8px 15px; font-size: 13px; border-radius: 15px;">
                                     💬 Mesaj
                                 </button>
-                                <button class="btn" id="modal-remove-friend-btn" style="background-color: transparent; border-color: var(--border-color); color: var(--text-muted); padding: 6px 10px; font-size: 11px; border-radius: 15px;">
+                                <button class="btn" id="modal-remove-friend-btn" style="background-color: transparent; border-color: var(--border-color); color: var(--text-muted); padding: 8px 10px; font-size: 11px; border-radius: 15px;">
                                     Bitir
                                 </button>
                             </div>

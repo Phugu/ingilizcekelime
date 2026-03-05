@@ -455,7 +455,8 @@
     <!-- Çerez Bildirimi -->
     <!-- Herkese Açık Profil Modalı (Liderlik) -->
     <div id="public-profile-modal" class="modal hide" style="z-index: 10000; backdrop-filter: blur(5px);">
-        <div class="modal-content" style="max-width: 450px; padding: 0; overflow: hidden; position: relative;">
+        <div class="modal-content"
+            style="width: 95%; max-width: 450px; padding: 0; overflow: hidden; position: relative; border-radius: 24px;">
             <button class="modal-close-icon" id="close-public-profile-btn" title="Kapat">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none">
                     <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
@@ -478,7 +479,7 @@
                     Seviye -
                 </div>
 
-                <div id="public-profile-action-container" style="position: absolute; top: 55px; right: 25px;">
+                <div id="public-profile-action-container" class="profile-action-area">
                     <!-- 'Arkadaş Ekle' butonu buraya app.js tarafından eklenecek -->
                 </div>
 
@@ -841,12 +842,65 @@
         /* Masaüstünde genişletilmiş mod biraz daha elegant olsun */
         @media (min-width: 768px) {
             #chat-widget-container.expanded {
-                bottom: 0 !important;
-                right: 0 !important;
+                bottom: 20px !important;
+                right: 20px !important;
                 width: 480px !important;
-                height: 100vh !important;
-                border-radius: 0 !important;
+                height: calc(100vh - 40px) !important;
+                border-radius: 28px !important;
             }
+        }
+
+        /* Profil Modalı Mobil İyileştirmeleri */
+        .profile-action-area {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 45px;
+        }
+
+        @media (min-width: 480px) {
+            .profile-action-area {
+                position: absolute;
+                top: 55px;
+                right: 25px;
+                margin-bottom: 0;
+            }
+        }
+
+        @media (max-width: 400px) {
+            #public-profile-modal .modal-content {
+                width: 98%;
+            }
+
+            #public-profile-modal [style*="grid-template-columns: repeat(2, 1fr)"] {
+                gap: 10px !important;
+            }
+
+            #public-profile-modal [style*="padding: 15px"] {
+                padding: 10px !important;
+            }
+        }
+
+        .profile-actions-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @media (min-width: 480px) {
+            .profile-actions-inner {
+                align-items: flex-end;
+            }
+        }
+
+        .friendship-status-accepted {
+            color: var(--success-color);
+            font-weight: bold;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         /* Büyüt butonunu küçül ikonuyla değiştir */

@@ -1121,15 +1121,21 @@ window.addEventListener('load', () => {
                 let photoURL = photo;
                 if (!photoURL || !friendName) {
                     try {
+                        const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js');
                         const publicDoc = await getDoc(doc(db, 'users_public', friendUid));
                         if (publicDoc.exists()) {
-                            if (!photoURL) photoURL = publicDoc.data().photoURL || null;
-                            if (!friendName) friendName = publicDoc.data().displayName || 'Kullanıcı';
+                            const pData = publicDoc.data();
+                            if (!photoURL && pData.photoURL) photoURL = pData.photoURL;
+                            if (!friendName && pData.displayName) friendName = pData.displayName;
                         }
-                    } catch { }
+                    } catch (err) {
+                        console.error("Public doc fetch error:", err);
+                    }
                 }
 
-                if (!friendName) friendName = 'Kullanıcı';
+                if (!friendName || friendName.trim() === '') {
+                    friendName = 'Kullanıcı';
+                }
 
                 const initial = friendName.charAt(0).toUpperCase();
                 const avatarStyle = photoURL

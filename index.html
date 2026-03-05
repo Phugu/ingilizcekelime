@@ -626,6 +626,21 @@
             <!-- İçerik JavaScript ile yüklenecek -->
         </div>
 
+        <!-- Yanıt Önizleme Alanı -->
+        <div id="reply-preview" class="reply-preview-container">
+            <div class="reply-info">
+                <div class="reply-to-name" id="reply-to-name">Yanıtlanan Kişi</div>
+                <div class="reply-to-text" id="reply-to-text">Mesaj içeriği...</div>
+            </div>
+            <button class="cancel-reply-btn" onclick="window.cancelReply && window.cancelReply()" title="İptal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
         <!-- Mesaj Yazma Alanı -->
         <div id="chat-footer"
             style="padding: 12px; display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--border-color); background: white;">
@@ -996,10 +1011,131 @@
             pointer-events: none;
         }
 
+        /* Mesaj Yanıtla (Instagram style) */
+        .reply-preview-container {
+            padding: 8px 12px;
+            background: rgba(var(--primary-rgb), 0.05);
+            border-left: 4px solid var(--primary-color);
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideUp 0.2s ease-out;
+        }
+
+        .reply-preview-container.active {
+            display: flex;
+        }
+
+        .reply-info {
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .reply-to-name {
+            font-weight: bold;
+            font-size: 11px;
+            color: var(--primary-color);
+            margin-bottom: 2px;
+        }
+
+        .reply-to-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cancel-reply-btn {
+            background: none;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            color: var(--text-muted);
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .cancel-reply-btn:hover {
+            opacity: 1;
+        }
+
+        .quoted-msg-wrapper {
+            background: rgba(0, 0, 0, 0.05);
+            border-left: 3px solid rgba(255, 255, 255, 0.5);
+            padding: 6px 10px;
+            border-radius: 8px 8px 4px 4px;
+            margin-bottom: 4px;
+            font-size: 11px;
+            max-width: 100%;
+        }
+
+        .chat-msg.sent .quoted-msg-wrapper {
+            background: rgba(255, 255, 255, 0.15);
+            border-left-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .quoted-name {
+            font-weight: bold;
+            opacity: 0.9;
+            margin-bottom: 2px;
+        }
+
+        .quoted-text {
+            opacity: 0.8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .msg-reply-btn {
+            opacity: 0;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            transform: scale(0.8);
+        }
+
+        .chat-msg-wrapper:hover .msg-reply-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+        }
+
         /* Dark Theme Bubble */
         .dark-theme #message-notification-bubble {
             background: #1a1a1a;
             border-color: var(--primary-color);
+        }
+
+        .dark-theme .quoted-msg-wrapper {
+            background: rgba(255, 255, 255, 0.05);
         }
     </style>
     <div id="cookie-consent" class="cookie-consent">

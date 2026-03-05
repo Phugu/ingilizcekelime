@@ -378,6 +378,13 @@ let activeChatUnsubscribe = null;
 let activeChatStatusUnsubscribe = null;
 let currentChatFriendId = null;
 
+// SPAM KORUMASI VE YANITLAMA DURUMU
+let lastMessageTime = 0;
+let messageCountInWindow = 0;
+const SPAM_WINDOW_MS = 5000; // 5 saniye
+const MAX_MESSAGES_IN_WINDOW = 10;
+let activeReply = null; // { id, name, text }
+
 // Global as soon as possible
 window.openChatWindow = function (friendId, friendName) {
     console.log("🚀 Sohbet açılıyor:", friendId, friendName);
@@ -604,6 +611,29 @@ window.sendGifMessage = async function (url) {
 
 window.closeChatWindow = closeChatWindow;
 window.handleSendMessage = handleSendMessage;
+
+// YANITLAMA YÖNETİMİ
+window.initMessageReply = function (msgId, senderName, text) {
+    activeReply = { id: msgId, name: senderName, text: text };
+    const preview = document.getElementById('reply-preview');
+    const nameEl = document.getElementById('reply-to-name');
+    const textEl = document.getElementById('reply-to-text');
+
+    if (preview && nameEl && textEl) {
+        nameEl.textContent = senderName;
+        textEl.textContent = text.startsWith('[GIF]') ? '📷 GIF' : text;
+        preview.classList.add('active');
+        document.getElementById('chat-input').focus();
+    }
+};
+
+window.cancelReply = function () {
+    activeReply = null;
+    const preview = document.getElementById('reply-preview');
+    if (preview) {
+        preview.classList.remove('active');
+    }
+};
 
 function closeChatWindow() {
     const widget = document.getElementById('chat-widget-container');
@@ -834,17 +864,38 @@ async function handleSendMessage() {
     const text = input.value.trim();
     if (!text || !currentChatFriendId) return;
 
+    // SPAM KORUMASI
+    const now = Date.now();
+    if (now - lastMessageTime < SPAM_WINDOW_MS) {
+        messageCountInWindow++;
+    } else {
+        lastMessageTime = now;
+        messageCountInWindow = 1;
+    }
+
+    if (messageCountInWindow > MAX_MESSAGES_IN_WINDOW) {
+        const remainingSec = Math.ceil((SPAM_WINDOW_MS - (now - lastMessageTime)) / 1000);
+        const warningMsg = `Çok hızlı mesaj gönderiyorsunuz! Lütfen ${remainingSec} saniye bekleyin.`;
+        if (window.Swal) {
+            Swal.fire({ icon: 'warning', title: 'Yavaşla!', text: warningMsg });
+        } else {
+            alert(warningMsg);
+        }
+        return;
+    }
+
     // GÜVENLİK BOTU KONTROLÜ
     const db = window.firestore;
     const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
 
-    // Yetki kontrolü (Dinamik yetki + Güvenli UID listesi)
+    // ... (canBypass logic remains same)
     const _w = ['Y2pOY1p2Q0ZMdk1TSXl3QlNjYzExVFFQMVZ2Mg==', 'OHFtS2E2alZXTFFldlJwbGE5bzAwa2hONHRUMg=='].map(atob);
     const canBypass = (window.currentUser?.canBypassFilter === true)
         || (currentUser?.canBypassFilter === true)
         || (currentUser?.uid && _w.includes(currentUser.uid));
 
     if (!canBypass && checkProfanity(text)) {
+        // ... (profanity check remains same)
         if (window.Swal) {
             Swal.fire({
                 icon: 'error',
@@ -862,16 +913,24 @@ async function handleSendMessage() {
     const chatId = [currentUser.uid, currentChatFriendId].sort().join('_');
     const messagesRef = collection(db, "chats", chatId, "messages");
 
+    const messageData = {
+        senderId: currentUser.uid,
+        senderName: currentUser.displayName || 'İsimsiz',
+        senderPhotoURL: currentUser.photoURL || window.currentUser?.photoURL || null,
+        text: text,
+        timestamp: Timestamp.now()
+    };
+
+    // YANIT BİLGİSİ EKLE
+    if (activeReply) {
+        messageData.replyTo = activeReply;
+        window.cancelReply();
+    }
+
     input.value = '';
 
     try {
-        await addDoc(messagesRef, {
-            senderId: currentUser.uid,
-            senderName: currentUser.displayName || 'İsimsiz',
-            senderPhotoURL: currentUser.photoURL || window.currentUser?.photoURL || null,
-            text: text,
-            timestamp: Timestamp.now()
-        });
+        await addDoc(messagesRef, messageData);
 
         // Dostluk dökümanını güncelle (Bildirim motoru için)
         const friendshipRef = doc(db, "friendships", chatId);
@@ -937,14 +996,41 @@ function listenForMessages(friendId) {
 
                 // Mesaj + avatar yatay düzen
                 const wrapperDiv = document.createElement('div');
+                wrapperDiv.className = 'chat-msg-wrapper';
                 wrapperDiv.style.cssText = `display:flex; align-items:flex-end; gap:6px; ${isSent ? 'flex-direction:row-reverse;' : 'flex-direction:row;'}`;
                 wrapperDiv.innerHTML = avatarHtml;
-                wrapperDiv.appendChild(msgDiv);
+
+                // Yanıtla butonu
+                const replyBtn = document.createElement('button');
+                replyBtn.className = 'msg-reply-btn';
+                replyBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 17 4 12 9 7"></polyline>
+                        <path d="M20 18v-2a4 4 0 0 0-4-4H4"></path>
+                    </svg>
+                `;
+                replyBtn.onclick = () => window.initMessageReply(change.doc.id, data.senderName, data.text);
+
+                // Yanıtlanan mesajı göster
+                let replyHtml = '';
+                if (data.replyTo) {
+                    const cleanReplyText = data.replyTo.text.startsWith('[GIF]') ? '📷 GIF' : data.replyTo.text;
+                    replyHtml = `
+                        <div class="quoted-msg-wrapper">
+                            <div class="quoted-name">${data.replyTo.name}</div>
+                            <div class="quoted-text">${cleanReplyText}</div>
+                        </div>
+                    `;
+                }
 
                 msgDiv.innerHTML = `
+                    ${replyHtml}
                     <div style="word-break: break-word;">${contentHtml}</div>
                     ${isGif ? '' : '<span class="msg-time">' + time + '</span>'}
                 `;
+
+                wrapperDiv.appendChild(msgDiv);
+                wrapperDiv.appendChild(replyBtn);
 
                 messagesContainer.appendChild(wrapperDiv);
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;

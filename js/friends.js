@@ -983,7 +983,7 @@ window.setupGlobalChatListener = function () {
                 const isCurrentlyChatting = currentChatFriendId === senderId && document.getElementById('chat-widget-container').classList.contains('active');
 
                 if (isIncoming && !isCurrentlyChatting && data['unread_' + currentUser.uid]) {
-                    const senderName = data['name_' + senderId] || "Arkadaş";
+                    const senderName = (data.senderId === currentUser.uid ? data.receiverName : data.senderName) || "Arkadaş";
                     showGlobalNotification(senderName, data.lastMessage, senderId);
                 }
             }
@@ -1113,7 +1113,7 @@ window.addEventListener('load', () => {
             // Her arkadaş için satır oluştur
             const rows = await Promise.all(docsData.map(async (data) => {
                 const friendUid = data.users.find(u => u !== currentUser.uid);
-                let friendName = data['name_' + friendUid];
+                let friendName = data.senderId === currentUser.uid ? data.receiverName : data.senderName;
                 const lastMsg = data.lastMessage || '';
                 const photo = data['photo_' + friendUid] || null;
 

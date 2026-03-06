@@ -637,6 +637,7 @@ async function initApp() {
 
         // Global currentUser'ı ayarla
         currentUser = user;
+        window.currentUser = user; // Dış dosyaların erişimi için
         const userId = currentUser.uid;
         console.log('Aktif kullanıcı kimliği:', userId);
 

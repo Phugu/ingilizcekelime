@@ -1113,7 +1113,7 @@ function listenForMessages(friendId) {
 // Global olarak public profile açma metodunu sızdır (Leaderboard veya Arkadaşlar listesi için)
 // GLOBAL BİLDİRİM MOTORU
 let globalChatUnsubscribe = null;
-const notificationSound = new Audio('assets/musics/ringtonee.mp3');
+const notificationSound = new Audio('/assets/musics/ringtonee.mp3');
 notificationSound.preload = 'auto';
 
 // Tarayıcı kısıtlamaları için kullanıcı etkileşimi sonrası sesi "unmute" etme veya yükleme
@@ -1123,7 +1123,18 @@ document.addEventListener('click', () => {
 }, { once: true });
 
 notificationSound.addEventListener('error', (e) => {
-    console.error("🚨 Ses dosyası yüklenirken hata oluştu (ringtonee.mp3):", e);
+    const error = notificationSound.error;
+    let errorMsg = "Bilinmeyen hata";
+    if (error) {
+        switch (error.code) {
+            case 1: errorMsg = "Yükleme durduruldu (ABORTED)"; break;
+            case 2: errorMsg = "Ağ hatası (NETWORK)"; break;
+            case 3: errorMsg = "Ses çözme hatası (DECODE) - Dosya bozuk olabilir"; break;
+            case 4: errorMsg = "Desteklenmeyen format veya bulunamadı (SRC_NOT_SUPPORTED)"; break;
+        }
+    }
+    console.error(`🚨 Ses dosyası hatası (ringtonee.mp3) [Kod: ${error?.code || '?'}] - ${errorMsg}`, e);
+    console.log("🔍 Denenen tam yol:", notificationSound.src);
 });
 
 window.setupGlobalChatListener = function () {

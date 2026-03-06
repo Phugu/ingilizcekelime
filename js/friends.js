@@ -1113,7 +1113,7 @@ function listenForMessages(friendId) {
 // Global olarak public profile açma metodunu sızdır (Leaderboard veya Arkadaşlar listesi için)
 // GLOBAL BİLDİRİM MOTORU
 let globalChatUnsubscribe = null;
-const notificationSound = new Audio('/assets/musics/ringtonee.mp3');
+const notificationSound = new Audio('assets/musics/ringtonee.m4a?v=1');
 notificationSound.preload = 'auto';
 
 // Tarayıcı kısıtlamaları için kullanıcı etkileşimi sonrası sesi "unmute" etme veya yükleme
@@ -1133,7 +1133,7 @@ notificationSound.addEventListener('error', (e) => {
             case 4: errorMsg = "Desteklenmeyen format veya bulunamadı (SRC_NOT_SUPPORTED)"; break;
         }
     }
-    console.error(`🚨 Ses dosyası hatası (ringtonee.mp3) [Kod: ${error?.code || '?'}] - ${errorMsg}`, e);
+    console.error(`🚨 Ses dosyası hatası (ringtonee.m4a) [Kod: ${error?.code || '?'}] - ${errorMsg}`, e);
     console.log("🔍 Denenen tam yol:", notificationSound.src);
 });
 

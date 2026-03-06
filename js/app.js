@@ -640,6 +640,12 @@ async function initApp() {
         const userId = currentUser.uid;
         console.log('Aktif kullanıcı kimliği:', userId);
 
+        // Küresel Sohbet Dinleyicisini Başlat (Bildirimler ve Ses için)
+        if (typeof window.setupGlobalChatListener === 'function') {
+            window.setupGlobalChatListener();
+            console.log("💬 Sohbet dinleyicisi aktif edildi.");
+        }
+
         // Kullanıcı adını göster (header'dan kaldırıldı, sadece profil sayfasında gösteriliyor)
         // Firebase uses displayName or we'll fetch from Firestore
         const userName = user.displayName || user.email;

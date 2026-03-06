@@ -1118,9 +1118,13 @@ notificationSound.preload = 'auto';
 
 // Tarayıcı kısıtlamaları için kullanıcı etkileşimi sonrası sesi "unmute" etme veya yükleme
 document.addEventListener('click', () => {
-    // Sadece bir kez çalışması yeterli, dosya yüklenmiş olur
     notificationSound.load();
+    console.log("🔊 Bildirim sesi yüklendi ve hazır.");
 }, { once: true });
+
+notificationSound.addEventListener('error', (e) => {
+    console.error("🚨 Ses dosyası yüklenirken hata oluştu (ringtonee.mp3):", e);
+});
 
 window.setupGlobalChatListener = function () {
     const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
@@ -1198,10 +1202,20 @@ function showGlobalNotification(name, text, uid, photoURL) {
 
     // Sesi çal
     try {
+        console.log("🔔 Bildirim sesi tetikleniyor...");
+        notificationSound.pause();
         notificationSound.currentTime = 0;
-        notificationSound.play().catch(e => console.warn("Ses çalınamadı (etkileşim gerekebilir):", e));
+
+        const playPromise = notificationSound.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log("✅ Bildirim sesi başarıyla çalındı.");
+            }).catch(e => {
+                console.warn("⚠️ Ses çalınamadı (Tarayıcı etkileşim bekliyor olabilir):", e);
+            });
+        }
     } catch (e) {
-        console.error("Ses hatası:", e);
+        console.error("🚨 Ses çalma hatası:", e);
     }
 
     bubble.classList.replace('hide-bubble', 'show-bubble');

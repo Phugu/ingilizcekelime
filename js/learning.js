@@ -669,6 +669,256 @@ export class WordLearning {
         }
     }
 
+    // ── ÖĞRENME SONRASI MİNİ QUİZ ──────────────────────────────────
+    startPostLearningQuiz() {
+        const container = document.getElementById(this.containerId);
+        if (!container) return;
+
+        // Eğer kelime sayısı çok azsa (3'ten az) quiz'i atla
+        if (this.words.length < 3) {
+            this.completeWordLearning();
+            return;
+        }
+
+        // Quiz kelimelerini hazırla: rastgele 4-5 soru seç
+        const questionCount = Math.min(this.words.length >= 8 ? 5 : 4, this.words.length);
+        const shuffled = [...this.words].sort(() => Math.random() - 0.5);
+        this.quizQuestions = shuffled.slice(0, questionCount);
+        this.quizCurrentIndex = 0;
+        this.quizCorrectCount = 0;
+
+        // Quiz giriş ekranı
+        container.innerHTML = `
+            <div class="mini-quiz-intro" style="text-align: center; padding: 40px 20px; max-width: 500px; margin: 0 auto;">
+                <div style="font-size: 64px; margin-bottom: 20px;">🧠</div>
+                <h2 style="color: var(--primary-color); margin-bottom: 10px;">Mini Quiz!</h2>
+                <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 15px; line-height: 1.5;">
+                    Az önce öğrendiğin <strong>${this.words.length}</strong> kelimeden <strong>${questionCount}</strong> soru ile kendini test et!
+                </p>
+                <button id="start-mini-quiz-btn" class="btn" style="padding: 14px 40px; font-size: 16px; font-weight: bold; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+                    Başla 🚀
+                </button>
+            </div>
+        `;
+
+        container.querySelector('#start-mini-quiz-btn').addEventListener('click', () => {
+            this.showQuizQuestion();
+        });
+    }
+
+    showQuizQuestion() {
+        const container = document.getElementById(this.containerId);
+        if (!container) return;
+
+        const question = this.quizQuestions[this.quizCurrentIndex];
+        const total = this.quizQuestions.length;
+        const current = this.quizCurrentIndex + 1;
+
+        // Yanlış şıkları oluştur: doğru cevap hariç diğer kelimelerden 3 tane seç
+        const wrongOptions = this.words
+            .filter(w => w.english !== question.english)
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 3)
+            .map(w => w.turkish);
+
+        // Tüm şıkları karıştır
+        const allOptions = [...wrongOptions, question.turkish].sort(() => Math.random() - 0.5);
+
+        // İlerleme çubuğu yüzdesini hesapla
+        const progressPercent = ((current - 1) / total) * 100;
+
+        container.innerHTML = `
+            <div class="mini-quiz-container" style="max-width: 500px; margin: 0 auto; padding: 20px;">
+                <div class="mini-quiz-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Soru ${current}/${total}</span>
+                    <span style="font-size: 13px; color: var(--primary-color); font-weight: bold;">✅ ${this.quizCorrectCount} Doğru</span>
+                </div>
+
+                <div style="width: 100%; height: 6px; background: var(--border-color); border-radius: 3px; margin-bottom: 25px; overflow: hidden;">
+                    <div style="width: ${progressPercent}%; height: 100%; background: var(--primary-color); border-radius: 3px; transition: width 0.4s ease;"></div>
+                </div>
+
+                <div class="mini-quiz-question" style="text-align: center; margin-bottom: 30px;">
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Bu kelimenin Türkçe karşılığı nedir?</p>
+                    <h2 style="font-size: 28px; color: var(--text-main); font-weight: bold; margin: 0;">${question.english}</h2>
+                </div>
+
+                <div class="mini-quiz-options" id="quiz-options-container" style="display: flex; flex-direction: column; gap: 10px;">
+                    ${allOptions.map((option, i) => `
+                        <button class="mini-quiz-option-btn" data-answer="${option}" style="
+                            width: 100%;
+                            padding: 14px 18px;
+                            border: 2px solid var(--border-color);
+                            border-radius: 14px;
+                            background: var(--card-bg);
+                            color: var(--text-main);
+                            font-size: 15px;
+                            font-weight: 500;
+                            cursor: pointer;
+                            text-align: left;
+                            transition: all 0.2s ease;
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                        ">
+                            <span style="
+                                display: flex; align-items: center; justify-content: center;
+                                width: 30px; height: 30px; border-radius: 50%;
+                                background: var(--bg-color); border: 1px solid var(--border-color);
+                                font-size: 13px; font-weight: bold; color: var(--text-muted);
+                                flex-shrink: 0;
+                            ">${String.fromCharCode(65 + i)}</span>
+                            ${option}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        // Şıklara tıklama event'leri ekle
+        const optionBtns = container.querySelectorAll('.mini-quiz-option-btn');
+        optionBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Tüm butonları devre dışı bırak (çift tıklama önleme)
+                optionBtns.forEach(b => {
+                    b.style.pointerEvents = 'none';
+                });
+
+                const selectedAnswer = btn.dataset.answer;
+                const isCorrect = selectedAnswer === question.turkish;
+
+                if (isCorrect) {
+                    this.quizCorrectCount++;
+                    btn.style.borderColor = '#2ecc71';
+                    btn.style.background = 'rgba(46, 204, 113, 0.15)';
+                    btn.style.color = '#27ae60';
+
+                    // İkon ekle
+                    const iconSpan = btn.querySelector('span');
+                    if (iconSpan) {
+                        iconSpan.style.background = '#2ecc71';
+                        iconSpan.style.color = '#fff';
+                        iconSpan.style.border = 'none';
+                        iconSpan.textContent = '✓';
+                    }
+                } else {
+                    btn.style.borderColor = '#e74c3c';
+                    btn.style.background = 'rgba(231, 76, 60, 0.15)';
+                    btn.style.color = '#c0392b';
+
+                    const iconSpan = btn.querySelector('span');
+                    if (iconSpan) {
+                        iconSpan.style.background = '#e74c3c';
+                        iconSpan.style.color = '#fff';
+                        iconSpan.style.border = 'none';
+                        iconSpan.textContent = '✗';
+                    }
+
+                    // Doğru cevabı yeşil olarak göster
+                    optionBtns.forEach(b => {
+                        if (b.dataset.answer === question.turkish) {
+                            b.style.borderColor = '#2ecc71';
+                            b.style.background = 'rgba(46, 204, 113, 0.15)';
+                            b.style.color = '#27ae60';
+                            const correctIcon = b.querySelector('span');
+                            if (correctIcon) {
+                                correctIcon.style.background = '#2ecc71';
+                                correctIcon.style.color = '#fff';
+                                correctIcon.style.border = 'none';
+                                correctIcon.textContent = '✓';
+                            }
+                        }
+                    });
+                }
+
+                // 1.2 saniye bekleyip sonraki soruya geç
+                setTimeout(() => {
+                    this.quizCurrentIndex++;
+                    if (this.quizCurrentIndex < this.quizQuestions.length) {
+                        this.showQuizQuestion();
+                    } else {
+                        this.showQuizResults();
+                    }
+                }, 1200);
+            });
+        });
+    }
+
+    showQuizResults() {
+        const container = document.getElementById(this.containerId);
+        if (!container) return;
+
+        const total = this.quizQuestions.length;
+        const correct = this.quizCorrectCount;
+        const percent = Math.round((correct / total) * 100);
+        const xpEarned = correct * 5;
+
+        // Emoji ve mesaj seç
+        let emoji, message;
+        if (percent === 100) {
+            emoji = '🏆';
+            message = 'Mükemmel! Hepsini bildin!';
+        } else if (percent >= 75) {
+            emoji = '🎉';
+            message = 'Harika! Neredeyse hepsini bildin!';
+        } else if (percent >= 50) {
+            emoji = '👍';
+            message = 'İyi gidiyorsun, biraz daha pratik yap!';
+        } else {
+            emoji = '💪';
+            message = 'Kelimeleri tekrar gözden geçirmelisin!';
+        }
+
+        container.innerHTML = `
+            <div class="mini-quiz-result" style="text-align: center; padding: 40px 20px; max-width: 500px; margin: 0 auto;">
+                <div style="font-size: 64px; margin-bottom: 15px;">${emoji}</div>
+                <h2 style="color: var(--primary-color); margin-bottom: 10px;">Quiz Tamamlandı!</h2>
+                <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 15px;">${message}</p>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px;">
+                    <div style="background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 24px; font-weight: bold; color: #2ecc71;">${correct}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Doğru</div>
+                    </div>
+                    <div style="background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 24px; font-weight: bold; color: #e74c3c;">${total - correct}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Yanlış</div>
+                    </div>
+                    <div style="background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 24px; font-weight: bold; color: var(--primary-color);">%${percent}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Başarı</div>
+                    </div>
+                </div>
+
+                ${xpEarned > 0 ? `<p style="color: var(--primary-color); font-weight: bold; margin-bottom: 20px; font-size: 16px;">+${xpEarned} XP Kazandın! ⭐</p>` : ''}
+
+                <button id="quiz-continue-btn" class="btn" style="padding: 14px 40px; font-size: 16px; font-weight: bold; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+                    Devam Et →
+                </button>
+            </div>
+        `;
+
+        // XP ver
+        if (xpEarned > 0) {
+            try {
+                giveXP(xpEarned, `Mini Quiz: ${correct}/${total} Doğru`);
+            } catch (e) {
+                console.error("XP verilemedi:", e);
+            }
+        }
+
+        // Konfeti efekti (mükemmel sonuçta)
+        if (percent === 100 && typeof confetti === 'function') {
+            try {
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            } catch (e) { }
+        }
+
+        container.querySelector('#quiz-continue-btn').addEventListener('click', () => {
+            this.completeWordLearning();
+        });
+    }
+
     // Kelime öğrenmeyi tamamla
     completeWordLearning() {
         const container = document.getElementById(this.containerId);
@@ -1164,9 +1414,9 @@ export class WordLearning {
             currentCard.style.animationDuration = '0.6s';
             currentCard.style.animationFillMode = 'forwards';
 
-            // Animasyon bittikten sonra tamamlama ekranını göster
+            // Animasyon bittikten sonra mini quiz'i başlat
             setTimeout(() => {
-                this.completeWordLearning();
+                this.startPostLearningQuiz();
             }, 600);
         }
     }

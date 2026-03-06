@@ -1966,6 +1966,102 @@ a {
     color: #9b59b6;
 }
 
+.pool-card[data-level='b2']::before {
+    background-color: var(--level-b2);
+}
+
+.pool-card[data-level='c1']::before {
+    background-color: var(--level-c1);
+}
+
+/* KİLİT SİSTEMİ: ZİNCİRLİ KART GÖRÜNÜMÜ */
+.pool-card.locked-chain {
+    position: relative;
+    overflow: hidden;
+    opacity: 0.8;
+    pointer-events: none;
+    /* Tıklanmayı tamamen engeller */
+    cursor: not-allowed;
+    border-color: #bdc3c7 !important;
+    background-color: var(--input-bg);
+}
+
+.pool-card.locked-chain .chain-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.4);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.dark-theme .pool-card.locked-chain .chain-overlay {
+    background: rgba(0, 0, 0, 0.5);
+    /* Karanlık tema için koyu saydamlık */
+}
+
+/* Çapraz Zincir Çizimleri (CSS Gradient ile) */
+.pool-card.locked-chain .chain-overlay::before,
+.pool-card.locked-chain .chain-overlay::after {
+    content: '';
+    position: absolute;
+    width: 120%;
+    height: 12px;
+    background: repeating-linear-gradient(90deg,
+            #7f8c8d,
+            #7f8c8d 10px,
+            #bdc3c7 10px,
+            #bdc3c7 20px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    z-index: 11;
+}
+
+.pool-card.locked-chain .chain-overlay::before {
+    transform: rotate(15deg);
+}
+
+.pool-card.locked-chain .chain-overlay::after {
+    transform: rotate(-15deg);
+}
+
+/* Kilit İkonu */
+.pool-card.locked-chain .lock-icon-container {
+    font-size: 38px;
+    z-index: 12;
+    background: #f1c40f;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4), inset 0 2px 5px rgba(255, 255, 255, 0.5);
+    border: 3px solid #f39c12;
+    animation: lockPulse 2s infinite ease-in-out;
+}
+
+@keyframes lockPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 15px rgba(243, 156, 18, 0.6);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+}
+
 .pool-card[data-pool="food"] {
     border-left-color: #e74c3c;
 }

@@ -1113,6 +1113,14 @@ function listenForMessages(friendId) {
 // Global olarak public profile açma metodunu sızdır (Leaderboard veya Arkadaşlar listesi için)
 // GLOBAL BİLDİRİM MOTORU
 let globalChatUnsubscribe = null;
+const notificationSound = new Audio('assets/musics/ringtonee.mp3');
+notificationSound.preload = 'auto';
+
+// Tarayıcı kısıtlamaları için kullanıcı etkileşimi sonrası sesi "unmute" etme veya yükleme
+document.addEventListener('click', () => {
+    // Sadece bir kez çalışması yeterli, dosya yüklenmiş olur
+    notificationSound.load();
+}, { once: true });
 
 window.setupGlobalChatListener = function () {
     const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
@@ -1187,6 +1195,14 @@ function showGlobalNotification(name, text, uid, photoURL) {
     // Dataset ayarla (tıklayınca doğru kişiyi açsın)
     bubble.dataset.uid = uid;
     bubble.dataset.name = name;
+
+    // Sesi çal
+    try {
+        notificationSound.currentTime = 0;
+        notificationSound.play().catch(e => console.warn("Ses çalınamadı (etkileşim gerekebilir):", e));
+    } catch (e) {
+        console.error("Ses hatası:", e);
+    }
 
     bubble.classList.replace('hide-bubble', 'show-bubble');
 

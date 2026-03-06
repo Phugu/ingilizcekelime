@@ -10,7 +10,8 @@ import {
     getDocs,
     addDoc,
     Timestamp,
-    increment
+    increment,
+    arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { giveXP, updateQuestProgress } from './app.js';
@@ -305,15 +306,26 @@ export class WordLearning {
             else if (key === 'travel') { title = "Seyahat"; desc = "Seyahat ile ilgili temel kelimeler"; }
             else if (key === 'food') { title = "Yiyecek"; desc = "Temel yiyecek ve içecek kelimeleri"; }
             else if (key === 'family') { title = "Aile"; desc = "Aile üyeleriyle ilgili kelimeler"; }
-            else if (key.startsWith('oxford')) {
+            let isLocked = this.isPoolLocked('a1', key);
+            let lockHtml = '';
+
+            // extraStyle reset or append
+            extraStyle = ''; // Reset extraStyle for each card
+            if (isLocked) {
+                extraStyle += 'opacity: 0.6; pointer-events: none; filter: grayscale(100%); cursor: not-allowed;';
+                lockHtml = '<div style="position: absolute; top: 10px; right: 10px; font-size: 20px;" title="Önceki aşamayı tamamlamalısın">🔒</div>';
+            }
+
+            if (key.startsWith('oxford')) {
                 const num = key.split('_set')[1] || key.replace('oxford', '');
                 title = `Oxford 3000 (Set ${num})`;
                 desc = `Dünyada en çok kullanılan kelimeler`;
-                extraStyle = 'border-color: #8e44ad;';
+                extraStyle += ' border-color: #8e44ad;';
             }
 
             poolsHtml += `
-                <div class="pool-card ${key.startsWith('oxford') ? 'oxford-card' : ''}" data-pool="${key}" data-level="a1" style="${extraStyle}">
+                <div class="pool-card ${key.startsWith('oxford') ? 'oxford-card' : ''}" data-pool="${key}" data-level="a1" style="position: relative; ${extraStyle}">
+                    ${lockHtml}
                     <h3 style="${key.startsWith('oxford') ? 'color: #8e44ad;' : ''}">${title}</h3>
                     <p>${desc}</p>
                     <span class="word-count">${pool.length} kelime</span>
@@ -382,15 +394,25 @@ export class WordLearning {
             if (key === 'learning1') { title = "Kelime Öğrenme 1"; desc = "A2 seviye temel kelimeler"; }
             else if (key === 'learning2') { title = "Kelime Öğrenme 2"; desc = "A2 seviye ek kelimeler"; }
             else if (key === 'travel') { title = "Seyahat"; desc = "A2 seviye seyahat kelimeleri"; }
-            else if (key.startsWith('oxford')) {
+            let isLocked = this.isPoolLocked('a2', key);
+            let lockHtml = '';
+            extraStyle = ''; // Reset extraStyle for each card
+
+            if (isLocked) {
+                extraStyle += 'opacity: 0.6; pointer-events: none; filter: grayscale(100%); cursor: not-allowed;';
+                lockHtml = '<div style="position: absolute; top: 10px; right: 10px; font-size: 20px;" title="Önceki aşamayı tamamlamalısın">🔒</div>';
+            }
+
+            if (key.startsWith('oxford')) {
                 const num = key.split('_set')[1] || key.replace('oxford', '');
-                title = `A2 Oxford Kelimeleri (Set ${num})`;
-                desc = `Dünyada en çok kullanılan A2 kelimeleri`;
-                extraStyle = 'border-color: #8e44ad;';
+                title = `A2 Oxford Kelimeleri (Set ${num})`; // Changed from "Oxford 3000"
+                desc = `Dünyada en çok kullanılan A2 kelimeleri`; // Changed description
+                extraStyle += ' border-color: #8e44ad;';
             }
 
             poolsHtml += `
-                <div class="pool-card ${key.startsWith('oxford') ? 'oxford-card' : ''}" data-pool="${key}" data-level="a2" style="${extraStyle}">
+                <div class="pool-card ${key.startsWith('oxford') ? 'oxford-card' : ''}" data-pool="${key}" data-level="a2" style="position: relative; ${extraStyle}">
+                    ${lockHtml}
                     <h3 style="${key.startsWith('oxford') ? 'color: #8e44ad;' : ''}">${title}</h3>
                     <p>${desc}</p>
                     <span class="word-count">${pool.length} kelime</span>
@@ -444,15 +466,25 @@ export class WordLearning {
             let extraStyle = '';
 
             if (key === 'learning1') { title = "Kelime Öğrenme 1"; desc = "B1 seviye temel kelimeler"; }
-            else if (key.startsWith('oxford')) {
+            let isLocked = this.isPoolLocked('b1', key);
+            let lockHtml = '';
+            // extraStyle = ''; // Reset extraStyle for each card
+
+            if (isLocked) {
+                extraStyle += 'opacity: 0.6; pointer-events: none; filter: grayscale(100%); cursor: not-allowed;';
+                lockHtml = '<div style="position: absolute; top: 10px; right: 10px; font-size: 20px;" title="Önceki aşamayı tamamlamalısın">🔒</div>';
+            }
+
+            if (key.startsWith('oxford')) {
                 const num = key.split('_set')[1] || key.replace('oxford', '');
-                title = `B1 Oxford Kelimeleri (Set ${num})`;
-                desc = `Dünyada en çok kullanılan B1 kelimeleri`;
-                extraStyle = 'border-color: #8e44ad;';
+                title = `B1 Oxford Kelimeleri (Set ${num})`; // Changed from "Oxford 3000/5000"
+                desc = `Dünyada en çok kullanılan B1 kelimeleri`; // Changed from "İleri seviye kelimeler"
+                extraStyle += ' border-color: #8e44ad;';
             }
 
             poolsHtml += `
-                <div class="pool-card ${key.startsWith('oxford') ? 'oxford-card' : ''}" data-pool="${key}" data-level="b1" style="${extraStyle}">
+                <div class="pool-card ${key.startsWith('oxford') ? 'oxford-card' : ''}" data-pool="${key}" data-level="b1" style="position: relative; ${extraStyle}">
+                    ${lockHtml}
                     <h3 style="${key.startsWith('oxford') ? 'color: #8e44ad;' : ''}">${title}</h3>
                     <p>${desc}</p>
                     <span class="word-count">${pool.length} kelime</span>
@@ -506,15 +538,25 @@ export class WordLearning {
             let extraStyle = '';
 
             if (key === 'learning1') { title = "Kelime Öğrenme 1"; desc = "B2 seviye temel kelimeler"; }
-            else if (key.startsWith('oxford')) {
+            let isLocked = this.isPoolLocked('b2', key);
+            let lockHtml = '';
+            extraStyle = ''; // Reset extraStyle for each card
+
+            if (isLocked) {
+                extraStyle += 'opacity: 0.6; pointer-events: none; filter: grayscale(100%); cursor: not-allowed;';
+                lockHtml = '<div style="position: absolute; top: 10px; right: 10px; font-size: 20px;" title="Önceki aşamayı tamamlamalısın">🔒</div>';
+            }
+
+            if (key.startsWith('oxford')) {
                 const num = key.split('_set')[1] || key.replace('oxford', '');
-                title = `B2 Oxford Kelimeleri (Set ${num})`;
-                desc = `Dünyada en çok kullanılan B2 kelimeleri`;
-                extraStyle = 'border-color: #8e44ad;';
+                title = `B2 Oxford Kelimeleri (Set ${num})`; // Changed from "Oxford 5000"
+                desc = `Dünyada en çok kullanılan B2 kelimeleri`; // Changed from "İleri seviye kelimeler"
+                extraStyle += ' border-color: #8e44ad;';
             }
 
             poolsHtml += `
-                <div class="pool-card ${key.startsWith('oxford') ? 'oxford-card' : ''}" data-pool="${key}" data-level="b2" style="${extraStyle}">
+                <div class="pool-card ${key.startsWith('oxford') ? 'oxford-card' : ''}" data-pool="${key}" data-level="b2" style="position: relative; ${extraStyle}">
+                    ${lockHtml}
                     <h3 style="${key.startsWith('oxford') ? 'color: #8e44ad;' : ''}">${title}</h3>
                     <p>${desc}</p>
                     <span class="word-count">${pool.length} kelime</span>
@@ -806,6 +848,9 @@ export class WordLearning {
                     btn.style.background = 'rgba(231, 76, 60, 0.15)';
                     btn.style.color = '#c0392b';
 
+                    // Zayıf kelimeyi hata havuzuna ekle
+                    this.logWeakness(question);
+
                     const iconSpan = btn.querySelector('span');
                     if (iconSpan) {
                         iconSpan.style.background = '#e74c3c';
@@ -919,10 +964,58 @@ export class WordLearning {
         });
     }
 
+    // ── KİLİT SİSTEMİ VERİ TABANI ──────────────────────────────────
+    async markPoolAsCompleted(poolName) {
+        if (!this.userId || this.userId.startsWith('guest_')) return;
+
+        try {
+            const userRef = doc(db, "users_public", this.userId);
+            const levelPrefix = (this.currentLevel || 'A1').toLowerCase();
+            const poolKey = `${levelPrefix}_${poolName}`;
+
+            await updateDoc(userRef, {
+                completed_pools: arrayUnion(poolKey)
+            });
+
+            // Local state update
+            if (window.currentUser) {
+                if (!window.currentUser.completed_pools) window.currentUser.completed_pools = [];
+                if (!window.currentUser.completed_pools.includes(poolKey)) {
+                    window.currentUser.completed_pools.push(poolKey);
+                }
+            }
+        } catch (e) {
+            console.error("Havuz tamamlanma durumu kaydedilemedi:", e);
+        }
+    }
+
+    isPoolLocked(level, poolKey) {
+        if (!window.currentUser || window.currentUser.isGuest) return false;
+
+        const completed = window.currentUser.completed_pools || [];
+        const prefix = level.toLowerCase();
+
+        // learning2 requires learning1
+        if (poolKey === 'learning2') {
+            return !completed.includes(`${prefix}_learning1`);
+        }
+        // learning3 requires learning2
+        else if (poolKey === 'learning3') {
+            return !completed.includes(`${prefix}_learning2`);
+        }
+
+        return false;
+    }
+
     // Kelime öğrenmeyi tamamla
     completeWordLearning() {
         const container = document.getElementById(this.containerId);
         if (!container) return;
+
+        // Havuz tamamlandığı için kaydet (kilitleri açmak için)
+        if (this.currentPool) {
+            this.markPoolAsCompleted(this.currentPool);
+        }
 
         // Kategori ismini daha kullanıcı dostu hale getir
         const categoryLabels = {

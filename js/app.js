@@ -802,6 +802,11 @@ async function loadUserStats(userId) {
         const publicData = publicDoc.data();
         const privateData = privateDoc.data();
 
+        // Kullanıcının tamamladığı bölüm dizisini oturuma aktar
+        if (currentUser) {
+            currentUser.completed_pools = publicData.completed_pools || [];
+        }
+
         // 30 GÜNLÜK HESAP SİLME KONTROLÜ (Soft Delete)
         if (privateData && privateData.accountStatus === 'pending_deletion') {
             const now = new Date();

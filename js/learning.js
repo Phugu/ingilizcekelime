@@ -9,6 +9,7 @@ import {
     where,
     getDocs,
     addDoc,
+    deleteDoc,
     Timestamp,
     increment,
     arrayUnion
@@ -1925,6 +1926,11 @@ export class WordLearning {
         if (selectedOption === correctAnswer) {
             optionButtons[selectedIndex].classList.add('correct-option');
             this.correctAnswers++;
+
+            // Eğer bu bir zayıf kelimeyse (Smart Review), listeden sil
+            if (this.currentLevel === 'MIXED') {
+                this.removeFromWeakness(currentWord);
+            }
         } else {
             optionButtons[selectedIndex].classList.add('wrong-option');
             // Kullanıcının yanlış bildiği kelimeyi kaydet (Eksiklerini Gider özelliği için)
@@ -1935,6 +1941,20 @@ export class WordLearning {
         setTimeout(() => {
             this.goToNextQuestion();
         }, 1500);
+    }
+
+    // Doğru bilinen kelimeyi "Zayıf Noktalar" listesinden sil
+    async removeFromWeakness(word) {
+        if (!this.userId || this.userId.startsWith('guest_')) return;
+
+        try {
+            const wordId = word.english.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+            const weakRef = doc(db, "weak_words", `${this.userId}_${wordId}`);
+            await deleteDoc(weakRef);
+            console.log(`Kelime zayıf listesinden silindi: ${word.english}`);
+        } catch (e) {
+            console.error("Zayıf kelime silinemedi:", e);
+        }
     }
 
     // Yanlış bilinen kelimeyi "Zayıf Noktalar" için veritabanına kaydet
@@ -2143,12 +2163,24 @@ export class WordLearning {
 
                 // XP Kazandır
                 try {
-                    const quizXP = this.correctAnswers * 5;
-                    const bonusXP = percentage === 100 ? 50 : 0;
+                    let quizXP = 0;
+                    let bonusXP = 0;
+
+                    if (this.currentLevel === 'MIXED') {
+                        // Smart Review: Suistimali önlemek için daha düşük XP
+                        quizXP = this.correctAnswers * 1;
+                        bonusXP = 0;
+                    } else {
+                        // Normal Test
+                        quizXP = this.correctAnswers * 5;
+                        bonusXP = percentage === 100 ? 50 : 0;
+                    }
+
                     const totalQuizXP = quizXP + bonusXP;
 
                     let reason = `${this.correctAnswers} doğru cevap!`;
-                    if (percentage === 100) reason += " (Mükemmel Skor Bonusu!)";
+                    if (this.currentLevel === 'MIXED') reason = `Eksiklerini Giderme Tamamlandı!`;
+                    else if (percentage === 100) reason += " (Mükemmel Skor Bonusu!)";
 
                     if (totalQuizXP > 0) {
                         await giveXP(totalQuizXP, reason);

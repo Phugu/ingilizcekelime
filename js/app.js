@@ -844,6 +844,12 @@ async function loadUserStats(userId) {
         const publicData = publicDoc.data();
         const privateData = privateDoc.data();
 
+        // GÜVENLİK: Eğer dökümanlar bir şekilde yüklenemediyse veya verisi boşsa çökme
+        if (!publicData || !privateData) {
+            console.warn("⚠️ Kullanıcı verileri eksik veya okunamadı, işlem durduruldu.");
+            return;
+        }
+
         // 🟢 BAN KONTROLÜ (Şikayet Sayısı veya Manuel Ban)
         const reportCount = publicData.report_count || 0;
         const isBanned = privateData.isBanned === true || reportCount >= 10;

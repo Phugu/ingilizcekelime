@@ -3587,6 +3587,98 @@ window.showPublicProfile = async function (uid) {
             modal.classList.add('hide');
         }
     };
+
+    // Şikayet Et Butonu Mantığı
+    const reportBtn = document.getElementById('report-user-btn');
+    if (reportBtn) {
+        if (!currentUser || currentUser.isGuest || currentUser.uid === uid) {
+            reportBtn.style.display = 'none'; // Kendini veya misafirken şikayet edemez
+        } else {
+            reportBtn.style.display = 'flex';
+            reportBtn.onclick = () => {
+                window.openReportModal(uid, rawName);
+            };
+        }
+    }
+}
+
+// Şikayet Modalı İşlemleri
+window.openReportModal = function (reportedUid, reportedName) {
+    const reportModal = document.getElementById('report-user-modal');
+    if (!reportModal) return;
+
+    // Reset form
+    document.getElementById('report-reason').value = '';
+    document.getElementById('report-details').value = '';
+
+    // Store current target
+    reportModal.dataset.reportedUid = reportedUid;
+    reportModal.dataset.reportedName = reportedName;
+
+    reportModal.classList.remove('hide');
+
+    // Close logic
+    const closeBtn = document.getElementById('close-report-modal-btn');
+    closeBtn.onclick = () => reportModal.classList.add('hide');
+
+    reportModal.onclick = (e) => {
+        if (e.target === reportModal) {
+            reportModal.classList.add('hide');
+        }
+    };
+
+    // Submit logic
+    const submitBtn = document.getElementById('submit-report-btn');
+    submitBtn.onclick = async () => {
+        const reason = document.getElementById('report-reason').value;
+        const details = document.getElementById('report-details').value;
+
+        if (!reason) {
+            alert('Lütfen bir şikayet sebebi seçin.');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gönderiliyor...';
+
+        try {
+            const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
+
+            // 1. Yeni rapor dökümanı oluştur
+            await addDoc(collection(db, 'reports'), {
+                reporter_id: currentUser.uid,
+                reporter_name: currentUser.displayName || 'İsimsiz',
+                reported_id: reportedUid,
+                reported_name: reportedName,
+                reason: reason,
+                details: details,
+                created_at: Timestamp.now(),
+                status: 'pending' // admin paneli için
+            });
+
+            // 2. Kullanıcının profilindeki şikayet sayacını artır (Eğer yetki varsa)
+            // Not: Firestore kuralları nedeniyle fail olabilir, try-catch içinde güvenli
+            const reportedUserRef = doc(db, "users_public", reportedUid);
+            try {
+                await updateDoc(reportedUserRef, {
+                    report_count: firebase.firestore.FieldValue.increment(1)
+                });
+            } catch (updateErr) {
+                console.warn('Şikayet sayacı güncellenemedi (Kurallar kısıtlamış olabilir), ancak rapor kaydedildi.', updateErr);
+            }
+
+            alert('Şikayetiniz başarıyla iletildi. İnceleme sonucunda gerekli işlemler yapılacaktır.');
+            reportModal.classList.add('hide');
+
+        } catch (error) {
+            console.error('Şikayet gönderilirken hata:', error);
+            alert('Şikayet gönderilemedi. Lütfen daha sonra tekrar deneyin.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    };
 }
 
 // Quiz'i başlat

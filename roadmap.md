@@ -39,6 +39,7 @@ Bu dosya, platformun eğitim ve oyunlaştırma (gamification) özelliklerinin ge
 
 ### 🚨 Kullanıcı Şikayet Sistemi
 - [x] **Raporlama Mekanizması:** Uygunsuz, spam vb. profillerin raporlanabilmesi ve veritabanında loglanması (Admin Paneli uyumlu).
+- [x] **Otomatik Ban Sistemi:** 10+ şikayet alan veya admin tarafından yasaklanan kullanıcıların uygulamaya erişiminin otomatik engellenmesi.
 
 ---
 

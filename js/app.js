@@ -805,6 +805,23 @@ async function loadUserStats(userId) {
         const publicData = publicDoc.data();
         const privateData = privateDoc.data();
 
+        // 🟢 BAN KONTROLÜ (Şikayet Sayısı veya Manuel Ban)
+        const reportCount = publicData.report_count || 0;
+        const isBanned = privateData.isBanned === true || reportCount >= 10;
+
+        if (isBanned) {
+            console.error("⛔ ERİŞİM ENGELENDİ: Kullanıcı yasaklı.", { reportCount });
+            const banOverlay = document.getElementById('banned-user-overlay');
+            if (banOverlay) {
+                banOverlay.classList.remove('hide');
+                // Tüm sesleri durdur
+                if (window.audioContext) window.audioContext.suspend();
+                // Chat dinleyicilerini kapat
+                if (window.closeChatWindow) window.closeChatWindow();
+                return; // Uygulama yüklenmesini durdur
+            }
+        }
+
         // Kullanıcının tamamladığı bölüm dizisini oturuma aktar
         if (currentUser) {
             currentUser.completed_pools = publicData.completed_pools || [];

@@ -94,6 +94,35 @@
         </div>
     </div>
 
+    <!-- Yasaklı Kullanıcı Ekranı -->
+    <div id="banned-user-overlay" class="initial-loader hide"
+        style="background: rgba(255, 255, 255, 0.98); z-index: 99999; backdrop-filter: blur(10px);">
+        <div class="loader-content"
+            style="max-width: 400px; padding: 40px; border-radius: 20px; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+            <div style="font-size: 60px; color: #f44336; margin-bottom: 20px; text-align: center;">
+                <i class="fa-solid fa-user-slash"></i>
+            </div>
+            <h1 style="color: #333; margin-bottom: 15px; font-size: 24px; text-align: center;">Erişim Engellendi</h1>
+            <p style="color: #666; font-size: 16px; line-height: 1.6; margin-bottom: 25px; text-align: center;">
+                Hesabınız, uygulama topluluk kurallarını ihlal ettiği veya çok sayıda şikayet aldığı için askıya
+                alınmıştır.
+            </p>
+            <div
+                style="background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 25px; text-align: left; font-size: 14px; color: #555;">
+                <strong>Nedenler şunlar olabilir:</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>Uygunsuz profil içeriği</li>
+                    <li>Sohbet üzerinden taciz veya spam</li>
+                    <li>Sistem suistimali</li>
+                </ul>
+            </div>
+            <p style="font-size: 13px; color: #999; text-align: center;">Bir hata olduğunu düşünüyorsanız destek ile
+                iletişime geçebilirsiniz.</p>
+            <button onclick="location.reload()" class="action-btn"
+                style="margin-top: 20px; width: 100%; height: 45px;">Tekrar Dene</button>
+        </div>
+    </div>
+
     <div class="auth-container hide" id="auth-container" style="text-align: center;">
         <img src="assets/images/Panlingo.png" alt="İngilizce Kelime Logo"
             style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">

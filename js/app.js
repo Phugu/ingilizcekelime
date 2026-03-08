@@ -3512,9 +3512,15 @@ window.showPublicProfile = async function (uid) {
                 actionContainer.innerHTML = `<p style="color: var(--text-muted); font-size: 13px;">Kontrol ediliyor...</p>`;
 
                 // İlişki durumunu kontrol et
-                const relationId = [currentUser.uid, uid].sort().join('_');
-                const relationRef = doc(db, "friendships", relationId);
-                const relSnap = await getDoc(relationRef);
+                let relSnap = { exists: () => false };
+                try {
+                    const relationId = [currentUser.uid, uid].sort().join('_');
+                    const relationRef = doc(db, "friendships", relationId);
+                    relSnap = await getDoc(relationRef);
+                    window.lastRelationRef = relationRef; // Global ref for click handlers
+                } catch (relErr) {
+                    console.error("🤝 Arkadaşlık durumu kontrol edilemedi:", relErr);
+                }
 
                 if (!relSnap.exists()) {
                     // İstek yok, buton göster
@@ -3571,8 +3577,11 @@ window.showPublicProfile = async function (uid) {
 
                         document.getElementById('modal-remove-friend-btn').onclick = async function () {
                             if (confirm("Bu kişiyi arkadaşlıktan çıkarmak istediğinize emin misiniz?")) {
-                                await deleteDoc(relationRef);
-                                window.showPublicProfile(uid);
+                                const relationRef = window.lastRelationRef;
+                                if (relationRef) {
+                                    await deleteDoc(relationRef);
+                                    window.showPublicProfile(uid);
+                                }
                             }
                         };
                     } else if (relData.status === 'pending') {
@@ -3585,8 +3594,11 @@ window.showPublicProfile = async function (uid) {
                                      </button>
                                  </div>`;
                             document.getElementById('modal-cancel-req-btn').onclick = async function () {
-                                await deleteDoc(relationRef);
-                                window.showPublicProfile(uid);
+                                const relationRef = window.lastRelationRef;
+                                if (relationRef) {
+                                    await deleteDoc(relationRef);
+                                    window.showPublicProfile(uid);
+                                }
                             };
                         } else {
                             actionContainer.innerHTML = `
@@ -3599,12 +3611,18 @@ window.showPublicProfile = async function (uid) {
                                  </div>`;
 
                             document.getElementById('modal-accept-req-btn').onclick = async function () {
-                                await updateDoc(relationRef, { status: 'accepted' });
-                                window.showPublicProfile(uid);
+                                const relationRef = window.lastRelationRef;
+                                if (relationRef) {
+                                    await updateDoc(relationRef, { status: 'accepted' });
+                                    window.showPublicProfile(uid);
+                                }
                             };
                             document.getElementById('modal-reject-req-btn').onclick = async function () {
-                                await deleteDoc(relationRef);
-                                window.showPublicProfile(uid);
+                                const relationRef = window.lastRelationRef;
+                                if (relationRef) {
+                                    await deleteDoc(relationRef);
+                                    window.showPublicProfile(uid);
+                                }
                             };
                         }
                     }

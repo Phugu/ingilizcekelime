@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. ADMIN KURALI: 
+    // Bu UID'ye sahip olan kişi HER ŞEYİ okuyabilir ve yazabilir.
+    match /{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == "8qmKa6jVWLQevRpla9o00khN4tT2";
+    }
+
+    // YARDIMCI FONKSİYON: Kullanıcının yasaklı olup olmadığını kontrol eder
+    function isNotBanned() {
+      let publicDoc = get(/databases/$(database)/documents/users_public/$(request.auth.uid));
+      return publicDoc == null || (
+        (!('isBanned' in publicDoc.data) || publicDoc.data.isBanned == false) &&
+        (!('report_count' in publicDoc.data) || publicDoc.data.report_count < 10)
+      );
+    }
+
+    // 2. NORMAL KULLANICI KURALLARI:
+
+    // Kullanıcıların kendi özel verileri
+    match /users_private/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Herkese açık profiller
+    match /users_public/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId && isNotBanned();
+    }
+
+    // Şikayet Sistemi: Herkes şikayet oluşturabilir, sadece admin okuyabilir
+    match /reports/{reportId} {
+      allow create: if request.auth != null;
+    }
+
+    // Öğrenilen kelimeler, İlerleme vb. (Sadece sahibi ve banlanmamışsa)
+    match /learned_words/{docId} {
+      allow read, write: if request.auth != null && (resource == null || resource.data.user_id == request.auth.uid) && isNotBanned();
+    }
+    
+    match /weak_words/{docId} {
+      allow read, write: if request.auth != null && (resource == null || resource.data.user_id == request.auth.uid) && isNotBanned();
+    }
+
+    match /quiz_results/{docId} {
+      allow read, write: if request.auth != null && (resource == null || resource.data.user_id == request.auth.uid) && isNotBanned();
+    }
+
+    match /user_progress/{docId} {
+      allow read, write: if request.auth != null && (resource == null || resource.data.user_id == request.auth.uid) && isNotBanned();
+    }
+
+    // Sohbet (Chat)
+    match /chats/{chatId} {
+      allow read: if request.auth != null && isNotBanned();
+      allow write: if request.auth != null && isNotBanned();
+      
+      match /{allPaths=**} {
+        allow read, write: if request.auth != null && isNotBanned();
+      }
+    }
+  }
+}

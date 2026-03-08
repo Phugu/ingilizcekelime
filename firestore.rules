@@ -13,13 +13,10 @@ service cloud.firestore {
     }
 
     function isNotBanned() {
-      // exists() ile döküman olup olmadığını kontrol et
-      let path = /databases/$(database)/documents/users_public/$(request.auth.uid);
-      if (!exists(path)) {
-        return true; 
-      }
-      let data = get(path).data;
-      return (data.get('isBanned', false) == false) && (data.get('report_count', 0) < 10);
+      return !exists(/databases/$(database)/documents/users_public/$(request.auth.uid)) || (
+        get(/databases/$(database)/documents/users_public/$(request.auth.uid)).data.get('isBanned', false) == false &&
+        get(/databases/$(database)/documents/users_public/$(request.auth.uid)).data.get('report_count', 0) < 10
+      );
     }
 
     // 2. NORMAL KULLANICI KURALLARI

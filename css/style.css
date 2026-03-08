@@ -4765,7 +4765,6 @@ body.dark-theme .pool-card.locked-chain .chain-overlay {
 
 .report-btn-fix:hover {
     transform: scale(1.1) !important;
-    rotate: 0deg !important;
 }
 
 .dark-theme .modal-close-icon {

@@ -27,7 +27,9 @@ import {
     limit,
     Timestamp,
     onSnapshot,
-    writeBatch
+    writeBatch,
+    addDoc,
+    increment
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // AI Moderasyon Kara Listesi (Hassas İçerik Filtresi)
@@ -3663,7 +3665,7 @@ window.openReportModal = function (reportedUid, reportedName) {
             const reportedUserRef = doc(db, "users_public", reportedUid);
             try {
                 await updateDoc(reportedUserRef, {
-                    report_count: firebase.firestore.FieldValue.increment(1)
+                    report_count: increment(1)
                 });
             } catch (updateErr) {
                 console.warn('Şikayet sayacı güncellenemedi (Kurallar kısıtlamış olabilir), ancak rapor kaydedildi.', updateErr);

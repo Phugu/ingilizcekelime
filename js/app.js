@@ -326,13 +326,37 @@ function setupForms() {
     document.querySelectorAll('.google-login-btn').forEach(btn => {
         btn.addEventListener('click', async function (e) {
             e.preventDefault();
+
+            // ÇİFT TIKLAMA ENGELİ
+            if (window.isGoogleLoginInProgress) return;
+            window.isGoogleLoginInProgress = true;
+
+            const originalHTML = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Giriş Yapılıyor...';
+
             const provider = new GoogleAuthProvider();
             try {
                 const result = await signInWithPopup(auth, provider);
                 console.log('Google ile giriş başarılı:', result.user.email);
+                // Başarılı girişte sayfa zaten onAuthStateChanged ile yenilenecek veya yönlenecek
             } catch (err) {
                 console.error('Google Giriş Hatası:', err);
-                alert('Google ile giriş yapılamadı. Tarayıcınız popup engelliyor olabilir veya ağ hatası var: ' + err.message);
+
+                // Kullanıcı popup'ı kapattıysa veya başka bir istek varken bastıysa uyarıyı sessize al
+                if (err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-closed-by-user') {
+                    console.warn("Google Giriş: Kullanıcı işlemi iptal etti veya popup kapandı.");
+                } else if (err.code === 'auth/popup-blocked') {
+                    alert('Tarayıcınız Google popup penceresini engelledi. Lütfen adres çubuğundaki engelleyiciyi kaldırıp tekrar deneyin.');
+                } else {
+                    alert('Google ile giriş yapılamadı: ' + err.message);
+                }
+
+                // Hatadan sonra butonu eski haline getir
+                this.disabled = false;
+                this.innerHTML = originalHTML;
+            } finally {
+                window.isGoogleLoginInProgress = false;
             }
         });
     });

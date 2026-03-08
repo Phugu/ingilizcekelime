@@ -3458,6 +3458,20 @@ window.showPublicProfile = async function (uid) {
                 avatarEl.innerHTML = escapeHTML(rawName.charAt(0).toUpperCase());
             }
 
+            // Şikayet Et Butonu Mantığı
+            const reportBtn = document.getElementById('report-user-btn');
+            if (reportBtn) {
+                const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
+                if (!currentUser || currentUser.isGuest || currentUser.uid === uid) {
+                    reportBtn.style.display = 'none'; // Kendini veya misafirken şikayet edemez
+                } else {
+                    reportBtn.style.display = 'flex';
+                    reportBtn.onclick = () => {
+                        window.openReportModal(uid, rawName);
+                    };
+                }
+            }
+
             // ARKADAŞLIK BUTONU MANTIĞI
             const actionContainer = document.getElementById('public-profile-action-container');
             const currentUser = window.firebaseAuth?.currentUser || window.currentUser;
@@ -3587,19 +3601,6 @@ window.showPublicProfile = async function (uid) {
             modal.classList.add('hide');
         }
     };
-
-    // Şikayet Et Butonu Mantığı
-    const reportBtn = document.getElementById('report-user-btn');
-    if (reportBtn) {
-        if (!currentUser || currentUser.isGuest || currentUser.uid === uid) {
-            reportBtn.style.display = 'none'; // Kendini veya misafirken şikayet edemez
-        } else {
-            reportBtn.style.display = 'flex';
-            reportBtn.onclick = () => {
-                window.openReportModal(uid, rawName);
-            };
-        }
-    }
 }
 
 // Şikayet Modalı İşlemleri

@@ -37,6 +37,9 @@ Bu dosya, platformun eğitim ve oyunlaştırma (gamification) özelliklerinin ge
 - [x] **Misafir Uyarı Sistemi:** Puan kazanma animasyonları çalışırken ilerlemenin kaydedilmediğine dair Dashboard, Profil, Liderlik ve Kelime Listesi ekranlarında sarı uyarı mesajları.
 - [x] **Güvenlik Kısıtlamaları:** Profil sayfasındaki şifre değiştirme ve hesap silme gibi alanlar misafirlerden gizlendi.
 
+### 🚨 Kullanıcı Şikayet Sistemi
+- [x] **Raporlama Mekanizması:** Uygunsuz, spam vb. profillerin raporlanabilmesi ve veritabanında loglanması (Admin Paneli uyumlu).
+
 ---
 
 ## 🟡 Devam Eden / Sıradaki İşlemler
@@ -49,7 +52,7 @@ Bu dosya, platformun eğitim ve oyunlaştırma (gamification) özelliklerinin ge
 
 ### 🎯 Günlük Görevler (Daily Quests) - 🚧 (Şu an Üzerinde Çalışılıyor)
 - [ ] **Görev Havuzu:** "Bugün 20 kelime öğren", "A1 Quizinden %100 başarı sağla", "Toplam 100 XP kazan" gibi rastgele günlük görevlerin oluşturulması.
-- [ ] **Arayüz (UI):** Dashboard (Ana Sayfa) üzerinde görevlerin durumunu ve ilerlemesini gösteren bir "Günlük Görevler" kartı tasarımı.
+- [ ] **Arayüz (UI)::** Dashboard (Ana Sayfa) üzerinde görevlerin durumunu ve ilerlemesini gösteren bir "Günlük Görevler" kartı tasarımı.
 - [ ] **Ödül Sistemi:** Görevler tamamlandığında otomatik ekstra XP kazandırma ve seriyi artırma yeteneği.
 - [ ] **Veritabanı (Firestore):** Kullanıcıların o anki günlük görev ilerlemelerinin `users_private` veya yeni bir alana saatlik/günlük olarak kaydedilip gece 00:00'da sıfırlanması.
 

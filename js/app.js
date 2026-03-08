@@ -2554,6 +2554,9 @@ class Dashboard {
                     <button onclick="document.getElementById('nav-learn').click()" class="action-btn">
                         Kelime Öğrenmeye Başla
                     </button>
+                    <button onclick="window.startDailyReview()" class="action-btn" style="background: linear-gradient(135deg, #27ae60, #2ecc71);">
+                        📅 Günlük Tekrar
+                    </button>
                     <button onclick="document.getElementById('nav-quiz').click()" class="action-btn">
                         Quiz Çöz
                     </button>
@@ -2691,10 +2694,12 @@ window.claimFreeFreeze = async function () {
             return;
         }
 
-        if (inventory.streak_freeze >= 1) {
-            showXPNotification("Zaten 1 adet Seri Dondurucun var! Aynı anda en fazla 1 tane taşıyabilirsin.", false);
-            return;
-        }
+        /* Limit kaldırıldı: Kullanıcı istediği kadar biriktirebilir 
++        if (inventory.streak_freeze >= 1) {
++            showXPNotification("Zaten 1 adet Seri Dondurucun var! Aynı anda en fazla 1 tane taşıyabilirsin.", false);
++            return;
++        }
++        */
 
         // Envantere ekle ve zamanlayıcıyı sıfırla
         inventory.streak_freeze += 1;
@@ -2847,10 +2852,12 @@ window.buyStreakFreeze = async function () {
         const inventory = privateData.inventory || { streak_freeze: 0 };
 
         // 2. Kontroller (Yeterli XP var mı? Zaten 1 tane var mı?)
-        if (inventory.streak_freeze >= 1) {
-            alert("Zaten 1 adet Seri Dondurucun var! Aynı anda en fazla 1 tane taşıyabilirsin.");
-            return;
-        }
+        /* Limit kaldırıldı 
++        if (inventory.streak_freeze >= 1) {
++            alert("Zaten 1 adet Seri Dondurucun var! Aynı anda en fazla 1 tane taşıyabilirsin.");
++            return;
++        }
++        */
 
         if (xp < COST) {
             alert(`Yetersiz XP! Seri Dondurucu almak için ${COST} XP gerekli, sende ${xp} XP var.`);
@@ -2879,6 +2886,95 @@ window.buyStreakFreeze = async function () {
     } finally {
         buyBtn.disabled = false;
         buyBtn.textContent = originalText;
+    }
+};
+
+// Günlük Tekrar (SRS) Başlatma
+window.startDailyReview = async function () {
+    if (!currentUser || currentUser.isGuest) {
+        alert("Bu özelliği kullanmak için giriş yapmalısınız.");
+        return;
+    }
+
+    const reviewBtn = document.querySelector('button[onclick="window.startDailyReview()"]');
+    const originalText = reviewBtn ? reviewBtn.innerHTML : '📅 Günlük Tekrar';
+
+    try {
+        if (reviewBtn) { reviewBtn.disabled = true; reviewBtn.innerHTML = 'Yükleniyor...'; }
+
+        // Öğrenilen kelimeleri getir
+        const learnedQuery = query(
+            collection(db, "learned_words"),
+            where("user_id", "==", currentUser.uid)
+        );
+        const snapshot = await getDocs(learnedQuery);
+
+        if (snapshot.empty) {
+            alert("Henüz öğrendiğiniz bir kelime yok. Lütfen önce 'Kelime Öğrenmeye Başla' kısmından yeni kelimeler öğrenin.");
+            return;
+        }
+
+        const now = Date.now();
+        let reviewsDue = [];
+
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            const nextReview = data.next_review_date ? data.next_review_date.toMillis() : 0;
+            // Eğer next_review_date yoksa (eski veri) veya geçmişteyse tekrar edilmeli
+            if (nextReview <= now || !data.next_review_date) {
+                reviewsDue.push({
+                    id: doc.id,
+                    english: data.word_english,
+                    turkish: data.word_turkish,
+                    level: data.level || 'A1',
+                    category: data.category || 'Genel',
+                    srs_box: data.srs_box || 1,
+                    nextReviewTime: nextReview // sıralama için
+                });
+            }
+        });
+
+        if (reviewsDue.length === 0) {
+            alert("Harika! Bugün için tekrar etmeniz gereken kelime kalmadı.");
+            return;
+        }
+
+        // Eğer çok kelime varsa sınırla (örneğin en fazla 20)
+        reviewsDue.sort((a, b) => a.nextReviewTime - b.nextReviewTime); // En eskiler önce
+        if (reviewsDue.length > 20) {
+            reviewsDue = reviewsDue.slice(0, 20);
+        }
+
+        // Ekranı Quiz'e ayarla
+        document.querySelector('.content > div:not(.hide)').classList.add('hide');
+        document.getElementById('quiz-content').classList.remove('hide');
+        const activeNav = document.querySelector('.main-nav ul li a.active');
+        if (activeNav) activeNav.classList.remove('active');
+        document.getElementById('nav-quiz').classList.add('active');
+
+        // WordLearning sınıfını başlat ve quizi tetikle
+        import('./learning.js').then(module => {
+            const wl = new module.WordLearning('quiz-content', currentUser.uid);
+            // Öğeleri karıştır
+            wl.words = wl.shuffleArray(reviewsDue);
+            wl.currentWordIndex = 0;
+            wl.correctAnswers = 0;
+            wl.userAnswers = [];
+            wl.currentLevel = 'SRS_REVIEW'; // Özel SRS seviyesi
+            wl.renderWordTest();
+        }).catch(err => {
+            console.error("Modül yükleme hatası:", err);
+            alert("Quiz modülü yüklenirken bir hata oluştu.");
+        });
+
+    } catch (error) {
+        console.error("Günlük Tekrar başlatılamadı:", error);
+        alert("Tekrar kelimeleri yüklenirken bir hata oluştu: " + error.message);
+    } finally {
+        if (reviewBtn) {
+            reviewBtn.disabled = false;
+            reviewBtn.innerHTML = originalText;
+        }
     }
 };
 

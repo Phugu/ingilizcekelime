@@ -1533,6 +1533,10 @@ export class WordLearning {
 
             if (querySnapshot.empty) {
                 isNewWord = true;
+                // SRS Başlangıç ayarları (Yarın için tekrar randevusu)
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+
                 await addDoc(collection(db, "learned_words"), {
                     user_id: this.userId,
                     word_english: word.english,
@@ -1541,7 +1545,9 @@ export class WordLearning {
                     category: word.category,
                     learned_at: Timestamp.now(),
                     last_reviewed_at: Timestamp.now(),
-                    review_count: 1
+                    review_count: 1,
+                    srs_box: 1, // Kutu 1 (Yeni)
+                    next_review_date: Timestamp.fromDate(tomorrow) // İlk tekrar yarın
                 });
                 console.log('Kelime kaydedildi:', word.english, 'Seviye:', (word.level || 'A1').toUpperCase());
             } else {
@@ -1931,10 +1937,19 @@ export class WordLearning {
             if (this.currentLevel === 'MIXED') {
                 this.removeFromWeakness(currentWord);
             }
+            // Eğere bu Günlük Tekrar (SRS) ise, kelimeyi bir üst seviyeye taşı
+            else if (this.currentLevel === 'SRS_REVIEW') {
+                this.updateSrsLevel(currentWord, true);
+            }
         } else {
             optionButtons[selectedIndex].classList.add('wrong-option');
             // Kullanıcının yanlış bildiği kelimeyi kaydet (Eksiklerini Gider özelliği için)
             this.logWeakness(currentWord);
+
+            // Eğer bu Günlük Tekrar (SRS) ise, kelimenin seviyesini sıfırla
+            if (this.currentLevel === 'SRS_REVIEW') {
+                this.updateSrsLevel(currentWord, false);
+            }
         }
 
         // Sonraki soruya geçmek için timeout ayarla
@@ -1954,6 +1969,47 @@ export class WordLearning {
             console.log(`Kelime zayıf listesinden silindi: ${word.english}`);
         } catch (e) {
             console.error("Zayıf kelime silinemedi:", e);
+        }
+    }
+
+    // SRS (Aralıklı Tekrar) Seviyesi Güncelleme
+    async updateSrsLevel(word, isCorrect) {
+        if (!this.userId || this.userId.startsWith('guest_')) return;
+
+        try {
+            const docId = word.id; // `startDailyReview` kısmında `doc.id`yi aktardık (id: doc.id)
+            if (!docId) return;
+
+            const learnedRef = doc(db, "learned_words", docId);
+            const currentBox = word.srs_box || 1;
+
+            let newBox = 1;
+            let daysToAdd = 1;
+
+            if (isCorrect) {
+                newBox = currentBox + 1;
+                // SRS Aralıkları: Kutu 1->1 gün, Kutu 2->3 gün, Kutu 3->7 gün, Kutu 4->14 gün, Kutu 5->30 gün
+                if (newBox === 2) daysToAdd = 3;
+                else if (newBox === 3) daysToAdd = 7;
+                else if (newBox === 4) daysToAdd = 14;
+                else if (newBox >= 5) daysToAdd = 30;
+            } else {
+                newBox = 1;
+                daysToAdd = 1;
+            }
+
+            const nextDate = new Date();
+            nextDate.setDate(nextDate.getDate() + daysToAdd);
+
+            await updateDoc(learnedRef, {
+                srs_box: newBox,
+                next_review_date: Timestamp.fromDate(nextDate),
+                last_reviewed_at: Timestamp.now()
+            });
+
+            console.log(`SRS güncellendi: ${word.english} -> Kutu: ${newBox}, Sonraki: ${daysToAdd} gün sonra`);
+        } catch (e) {
+            console.error("SRS seviyesi güncellenemedi:", e);
         }
     }
 
@@ -2170,6 +2226,10 @@ export class WordLearning {
                         // Smart Review: Suistimali önlemek için daha düşük XP
                         quizXP = this.correctAnswers * 1;
                         bonusXP = 0;
+                    } else if (this.currentLevel === 'SRS_REVIEW') {
+                        // Günlük Tekrar (SRS): Orta seviye XP ve teşvik
+                        quizXP = this.correctAnswers * 2;
+                        bonusXP = percentage === 100 ? 20 : 0;
                     } else {
                         // Normal Test
                         quizXP = this.correctAnswers * 5;
@@ -2180,6 +2240,7 @@ export class WordLearning {
 
                     let reason = `${this.correctAnswers} doğru cevap!`;
                     if (this.currentLevel === 'MIXED') reason = `Eksiklerini Giderme Tamamlandı!`;
+                    else if (this.currentLevel === 'SRS_REVIEW') reason = `Günlük Tekrar Tamamlandı!`;
                     else if (percentage === 100) reason += " (Mükemmel Skor Bonusu!)";
 
                     if (totalQuizXP > 0) {

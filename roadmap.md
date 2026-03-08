@@ -17,10 +17,14 @@ Bu dosya, platformun eğitim ve oyunlaştırma (gamification) özelliklerinin ge
 - [x] **Header UI:** 🔥 (Ateş) ikonu ve gün sayısı gösterimi.
 - [x] **Bonus XP:** Günlük ilk çalışma için +20 XP bonusu eklendi.
 - [x] **Seri Mantığı:** 24 saatten fazla ara verildiğinde serinin sıfırlanması.
+- [x] **Seri Dondurucu (Streak Freeze):** Çalışma kaçırıldığında seriyi koruyan market eşyası. Artik sınırsız sayıda biriktirilebilir (stackable).
 
 ### 🛠️ İyileştirmeler ve Hata Düzeltmeleri
 - [x] **Kelime Kartı Tasarımı:** Kartlardaki seviye (A1/A2), kategori ve soru sayısı çakışmaları düzeltildi.
 - [x] **Badge Estetiği:** Kategori ve seviye rozetleri birbirinden farklı renklerle (Mavi/Yeşil) netleştirildi.
+- [x] **Seslendirme Sistemi:** Kelime kartlarına normal ve yavaş hızda telaffuz butonları eklendi. SVG ikonlar ve tema uyumlu tasarım uygulandı.
+- [x] **Mesaj Bildirim Sesi:** Yeni mesaj geldiğinde ve sekme arka plandayken çalan 'ringtonee.m4a' sesli uyarı sistemi eklendi.
+- [x] **XP Suistimal Koruması:** Akıllı tekrar (Smart Review) seanslarında XP kazancı suiistimali önlemek için sınırlandırıldı.
 
 ### 🌓 Tema ve Görünüm (Onboarding)
 - [x] **Tema Seçim Ekranı:** İlk girişte kullanıcıya Aydınlık/Karanlık tema seçimi sunan karşılama ekranı.
@@ -58,17 +62,18 @@ Bu dosya, platformun eğitim ve oyunlaştırma (gamification) özelliklerinin ge
 
 ## 🔵 Akıllı Öğrenme Sistemleri (Smart Learning)
 
-### 🧠 Aralıklı Tekrar Sistemi (SRS - Spaced Repetition)
-- [ ] Kelimelerin öğrenilme düzeyine göre tekrar zamanlaması (Leitner Sistemi).
-- [ ] "Bugün Tekrar Etmen Gereken Kelimeler" bölümü.
+### 🧠 Aralıklı Tekrar Sistemi (SRS - Spaced Repetition) - (Tamamlandı ✅)
+- [x] Kelimelerin öğrenilme düzeyine göre tekrar zamanlaması (Leitner Sistemi).
+- [x] "Bugün Tekrar Etmen Gereken Kelimeler" bölümü.
 
-### ❌ Hata Havuzu (Mistakes Pool)
-- [ ] Quizlerde yanlış cevaplanan kelimelerin otomatik olarak özel bir havuzda toplanması.
-- [ ] Yanlış yapılan kelimelere yönelik özel pratik seansları.
+### 🧠 Eksikleri Gider (Smart Review) - (Tamamlandı ✅)
+- [x] **Hata Havuzu:** Quizlerde yanlış cevaplanan kelimelerin otomatik olarak `weak_words` koleksiyonunda toplanması.
+- [x] **Akıllı Pratik:** Zayıf kelimelere yönelik özel "Eksikleri Gider" seansları.
+- [x] **Dinamik Temizlik:** Doğru cevaplanan zayıf kelimelerin otomatik olarak havuzdan silinmesi.
 
 ---
 
 ## 🚀 Gelecek Planları
-- [ ] **Seslendirme:** Kelimelerin telaffuzları için ses motoru entegrasyonu.
+- [x] **Seslendirme:** Kelimelerin telaffuzları için ses motoru entegrasyonu (Web Speech API).
 - [ ] **Grafikler:** İlerleme sayfasına haftalık çalışma grafikleri.
 - [ ] **Çoklu Dil Desteği:** Diğer diller için de kelime setleri.

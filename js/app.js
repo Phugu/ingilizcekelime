@@ -744,8 +744,17 @@ async function loadUserStats(userId) {
     }
 
     try {
-        let publicDoc = await getDoc(doc(db, "users_public", userId));
-        let privateDoc = await getDoc(doc(db, "users_private", userId));
+        let publicDoc, privateDoc;
+        try {
+            publicDoc = await getDoc(doc(db, "users_public", userId));
+            privateDoc = await getDoc(doc(db, "users_private", userId));
+        } catch (permissionErr) {
+            console.error("🔐 Erişim reddedildi, ban kontrolü yapılıyor...", permissionErr);
+            // Eğer yetki hatası varsa muhtemelen kurallardaki ban'a takıldı
+            const banOverlay = document.getElementById('banned-user-overlay');
+            if (banOverlay) banOverlay.classList.remove('hide');
+            return;
+        }
 
         // LAZY MIGRATION: Eski "users" koleksiyonunu taşı
         if (!publicDoc.exists() || !privateDoc.exists()) {
@@ -815,9 +824,11 @@ async function loadUserStats(userId) {
             if (banOverlay) {
                 banOverlay.classList.remove('hide');
                 // Tüm sesleri durdur
-                if (window.audioContext) window.audioContext.suspend();
+                if (window.audioContext) try { window.audioContext.suspend(); } catch (e) { }
                 // Chat dinleyicilerini kapat
-                if (window.closeChatWindow) window.closeChatWindow();
+                if (window.closeChatWindow) try { window.closeChatWindow(); } catch (e) { }
+                // Dashboard verilerini gizle (Ek güvenlik)
+                document.getElementById('app-container')?.classList.add('hide');
                 return; // Uygulama yüklenmesini durdur
             }
         }

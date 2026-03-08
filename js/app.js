@@ -2233,7 +2233,7 @@ async function loadQuizHistory() {
 
             html += `
                 <tr>
-                    <td>${result.level.toUpperCase()}</td>
+                    <td>${result.level.toUpperCase() === 'SRS_REVIEW' ? 'Tekrar' : result.level.toUpperCase()}</td>
                     <td>${result.correct_count}</td>
                     <td>${result.total_questions}</td>
                     <td>%${successRate}</td>
@@ -3223,7 +3223,7 @@ function showQuizList(level) {
                 <div class="level-card quiz-card" onclick="startQuiz('${level}', 1)">
                     <div class="card-header">
                         <h3>Test 1</h3>
-                        <span class="badge">${level.toUpperCase()}</span>
+                        <span class="badge">${level === 'SRS_REVIEW' ? 'Tekrar' : level.toUpperCase()}</span>
                     </div>
                     <div class="card-content">
                         <p>Temel kelimeler ve kullanımları</p>
@@ -3241,7 +3241,7 @@ function showQuizList(level) {
                 <div class="level-card quiz-card" onclick="startQuiz('${level}', 2)">
                     <div class="card-header">
                         <h3>Test 2</h3>
-                        <span class="badge">${level.toUpperCase()}</span>
+                        <span class="badge">${level === 'SRS_REVIEW' ? 'Tekrar' : level.toUpperCase()}</span>
                     </div>
                     <div class="card-content">
                         <p>Günlük konuşma kelimeleri</p>
@@ -3259,7 +3259,7 @@ function showQuizList(level) {
                 <div class="level-card quiz-card" onclick="startQuiz('${level}', 3)">
                     <div class="card-header">
                         <h3>Test 3</h3>
-                        <span class="badge">${level.toUpperCase()}</span>
+                        <span class="badge">${level === 'SRS_REVIEW' ? 'Tekrar' : level.toUpperCase()}</span>
                     </div>
                     <div class="card-content">
                         <p>Karışık kelimeler testi</p>
@@ -3605,6 +3605,13 @@ function startQuiz(level, testNumber) {
     };
 
     const levelKey = level.toLowerCase();
+
+    // SRS_REVIEW Özel Durumu
+    if (levelKey === 'srs_review') {
+        window.startDailyReview();
+        return;
+    }
+
     const levelPools = pools[levelKey];
 
     if (!levelPools) {

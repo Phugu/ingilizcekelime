@@ -1760,7 +1760,12 @@ export class WordLearning {
 
             const pools = poolMap[levelKey];
             if (!pools) {
-                console.error('Geçersiz seviye:', level);
+                if (levelKey === 'srs_review') {
+                    // SRS_REVIEW için startDailyReview kullanılmalı, ancak hata vermemesi için sessizce çıkıyoruz
+                    console.log('SRS_REVIEW için özel başlatıcı kullanılıyor.');
+                } else {
+                    console.error('Geçersiz seviye:', level);
+                }
                 return;
             }
 
@@ -2677,7 +2682,7 @@ export class WordLearning {
 
         let html = `
             <div class="word-pool-container">
-                <h2>${level.toUpperCase()} Seviyesi - ${category} Kelimeleri</h2>
+                <h2>${level.toUpperCase() === 'SRS_REVIEW' ? 'Tekrar' : level.toUpperCase()} Seviyesi - ${category} Kelimeleri</h2>
                 <div class="word-cards">
         `;
 

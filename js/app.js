@@ -1,5 +1,5 @@
-// App.js - Ana uygulama dosyası (Versiyon: 19:40)
-console.error("🚀 MODERASYON MOTORU AKTİF (V19:40)");
+// App.js - Ana uygulama dosyası (Versiyon: 19:45)
+console.error("🚀 MODERASYON MOTORU AKTİF (V19:45)");
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,

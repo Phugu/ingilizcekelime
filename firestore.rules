@@ -2,8 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // 1. ADMIN KURALI: 
-    // Bu UID'ye sahip olan kişi HER ŞEYİ okuyabilir ve yazabilir.
+    // 1. ADMIN KURALI
     match /{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == "8qmKa6jVWLQevRpla9o00khN4tT2";
     }
@@ -14,15 +13,21 @@ service cloud.firestore {
     }
 
     function isNotBanned() {
-      // exists() kontrolü yeni kullanıcıların dökümanı oluşana kadar hata almasını önler
-      let publicDocPath = /databases/$(database)/documents/users_public/$(request.auth.uid);
-      return !exists(publicDocPath) || (
-        (!('isBanned' in get(publicDocPath).data) || get(publicDocPath).data.isBanned == false) &&
-        (!('report_count' in get(publicDocPath).data) || get(publicDocPath).data.report_count < 10)
-      );
+      // exists() ile döküman olup olmadığını kontrol et
+      let path = /databases/$(database)/documents/users_public/$(request.auth.uid);
+      if (!exists(path)) {
+        return true; 
+      }
+      let data = get(path).data;
+      return (data.get('isBanned', false) == false) && (data.get('report_count', 0) < 10);
     }
 
-    // 2. NORMAL KULLANICI KURALLARI:
+    // 2. NORMAL KULLANICI KURALLARI
+
+    // Eski koleksiyon (Yalnızca göç için gerekli)
+    match /users/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+    }
 
     match /users_private/{userId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
@@ -30,9 +35,10 @@ service cloud.firestore {
 
     match /users_public/{userId} {
       allow read: if isSignedIn();
+      // create: Yeni kayıt her zaman serbest
       allow create: if isSignedIn() && request.auth.uid == userId;
+      // update: Sadece banlanmamışsa
       allow update: if isSignedIn() && request.auth.uid == userId && isNotBanned();
-      allow delete: if false; 
     }
 
     match /friendships/{friendshipId} {
@@ -45,9 +51,9 @@ service cloud.firestore {
       allow create: if isSignedIn();
     }
 
-    // İstatistikler: Herkes görebilmeli (list için), sadece sahibi yazabilir
+    // İstatistikler (Listeleme ve okuma serbest, yazma sadece sahibi ve banlanmamışsa)
     match /learned_words/{docId} {
-      allow read: if isSignedIn(); 
+      allow read: if isSignedIn();
       allow write: if isSignedIn() && (resource == null || resource.data.user_id == request.auth.uid) && isNotBanned();
     }
     
@@ -67,7 +73,6 @@ service cloud.firestore {
 
     match /chats/{chatId} {
       allow read, write: if isSignedIn() && isNotBanned();
-      
       match /{allPaths=**} {
         allow read, write: if isSignedIn() && isNotBanned();
       }

@@ -1,5 +1,5 @@
-// App.js - Ana uygulama dosyası (Versiyon: 19:30)
-console.error("🚀 MODERASYON MOTORU AKTİF (V19:30)");
+// App.js - Ana uygulama dosyası (Versiyon: 19:40)
+console.error("🚀 MODERASYON MOTORU AKTİF (V19:40)");
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
@@ -852,7 +852,7 @@ async function loadUserStats(userId) {
 
         // 🟢 BAN KONTROLÜ (Şikayet Sayısı veya Manuel Ban)
         const reportCount = publicData.report_count || 0;
-        const isBanned = privateData.isBanned === true || reportCount >= 10;
+        const isBanned = (privateData && privateData.isBanned === true) || reportCount >= 10;
 
         if (isBanned) {
             console.error("⛔ ERİŞİM ENGELENDİ: Kullanıcı yasaklı.", { reportCount });

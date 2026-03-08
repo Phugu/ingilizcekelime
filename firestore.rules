@@ -30,7 +30,9 @@ service cloud.firestore {
 
     match /users_public/{userId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && request.auth.uid == userId && isNotBanned();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && request.auth.uid == userId && isNotBanned();
+      allow delete: if false; 
     }
 
     match /friendships/{friendshipId} {

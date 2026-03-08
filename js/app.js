@@ -1,5 +1,5 @@
-// App.js - Ana uygulama dosyası (Versiyon: 19:25)
-console.error("🚀 MODERASYON MOTORU AKTİF (V19:25)");
+// App.js - Ana uygulama dosyası (Versiyon: 19:30)
+console.error("🚀 MODERASYON MOTORU AKTİF (V19:30)");
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
@@ -781,58 +781,64 @@ async function loadUserStats(userId) {
         }
 
         // LAZY MIGRATION: Eski "users" koleksiyonunu taşı
-        if (!publicDoc.exists() || !privateDoc.exists()) {
-            const oldUserDoc = await getDoc(doc(db, "users", userId));
+        try {
+            if (!publicDoc.exists() || !privateDoc.exists()) {
+                const oldUserDoc = await getDoc(doc(db, "users", userId));
 
-            if (oldUserDoc.exists()) {
-                console.log('Eski users koleksiyonundan Public/Private aktarımı yapılıyor...');
-                const oldData = oldUserDoc.data();
+                if (oldUserDoc.exists()) {
+                    console.log('Eski users koleksiyonundan Public/Private aktarımı yapılıyor...');
+                    const oldData = oldUserDoc.data();
 
-                const publicData = {
-                    name: currentUser.displayName || oldData.name || 'Anonim',
-                    xp: oldData.xp || 0,
-                    level: oldData.level || 1,
-                    total_xp: oldData.total_xp || 0,
-                    streak: oldData.streak || 0,
-                    createdAt: oldData.createdAt || Timestamp.now()
-                };
+                    const publicData = {
+                        name: currentUser.displayName || oldData.name || 'Anonim',
+                        xp: oldData.xp || 0,
+                        level: oldData.level || 1,
+                        total_xp: oldData.total_xp || 0,
+                        streak: oldData.streak || 0,
+                        createdAt: oldData.createdAt || Timestamp.now()
+                    };
 
-                const privateData = {
-                    email: currentUser.email || oldData.email || '',
-                    kvkkAccepted: oldData.kvkkAccepted || false,
-                    kvkkAcceptedAt: oldData.kvkkAcceptedAt || null,
-                    accountStatus: oldData.accountStatus || 'active',
-                    deletionDate: oldData.deletionDate || null
-                };
+                    const privateData = {
+                        email: currentUser.email || oldData.email || '',
+                        kvkkAccepted: oldData.kvkkAccepted || false,
+                        kvkkAcceptedAt: oldData.kvkkAcceptedAt || null,
+                        accountStatus: oldData.accountStatus || 'active',
+                        deletionDate: oldData.deletionDate || null
+                    };
 
-                await setDoc(doc(db, "users_public", userId), publicData);
-                await setDoc(doc(db, "users_private", userId), privateData);
+                    await setDoc(doc(db, "users_public", userId), publicData);
+                    await setDoc(doc(db, "users_private", userId), privateData);
 
-                publicDoc = { exists: () => true, data: () => publicData };
-                privateDoc = { exists: () => true, data: () => privateData };
-            } else {
-                // Hiçbir döküman yoksa (Google Auth ile giren tamamen yeni kullanıcı)
-                console.log('Kullanıcı dökümanı bulunamadı, yeni public/private oluşturuluyor...');
-                const publicData = {
-                    name: currentUser.displayName || 'Anonim',
-                    xp: 0,
-                    level: 1,
-                    total_xp: 0,
-                    streak: 0,
-                    createdAt: Timestamp.now()
-                };
-                const privateData = {
-                    email: currentUser.email || '',
-                    kvkkAccepted: false, // Google ile girenler için modal gösterilsin
-                    accountStatus: 'active'
-                };
+                    publicDoc = { exists: () => true, data: () => publicData };
+                    privateDoc = { exists: () => true, data: () => privateData };
+                } else {
+                    // Hiçbir döküman yoksa (Google Auth ile giren tamamen yeni kullanıcı)
+                    console.log('Kullanıcı dökümanı bulunamadı, yeni public/private oluşturuluyor...');
+                    const publicData = {
+                        name: currentUser.displayName || 'Anonim',
+                        xp: 0,
+                        level: 1,
+                        total_xp: 0,
+                        streak: 0,
+                        createdAt: Timestamp.now()
+                    };
+                    const privateData = {
+                        email: currentUser.email || '',
+                        kvkkAccepted: false, // Google ile girenler için modal gösterilsin
+                        accountStatus: 'active'
+                    };
 
-                await setDoc(doc(db, "users_public", userId), publicData);
-                await setDoc(doc(db, "users_private", userId), privateData);
+                    await setDoc(doc(db, "users_public", userId), publicData);
+                    await setDoc(doc(db, "users_private", userId), privateData);
 
-                publicDoc = { exists: () => true, data: () => publicData };
-                privateDoc = { exists: () => true, data: () => privateData };
+                    publicDoc = { exists: () => true, data: () => publicData };
+                    privateDoc = { exists: () => true, data: () => privateData };
+                }
             }
+        } catch (migErr) {
+            console.error("⚠️ Kullanıcı dökümanı oluşturulamadı (Yetki hatası olabilir):", migErr);
+            // Eğer döküman yoksa ve oluşturulamazsa devam etmeye çalışalım ama muhtemelen kurallardan dolayıdır
+            if (!publicDoc || !publicDoc.exists()) return;
         }
 
         const publicData = publicDoc.data();
@@ -992,7 +998,7 @@ async function loadUserStats(userId) {
                 Promise.all([
                     updateDoc(userPrivateRef, { inventory: inventory }),
                     updateDoc(userPublicRef, { last_activity_date: Timestamp.fromDate(yesterday) })
-                ]).catch(err => console.error("Seri dondurucu hatası:", err));
+                ]).catch(err => console.warn("🔐 Seri dondurucu kullanımı kaydedilemedi (Yetki veya Belge Eksik):", err));
 
                 // Kullanıcıya bilgi ver
                 setTimeout(() => {
@@ -1005,7 +1011,7 @@ async function loadUserStats(userId) {
 
                 // KRİTİK: Veritabanını hemen güncelle ki sayfa yenilenince tekrar tetiklenmesin
                 const userPublicRef = doc(db, "users_public", userId);
-                updateDoc(userPublicRef, { streak: 0 }).catch(err => console.error("Streak reset update error:", err));
+                updateDoc(userPublicRef, { streak: 0 }).catch(err => console.warn("🔐 Seri sıfırlama kaydedilemedi (Yetki veya Belge Eksik):", err));
 
                 // Animasyonu login'den 2 saniye sonra başlat ki kullanıcı görsün
                 setTimeout(() => {
@@ -3537,11 +3543,12 @@ window.showPublicProfile = async function (uid) {
 
                 // İlişki durumunu kontrol et
                 let relSnap = { exists: () => false };
+                let relationRef = null; // SCOPE FİX: Higher level scope
                 try {
                     const relationId = [currentUser.uid, uid].sort().join('_');
-                    const relationRef = doc(db, "friendships", relationId);
+                    relationRef = doc(db, "friendships", relationId);
                     relSnap = await getDoc(relationRef);
-                    window.lastRelationRef = relationRef; // Global ref for click handlers
+                    window.lastRelationRef = relationRef; // Global ref for other click handlers
                 } catch (relErr) {
                     console.error("🤝 Arkadaşlık durumu kontrol edilemedi:", relErr);
                 }

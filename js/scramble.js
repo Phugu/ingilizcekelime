@@ -1,8 +1,23 @@
 import { doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Initialize Firebase references from global scope (set by firebase-init.js)
-const db = window.firestore;
-const auth = window.firebaseAuth;
+// Initialize Firebase and DOM elements lazily
+function getFirebase() {
+    return {
+        db: window.firestore,
+        auth: window.firebaseAuth
+    };
+}
+
+function getElements() {
+    return {
+        modal: document.getElementById('word-scramble-modal'),
+        hintEl: document.getElementById('scramble-hint'),
+        answerSlotsEl: document.getElementById('scramble-answer-slots'),
+        lettersEl: document.getElementById('scramble-letters'),
+        scoreEl: document.getElementById('scramble-score-val'),
+        feedbackEl: document.getElementById('scramble-feedback')
+    };
+}
 
 // Game State
 let currentWord = null;
@@ -11,14 +26,6 @@ let userGuess = [];
 let availableLetters = [];
 let allWordsCache = [];
 let isProcessing = false;
-
-// Element References
-const modal = document.getElementById('word-scramble-modal');
-const hintEl = document.getElementById('scramble-hint');
-const answerSlotsEl = document.getElementById('scramble-answer-slots');
-const lettersEl = document.getElementById('scramble-letters');
-const scoreEl = document.getElementById('scramble-score-val');
-const feedbackEl = document.getElementById('scramble-feedback');
 
 // Utility: Shuffle an array
 function shuffleArray(array) {
@@ -32,9 +39,15 @@ function shuffleArray(array) {
 
 // Main Window API Export
 window.openWordScramble = async function() {
-    if (!auth.currentUser && localStorage.getItem('isGuest') !== 'true') return;
+    const { auth } = getFirebase();
+    const { hintEl, modal, scoreEl, feedbackEl } = getElements();
+
+    if (!auth || (!auth.currentUser && localStorage.getItem('isGuest') !== 'true')) {
+        console.warn("Auth not ready or user not logged in");
+        return;
+    }
     
-    // Yükleme ekranı (opsiyonel gösterge)
+    // Yükleme ekranı
     if(hintEl) hintEl.textContent = "Kelimeler yükleniyor...";
     if(modal) modal.classList.remove('hide');
     userGuess = [];
@@ -46,18 +59,6 @@ window.openWordScramble = async function() {
     }
     isProcessing = false;
     
-    // Eğer Element Referansları henüz alınmadıysa (veya DOM'da sonradan oluştuysa)
-    if (!hintEl || !answerSlotsEl || !lettersEl || !scoreEl || !feedbackEl) {
-        Object.assign(window, {
-            modal: document.getElementById('word-scramble-modal'),
-            hintEl: document.getElementById('scramble-hint'),
-            answerSlotsEl: document.getElementById('scramble-answer-slots'),
-            lettersEl: document.getElementById('scramble-letters'),
-            scoreEl: document.getElementById('scramble-score-val'),
-            feedbackEl: document.getElementById('scramble-feedback')
-        });
-    }
-
     await loadWords();
     nextWord();
 };
@@ -72,7 +73,15 @@ async function loadWords() {
         if (allWordsCache.length === 0) {
             // Import from current data logic dynamically
             const module = await import('./oxford_words_updated.js');
-            allWordsCache = module.oxford_words;
+            const pools = module.oxfordPools;
+            if (pools) {
+                // Flatten all pools into a single array
+                allWordsCache = Object.values(pools).flat();
+            } else {
+                console.error("oxfordPools bulunamadı");
+                const hintEl = document.getElementById('scramble-hint');
+                if(hintEl) hintEl.textContent = "Kelime listesi yüklenemedi.";
+            }
         }
     } catch (e) {
         console.error("Kelime yüklerken hata:", e);
@@ -254,7 +263,8 @@ async function checkAnswer() {
 }
 
 async function awardXP(amount) {
-    if (!auth.currentUser || localStorage.getItem('isGuest') === 'true') return;
+    const { db, auth } = getFirebase();
+    if (!auth || !auth.currentUser || localStorage.getItem('isGuest') === 'true') return;
     try {
         const publicRef = doc(db, "users_public", auth.currentUser.uid);
         await updateDoc(publicRef, {

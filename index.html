@@ -1345,7 +1345,19 @@
                 <div class="scramble-score">Skor: <span id="scramble-score-val" style="color: var(--primary-color); font-weight: bold;">0</span></div>
             </div>
             
-            <div class="scramble-game-area">
+            <div id="scramble-level-selection" class="scramble-level-selection">
+                <p class="scramble-intro-text">Kelimelerin zorluk seviyesini seçerek oyuna başlayın:</p>
+                <div class="scramble-level-grid">
+                    <button class="level-btn a1" onclick="window.selectScrambleLevel('A1')">A1 <span>Temel</span></button>
+                    <button class="level-btn a2" onclick="window.selectScrambleLevel('A2')">A2 <span>Başlangıç</span></button>
+                    <button class="level-btn b1" onclick="window.selectScrambleLevel('B1')">B1 <span>Orta</span></button>
+                    <button class="level-btn b2" onclick="window.selectScrambleLevel('B2')">B2 <span>Üst Orta</span></button>
+                    <button class="level-btn c1" onclick="window.selectScrambleLevel('C1')">C1 <span>İleri</span></button>
+                    <button class="level-btn c2" onclick="window.selectScrambleLevel('C2')">C2 <span>Uzman</span></button>
+                </div>
+            </div>
+            
+            <div id="scramble-game-area" class="scramble-game-area hide">
                 <div class="scramble-hint-container">
                     <p class="scramble-hint-text" id="scramble-hint">Anlam: Bekleniyor...</p>
                 </div>

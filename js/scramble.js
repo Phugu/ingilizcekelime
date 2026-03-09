@@ -11,6 +11,8 @@ function getFirebase() {
 function getElements() {
     return {
         modal: document.getElementById('word-scramble-modal'),
+        levelSelectionEl: document.getElementById('scramble-level-selection'),
+        gameAreaEl: document.getElementById('scramble-game-area'),
         hintEl: document.getElementById('scramble-hint'),
         answerSlotsEl: document.getElementById('scramble-answer-slots'),
         lettersEl: document.getElementById('scramble-letters'),
@@ -25,6 +27,8 @@ let currentScore = 0;
 let userGuess = [];
 let availableLetters = [];
 let allWordsCache = [];
+let filteredWordPool = [];
+let selectedLevel = null;
 let isProcessing = false;
 
 // Utility: Shuffle an array
@@ -38,33 +42,63 @@ function shuffleArray(array) {
 }
 
 // Main Window API Export
+// Main Window API Export
 window.openWordScramble = async function() {
     const { auth } = getFirebase();
-    const { hintEl, modal, scoreEl, feedbackEl } = getElements();
+    const { modal, levelSelectionEl, gameAreaEl } = getElements();
 
     if (!auth || (!auth.currentUser && localStorage.getItem('isGuest') !== 'true')) {
         console.warn("Auth not ready or user not logged in");
         return;
     }
     
-    // Yükleme ekranı
-    if(hintEl) hintEl.textContent = "Kelimeler yükleniyor...";
     if(modal) modal.classList.remove('hide');
-    userGuess = [];
+    
+    // Reset to Level Selection View
+    if(levelSelectionEl) levelSelectionEl.classList.remove('hide');
+    if(gameAreaEl) gameAreaEl.classList.add('hide');
+    
     currentScore = 0;
-    if(scoreEl) scoreEl.textContent = currentScore;
-    if(feedbackEl) {
-        feedbackEl.textContent = "";
-        feedbackEl.className = "scramble-feedback";
-    }
+    renderScore();
     isProcessing = false;
     
     await loadWords();
+};
+
+window.selectScrambleLevel = function(level) {
+    selectedLevel = level;
+    const { levelSelectionEl, gameAreaEl, hintEl } = getElements();
+    
+    // Filter words for the selected level
+    filteredWordPool = allWordsCache.filter(w => w.level === selectedLevel);
+    
+    if (filteredWordPool.length === 0) {
+        if(window.Swal) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Kelime Bulunamadı',
+                text: `${selectedLevel} seviyesinde uygun kelime henüz sistemde yok.`,
+                confirmButtonText: 'Tamam'
+            });
+        }
+        return;
+    }
+    
+    // Transition to game area
+    if(levelSelectionEl) levelSelectionEl.classList.add('hide');
+    if(gameAreaEl) gameAreaEl.classList.remove('hide');
+    if(hintEl) hintEl.textContent = "Kelime hazırlanıyor...";
+    
     nextWord();
 };
 
+function renderScore() {
+    const { scoreEl } = getElements();
+    if(scoreEl) scoreEl.textContent = currentScore;
+}
+
 window.closeWordScramble = function() {
-    const modal = document.getElementById('word-scramble-modal');
+    const { modal } = getElements();
     if(modal) modal.classList.add('hide');
 };
 
@@ -79,43 +113,45 @@ async function loadWords() {
                 allWordsCache = Object.values(pools).flat();
             } else {
                 console.error("oxfordPools bulunamadı");
-                const hintEl = document.getElementById('scramble-hint');
+                const { hintEl } = getElements();
                 if(hintEl) hintEl.textContent = "Kelime listesi yüklenemedi.";
             }
         }
     } catch (e) {
         console.error("Kelime yüklerken hata:", e);
-        const hintEl = document.getElementById('scramble-hint');
+        const { hintEl } = getElements();
         if(hintEl) hintEl.textContent = "Hata oluştu, tekrar deneyin.";
     }
 }
 
 function nextWord() {
-    if(allWordsCache.length === 0) return;
+    if(filteredWordPool.length === 0) return;
     
-    // Sadece uygun uzunluktaki kelimeleri seçebiliriz (ör. 3 ile 10 harf arası)
-    const validWords = allWordsCache.filter(w => {
+    // Filter by length for better gameplay (3-12 letters)
+    const playableWords = filteredWordPool.filter(w => {
         const len = w.english.replace(/[^a-zA-Z]/g, '').length;
         return len >= 3 && len <= 12;
     });
 
-    if(validWords.length === 0) return;
+    if(playableWords.length === 0) {
+        playableWords.push(...filteredWordPool);
+    }
 
     // Pick random word
-    const randomIndex = Math.floor(Math.random() * validWords.length);
-    currentWord = validWords[randomIndex];
+    const randomIndex = Math.floor(Math.random() * playableWords.length);
+    currentWord = playableWords[randomIndex];
     
     // Reset state
     userGuess = [];
     
-    // Remove spaces or skip multi words if possible
+    // Create clean version for game
     const cleanWord = currentWord.english.toLowerCase().replace(/[^a-z]/g, '');
     let charArray = cleanWord.split('');
     
-    // Scramble it (make sure it's actually different)
+    // Scramble it
     availableLetters = shuffleArray(charArray);
     let attempts = 0;
-    while(availableLetters.join('') === cleanWord && attempts < 5) {
+    while(availableLetters.join('') === cleanWord && attempts < 5 && cleanWord.length > 1) {
         availableLetters = shuffleArray(charArray);
         attempts++;
     }
@@ -125,7 +161,7 @@ function nextWord() {
     renderSlots(cleanWord.length);
     renderLetters();
     
-    const feedbackEl = document.getElementById('scramble-feedback');
+    const { feedbackEl } = getElements();
     if(feedbackEl) {
         feedbackEl.textContent = "";
         feedbackEl.className = "scramble-feedback";
@@ -292,7 +328,7 @@ window.clearScramble = function() {
     const cleanWord = currentWord.english.toLowerCase().replace(/[^a-z]/g, '');
     renderSlots(cleanWord.length);
     renderLetters(); // Re-render letters completely will unhide them
-    const feedbackEl = document.getElementById('scramble-feedback');
+    const { feedbackEl } = getElements();
     if(feedbackEl) feedbackEl.textContent = "";
 };
 

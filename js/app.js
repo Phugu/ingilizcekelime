@@ -2623,6 +2623,9 @@ class Dashboard {
                     <button onclick="window.startDailyReview()" class="action-btn" style="background: linear-gradient(135deg, #27ae60, #2ecc71);">
                         📅 Günlük Tekrar
                     </button>
+                    <button onclick="window.openWordScramble()" class="action-btn" style="background: linear-gradient(135deg, #8e44ad, #9b59b6);">
+                        🧩 Word Scramble Oyna
+                    </button>
                     <button onclick="document.getElementById('nav-quiz').click()" class="action-btn">
                         Quiz Çöz
                     </button>

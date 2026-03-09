@@ -482,6 +482,7 @@
     <script type="module" src="js/app.js?v=20260308_v4"></script>
     <script type="module" src="js/learning.js?v=20260308_v4"></script>
     <script type="module" src="js/friends.js?v=20260308_v4"></script>
+    <script type="module" src="js/scramble.js?v=20260309_v1"></script>
 
     <!-- Çerez Bildirimi -->
     <!-- Herkese Açık Profil Modalı (Liderlik) -->
@@ -1328,6 +1329,43 @@
             <div id="kvkk-update-error" class="error-message hide" style="margin-bottom: 15px;"></div>
 
             <button id="kvkk-update-submit" class="btn" style="width: 100%;">Onaylıyorum ve Devam Et</button>
+        </div>
+    </div>
+
+    <!-- Word Scramble Modalı -->
+    <div id="word-scramble-modal" class="modal hide" style="z-index: 10002; backdrop-filter: blur(8px);">
+        <div class="modal-content scramble-modal-content">
+            <button class="modal-close-icon" onclick="window.closeWordScramble()" title="Kapat">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+            <div class="scramble-header">
+                <h2>🧩 Word Scramble</h2>
+                <div class="scramble-score">Skor: <span id="scramble-score-val" style="color: var(--primary-color); font-weight: bold;">0</span></div>
+            </div>
+            
+            <div class="scramble-game-area">
+                <div class="scramble-hint-container">
+                    <p class="scramble-hint-text" id="scramble-hint">Anlam: Bekleniyor...</p>
+                </div>
+                
+                <div class="scramble-answer-slots" id="scramble-answer-slots">
+                    <!-- Boşluklar buraya gelecek -->
+                </div>
+                
+                <div class="scramble-letters" id="scramble-letters">
+                    <!-- Karışık harfler buraya gelecek -->
+                </div>
+                
+                <div class="scramble-actions">
+                    <button id="scramble-clear-btn" class="scramble-btn secondary" onclick="window.clearScramble()">Temizle</button>
+                    <button id="scramble-hint-btn" class="scramble-btn primary" onclick="window.showScrambleHint()">İpucu</button>
+                    <button id="scramble-skip-btn" class="scramble-btn secondary" onclick="window.skipScramble()">Geç</button>
+                </div>
+            </div>
+            
+            <div id="scramble-feedback" class="scramble-feedback"></div>
         </div>
     </div>
 

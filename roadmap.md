@@ -60,6 +60,10 @@ Bu dosya, platformun eğitim ve oyunlaştırma (gamification) özelliklerinin ge
 ### 🎖️ Başarı Rozetleri (Badges)
 - [ ] "100 Kelime Öğrendin", "7 Günlük Seri", "İlk Mükemmel Quiz" gibi özel rozetlerin tasarımı ve kazanım mantığı.
 
+### 🧩 Mini Kelime Oyunları - (Tamamlandı ✅)
+- [x] **Word Scramble:** Türkçe anlamı verilen karıştırılmış İngilizce kelimeyi bulma oyunu.
+- [ ] **Hangman:** Klasik adam asmaca oyunu eklentisi.
+
 > **Eklenebilecek Onlarca Yeni Fikir** için proje kök dizinine `future_features.md` adlı özel doküman yaratılmış ve saklanmıştır.
 
 ---

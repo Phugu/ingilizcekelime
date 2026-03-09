@@ -1,5 +1,8 @@
-import { db, auth } from './firebase-init.js';
 import { doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// Initialize Firebase references from global scope (set by firebase-init.js)
+const db = window.firestore;
+const auth = window.firebaseAuth;
 
 // Game State
 let currentWord = null;

@@ -129,6 +129,7 @@ function hideAllContentSections() {
     document.getElementById('leaderboard-content')?.classList.add('hide');
     document.getElementById('settings-content')?.classList.add('hide');
     document.getElementById('friends-content')?.classList.add('hide');
+    document.getElementById('games-content')?.classList.add('hide');
 }
 
 // Aktif navigasyon öğesini güncelle
@@ -279,6 +280,14 @@ function setupMainNavigation(userId) {
         if (window.loadFriendsUI) {
             window.loadFriendsUI();
         }
+    });
+
+    document.getElementById('nav-games')?.addEventListener('click', function () {
+        hideAllContentSections();
+        document.getElementById('games-content').classList.remove('hide');
+        updateActiveNav(this);
+        const games = new Games('games-content', userId);
+        games.render();
     });
 }
 
@@ -2617,9 +2626,12 @@ class Dashboard {
                 ` : ''}
 
                 <div class="games-section" style="margin-top: 30px; margin-bottom: 25px;">
-                    <h3 class="section-title" style="margin-bottom: 15px; font-size: 1.2rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-gamepad" style="color: #9b59b6;"></i> Eğlenceli Oyunlar
-                    </h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 class="section-title" style="margin: 0; font-size: 1.2rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-gamepad" style="color: #9b59b6;"></i> Eğlenceli Oyunlar
+                        </h3>
+                        <a href="javascript:void(0)" onclick="document.getElementById('nav-games').click()" style="color: var(--primary-color); font-size: 13px; font-weight: bold; text-decoration: none;">Tümünü Gör →</a>
+                    </div>
                     <div class="games-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 320px)); gap: 20px; justify-content: flex-start;">
                         <div class="game-card" style="background: var(--card-bg); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.08); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.3s ease; position: relative;" onclick="window.openWordScramble()">
                             <div style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; backdrop-filter: blur(4px);">A1 - C2</div>
@@ -2645,6 +2657,9 @@ class Dashboard {
                     <button onclick="document.getElementById('nav-quiz').click()" class="action-btn">
                         Quiz Çöz
                     </button>
+                    <button onclick="document.getElementById('nav-games').click()" class="action-btn" style="background: linear-gradient(135deg, #8e44ad, #9b59b6);">
+                        🧩 Oyunlar
+                    </button>
                     <button onclick="window.startSmartReview()" class="action-btn" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
                         🧠 Eksiklerini Gider
                     </button>
@@ -2663,6 +2678,58 @@ class Dashboard {
                     <h2>Hata</h2>
                     <p>Dashboard yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.</p>
                     <button onclick="window.location.reload()" class="action-btn">Sayfayı Yenile</button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Games sınıfı
+class Games {
+    constructor(containerId, userId) {
+        this.containerId = containerId;
+        this.userId = userId;
+    }
+
+    render() {
+        const container = document.getElementById(this.containerId);
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="dashboard-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">Eğlenceli Oyunlar</h2>
+                    <button onclick="document.getElementById('nav-dashboard').click()" class="btn btn-secondary btn-sm" style="display: flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-arrow-left"></i> Geri Dön
+                    </button>
+                </div>
+
+                <div class="games-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                    <div class="game-card" style="background: var(--card-bg); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.08); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.3s ease; position: relative;" onclick="window.openWordScramble()">
+                        <div style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; backdrop-filter: blur(4px);">A1 - C2</div>
+                        <img src="assets/images/word-scramble.jpg" alt="Word Scramble" style="width: 100%; height: 180px; object-fit: cover; border-bottom: 1px solid var(--border-color);">
+                        <div style="padding: 20px; text-align: center;">
+                            <h4 style="margin: 0 0 10px 0; font-size: 20px; color: var(--text-main);">Word Scramble</h4>
+                            <p style="margin: 0 0 20px 0; font-size: 14px; color: var(--text-muted); line-height: 1.5;">Harfleri karışmış İngilizce kelimeleri doğru tahmin et, puanları topla!</p>
+                            <button class="action-btn" style="width: 100%; border-radius: 10px; font-weight: bold; background: linear-gradient(135deg, #f39c12, #e67e22); color: white; border: none; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);">
+                                <i class="fa-solid fa-play"></i> OYNA
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="game-card" style="background: var(--card-bg); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.08); border: 1px solid var(--border-color); opacity: 0.7; position: relative;">
+                         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: center; z-index: 2;">
+                            <span style="background: #34495e; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 14px;">Yakında!</span>
+                         </div>
+                         <div style="width: 100%; height: 180px; background: #ecf0f1; display: flex; align-items: center; justify-content: center; font-size: 60px;">🔤</div>
+                            <div style="padding: 20px; text-align: center;">
+                                <h4 style="margin: 0 0 10px 0; font-size: 20px; color: var(--text-main);">Adam Asmaca</h4>
+                                <p style="margin: 0 0 20px 0; font-size: 14px; color: var(--text-muted); line-height: 1.5;">Kelimeleri harf harf tahmin et, adamı kurtar!</p>
+                                <button class="action-btn" disabled style="width: 100%; border-radius: 10px; font-weight: bold; background: #95a5a6; color: white; border: none; padding: 12px;">
+                                    Çok Yakında
+                                </button>
+                            </div>
+                    </div>
                 </div>
             </div>
         `;

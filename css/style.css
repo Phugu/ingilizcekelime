@@ -5100,22 +5100,36 @@ body.dark-theme .pool-card.locked-chain .chain-overlay {
     gap: 12px;
     margin: 25px 0;
     background: var(--bg-color);
-    padding: 8px;
+    padding: 6px;
     border-radius: 20px;
     border: 1px solid var(--border-color);
     box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+    position: relative;
+    z-index: 1;
+}
+
+.lb-sort-indicator {
+    position: absolute;
+    height: calc(100% - 12px);
+    background: var(--card-bg);
+    border-radius: 15px;
+    top: 6px;
+    left: 6px;
+    z-index: -1;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .lb-sort-btn {
     background: transparent;
     border: none;
     color: var(--text-muted);
-    padding: 10px 20px;
+    padding: 10px 22px;
     border-radius: 15px;
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -5130,40 +5144,28 @@ body.dark-theme .pool-card.locked-chain .chain-overlay {
 
 .lb-sort-btn:hover {
     color: var(--text-main);
-    transform: translateY(-2px);
 }
 
 .lb-sort-btn:hover i {
-    transform: scale(1.2) rotate(10deg);
+    transform: scale(1.1);
 }
 
 /* Active State Styles */
-.lb-sort-btn.active {
-    background: var(--card-bg);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1), 0 2px 5px rgba(0,0,0,0.05);
-    transform: scale(1.05);
+.lb-sort-btn.active[onclick*="total_xp"] { color: #3498db; }
+.lb-sort-btn.active[onclick*="scramble_score"] { color: #9b59b6; }
+.lb-sort-btn.active[onclick*="doodle_score"] { color: #f1c40f; }
+
+/* Icon Theme Colors */
+.lb-sort-btn .fa-star, .lb-xp-icon { color: #3498db; }
+.lb-sort-btn .fa-puzzle-piece, .lb-puzzle-icon { color: #9b59b6; }
+.lb-sort-btn .fa-rocket, .lb-rocket-icon { color: #f1c40f; }
+
+/* Soft List Transition */
+.leaderboard-list {
+    transition: opacity 0.3s ease;
 }
 
-/* Specific Colors for Sort Buttons */
-.lb-sort-btn .fa-star { color: #3498db; opacity: 0.7; transition: all 0.3s; }
-.lb-sort-btn .fa-puzzle-piece { color: #9b59b6; opacity: 0.7; transition: all 0.3s; }
-.lb-sort-btn .fa-rocket { color: #f1c40f; opacity: 0.7; transition: all 0.3s; }
-
-.lb-sort-btn:hover i, .lb-sort-btn.active i {
-    opacity: 1;
-}
-
-/* Active Sort Text Colors */
-.lb-sort-btn.active[onclick*='total_xp'] { color: #3498db; }
-.lb-sort-btn.active[onclick*='scramble_score'] { color: #9b59b6; }
-.lb-sort-btn.active[onclick*='doodle_score'] { color: #f1c40f; }
-
-/* Icon Theme Colors in Rows (Request) */
-.lb-xp-icon { color: #3498db !important; }
-.lb-puzzle-icon { color: #9b59b6 !important; }
-.lb-rocket-icon { color: #f1c40f !important; }
-
-/* Pulse animation for active sort icon */
+/* Pulse animation for active sort icon in rows */
 .active-sort i {
     animation: lb-icon-pulse 1.5s infinite ease-in-out;
 }
@@ -5175,20 +5177,13 @@ body.dark-theme .pool-card.locked-chain .chain-overlay {
 }
 
 /* Highlight Active Column Softly */
-.active-sort {
-    background: rgba(52, 152, 219, 0.05);
-    padding: 6px 12px;
-    border-radius: 10px;
-    transition: all 0.3s ease;
-}
-
 .lb-scramble.active-sort { background: rgba(155, 89, 182, 0.05); }
 .lb-doodle.active-sort { background: rgba(241, 196, 15, 0.05); }
 
 @media (max-width: 480px) {
     .lb-sort-controls {
-        gap: 5px;
-        padding: 5px;
+        gap: 2px;
+        padding: 4px;
         overflow-x: auto;
     }
     .lb-sort-btn {

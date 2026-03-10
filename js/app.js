@@ -297,7 +297,14 @@ function setupMainNavigation(userId) {
         const lbContent = document.getElementById('leaderboard-content');
         lbContent.classList.remove('hide');
         updateActiveNav(this);
-        await loadLeaderboard(lbContent);
+        
+        // Eğer içerik boşsa yükle, doluysa sadece listeyi tazele
+        if (lbContent.innerHTML === "" || lbContent.querySelector('.leaderboard-list') === null) {
+            await loadLeaderboard(lbContent);
+        } else {
+            // Arka planda güncelle
+            loadLeaderboard(lbContent);
+        }
     });
 
     document.getElementById('nav-profile').addEventListener('click', function () {
@@ -3539,9 +3546,6 @@ window.showQuizTypes = showQuizTypes;
 
 // Liderlik tablosunu yükle
 async function loadLeaderboard(container) {
-    container.innerHTML = `<div style="text-align:center;padding:40px;">⏳ Yükleniyor...</div>`;
-
-    // Misafir kontrolü eklendi
     const isGuest = (typeof currentUser !== 'undefined' && currentUser && currentUser.isGuest) || localStorage.getItem('isGuest') === 'true';
     if (isGuest) {
         container.innerHTML = `
@@ -3555,6 +3559,37 @@ async function loadLeaderboard(container) {
         return;
     }
 
+    // Ana yapıyı sadece bir kere (veya konteyner değişirse) kur
+    if (container.querySelector('.leaderboard-list') === null) {
+        container.innerHTML = `
+            <div class="leaderboard-container">
+                <h2>🏆 Liderlik Tablosu</h2>
+                <p>En başarılı öğrenciler</p>
+                
+                <div class="lb-sort-controls">
+                    <div class="lb-sort-indicator"></div>
+                    <button onclick="window.changeLeaderboardSort('total_xp', this)" class="lb-sort-btn ${leaderboardSortBy === 'total_xp' ? 'active' : ''}" title="XP'ye Göre Sırala">
+                        <i class="fa-solid fa-star"></i> XP
+                    </button>
+                    <button onclick="window.changeLeaderboardSort('scramble_score', this)" class="lb-sort-btn ${leaderboardSortBy === 'scramble_score' ? 'active' : ''}" title="Scramble Puanına Göre Sırala">
+                        <i class="fa-solid fa-puzzle-piece"></i> Scramble
+                    </button>
+                    <button onclick="window.changeLeaderboardSort('doodle_score', this)" class="lb-sort-btn ${leaderboardSortBy === 'doodle_score' ? 'active' : ''}" title="Zıplama Skoruna Göre Sırala">
+                        <i class="fa-solid fa-rocket"></i> Zıplama
+                    </button>
+                </div>
+
+                <div class="leaderboard-list">
+                    <div style="text-align:center;padding:40px;">⏳ Yükleniyor...</div>
+                </div>
+            </div>`;
+    }
+
+    const listContainer = container.querySelector('.leaderboard-list');
+    if (listContainer) {
+        listContainer.style.opacity = '0.4'; // Geçiş başladığında hafif solgunlaştır
+    }
+    
     try {
         const q = query(
             collection(db, 'users_public'), 
@@ -3578,7 +3613,6 @@ async function loadLeaderboard(container) {
                     <span class="lb-rank">${medal}</span>
                     <span class="lb-name">${displayName}${isMe ? ' (Sen)' : ''}</span>
                     <div class="lb-stats" style="display: flex; gap: 10px; align-items: center;">
-                    <div class="lb-stats" style="display: flex; gap: 10px; align-items: center;">
                         <span class="lb-xp ${leaderboardSortBy === 'total_xp' ? 'active-sort' : ''}" title="Toplam XP">
                              <i class="fa-solid fa-star lb-xp-icon"></i> ${xp} XP
                         </span>
@@ -3589,40 +3623,45 @@ async function loadLeaderboard(container) {
                             <i class="fa-solid fa-rocket lb-rocket-icon"></i> ${dScore}
                         </span>
                     </div>
-                    </div>
                 </div>`;
         }).join('');
 
-        container.innerHTML = `
-            <div class="leaderboard-container">
-                <h2>🏆 Liderlik Tablosu</h2>
-                <p>En başarılı öğrenciler</p>
-                
-                <div class="lb-sort-controls">
-                    <button onclick="window.changeLeaderboardSort('total_xp')" class="lb-sort-btn ${leaderboardSortBy === 'total_xp' ? 'active' : ''}" title="XP'ye Göre Sırala">
-                        <i class="fa-solid fa-star"></i> XP
-                    </button>
-                    <button onclick="window.changeLeaderboardSort('scramble_score')" class="lb-sort-btn ${leaderboardSortBy === 'scramble_score' ? 'active' : ''}" title="Scramble Puanına Göre Sırala">
-                        <i class="fa-solid fa-puzzle-piece"></i> Scramble
-                    </button>
-                    <button onclick="window.changeLeaderboardSort('doodle_score')" class="lb-sort-btn ${leaderboardSortBy === 'doodle_score' ? 'active' : ''}" title="Zıplama Skoruna Göre Sırala">
-                        <i class="fa-solid fa-rocket"></i> Zıplama
-                    </button>
-                </div>
+        listContainer.innerHTML = rows || '<p>Henüz veri yok.</p>';
+        listContainer.style.opacity = '1';
 
-                <div class="leaderboard-list">
-                    ${rows || '<p>Henüz veri yok.</p>'}
-                </div>
-            </div>`;
+        // İndikatörü güncelle
+        setTimeout(() => updateSortIndicator(container), 50);
+
     } catch (err) {
         console.error('Liderlik tablosu yüklenemedi:', err);
-        container.innerHTML = `<div style="text-align:center;padding:40px;color:red;">Liderlik tablosu yüklenemedi.</div>`;
+        listContainer.innerHTML = `<div style="text-align:center;padding:40px;color:red;">Liderlik tablosu yüklenemedi.</div>`;
+        listContainer.style.opacity = '1';
+    }
+}
+
+// Kayan göstergeyi güncelle
+function updateSortIndicator(container) {
+    const activeBtn = container.querySelector('.lb-sort-btn.active');
+    const indicator = container.querySelector('.lb-sort-indicator');
+    if (activeBtn && indicator) {
+        indicator.style.width = `${activeBtn.offsetWidth}px`;
+        indicator.style.left = `${activeBtn.offsetLeft}px`;
     }
 }
 
 // Sıralama Değiştirme
-window.changeLeaderboardSort = function(field) {
+window.changeLeaderboardSort = function(field, btn) {
+    if (leaderboardSortBy === field) return;
+    
     leaderboardSortBy = field;
+    
+    // Buton sınıflarını anında güncelle (Hızlı tepki için)
+    const controls = btn.closest('.lb-sort-controls');
+    controls.querySelectorAll('.lb-sort-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    updateSortIndicator(btn.closest('.leaderboard-container'));
+
     const lbContent = document.getElementById('leaderboard-content');
     if (lbContent) loadLeaderboard(lbContent);
 };

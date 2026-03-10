@@ -243,7 +243,7 @@ function addPlatform(yPos) {
     if(rand > 0.9) pType = 'moving';
     else if(rand > 0.75) pType = 'broken';
 
-    let hasJp = (pType === 'normal' && Math.random() > 0.92); // ~%8 ihtimalle normal platformlarda çıkar
+    let hasJp = (pType === 'normal' && Math.random() > 0.97); // ~%3 ihtimalle normal platformlarda çıkar
 
     platforms.push({
         x: xPos,

@@ -272,8 +272,8 @@ async function checkAnswer() {
             currentScore += 10;
             if(scoreEl) scoreEl.textContent = currentScore;
             
-            // Firebase XP güncelleme (+10 XP)
-            await awardXP(10);
+            // Firebase XP ve Scramble Skoru güncelleme (+10 XP)
+            await awardXP(10, 10);
             
             setTimeout(() => {
                 isProcessing = false;
@@ -298,15 +298,21 @@ async function checkAnswer() {
     }
 }
 
-async function awardXP(amount) {
+async function awardXP(amount, scramblePoints = 0) {
     const { db, auth } = getFirebase();
     if (!auth || !auth.currentUser || localStorage.getItem('isGuest') === 'true') return;
     try {
         const publicRef = doc(db, "users_public", auth.currentUser.uid);
-        await updateDoc(publicRef, {
+        const updates = {
             xp: increment(amount),
             total_xp: increment(amount)
-        });
+        };
+        
+        if (scramblePoints > 0) {
+            updates.scramble_score = increment(scramblePoints);
+        }
+
+        await updateDoc(publicRef, updates);
         
         if (typeof showXPNotification === 'function') {
             showXPNotification(`+${amount} XP Word Scramble!`, true);
@@ -317,7 +323,7 @@ async function awardXP(amount) {
             window.updateDashboard();
         }
     } catch (e) {
-        console.error("XP kazandırılırken hata:", e);
+        console.error("XP/Skor kazandırılırken hata:", e);
     }
 }
 
@@ -334,7 +340,53 @@ window.clearScramble = function() {
 
 window.showScrambleHint = function() {
     if(isProcessing || !currentWord) return;
-    updateHintText(true);
+    
+    const cleanWord = currentWord.english.toLowerCase().replace(/[^a-z]/g, '');
+    const currentPos = userGuess.length;
+    
+    if (currentPos >= cleanWord.length) return;
+
+    // Maliyet Kontrolü
+    if (currentScore < 5) {
+        if(window.Swal) {
+            Swal.fire({
+                toast: true,
+                position: 'top',
+                icon: 'warning',
+                title: 'Yetersiz Puan!',
+                text: 'İpucu için en az 5 puanın olmalı.',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+        return;
+    }
+
+    // Doğru harfi bul (cleanWord[currentPos])
+    const targetChar = cleanWord[currentPos];
+    
+    // Alttaki harflerden bu harfi bul ve henüz kullanılmamış olanı seç
+    let foundIndex = -1;
+    for (let i = 0; i < availableLetters.length; i++) {
+        const btn = document.getElementById(`scramble-btn-${i}`);
+        if (availableLetters[i] === targetChar && btn && !btn.classList.contains('used')) {
+            foundIndex = i;
+            break;
+        }
+    }
+
+    if (foundIndex !== -1) {
+        // Puan düşür
+        currentScore -= 5;
+        renderScore();
+        
+        // Harfi "tıkla" (yerleştir)
+        const targetBtn = document.getElementById(`scramble-btn-${foundIndex}`);
+        if (targetBtn) targetBtn.click();
+        
+        // Opsiyonel: Anlamı da göster (isteğe bağlı ama kullanıcı "seçsin" dediği için asıl iş harf yerleştirmek)
+        // updateHintText(true); 
+    }
 };
 
 window.skipScramble = function() {

@@ -3534,19 +3534,25 @@ async function loadLeaderboard(container) {
             const isMe = docSnap.id === currentUser?.uid;
             const displayName = escapeHTML(rawName);
             const xp = d.total_xp || d.xp || 0;
+            const sScore = d.scramble_score || 0;
             const medal = medals[i] || `${i + 1}.`;
             return `
                 <div class="leaderboard-row ${isMe ? 'leaderboard-me' : ''}" onclick="window.showPublicProfile('${docSnap.id}')">
                     <span class="lb-rank">${medal}</span>
                     <span class="lb-name">${displayName}${isMe ? ' (Sen)' : ''}</span>
-                    <span class="lb-xp">${xp} XP</span>
+                    <div class="lb-stats" style="display: flex; gap: 10px; align-items: center;">
+                        <span class="lb-xp" title="Toplam XP">${xp} XP</span>
+                        <span class="lb-scramble" title="Scramble Skoru" style="font-size: 13px; color: var(--secondary-color); font-weight: bold;">
+                            <i class="fa-solid fa-puzzle-piece"></i> ${sScore}
+                        </span>
+                    </div>
                 </div>`;
         }).join('');
 
         container.innerHTML = `
             <div class="leaderboard-container">
                 <h2>🏆 Liderlik Tablosu</h2>
-                <p>En yüksek XP'ye sahip kullanıcılar</p>
+                <p>En başarılı öğrenciler</p>
                 <div class="leaderboard-list">
                     ${rows || '<p>Henüz veri yok.</p>'}
                 </div>
@@ -3592,6 +3598,12 @@ window.showPublicProfile = async function (uid) {
 
             document.getElementById('public-profile-streak').textContent = data.streak || 0;
             document.getElementById('public-profile-xp').textContent = data.total_xp || data.xp || 0;
+            
+            // Scramble Skorunu Göster
+            const scrambleEl = document.getElementById('public-profile-scramble');
+            if (scrambleEl) {
+                scrambleEl.textContent = data.scramble_score || 0;
+            }
 
             // Quiz ve Öğrenilen Kelimeleri Diğer Koleksiyonlardan Async Olarak Çek
             try {

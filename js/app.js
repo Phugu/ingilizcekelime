@@ -47,6 +47,7 @@ const FORBIDDEN_OBJECTS = [
 import {
     ref,
     uploadBytesResumable,
+    uploadBytes,
     getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 import { WordLearning } from './learning.js';
@@ -1754,156 +1755,112 @@ function setupAvatarUploadEvents(user) {
             // Storage referansını al ve yükleme işlemini başlat
             const storage = window.firebaseStorage;
             const storageRef = ref(storage, `profile_pictures/${user.uid}`);
-            const uploadTask = uploadBytesResumable(storageRef, file);
+            
+            // Daha stabil olan uploadBytes metodunu deneyelim (metadata ile)
+            const metadata = { contentType: file.type };
+            console.error("🚀 DEBUG: uploadBytes başlatılıyor...", metadata);
+            
+            await uploadBytes(storageRef, file, metadata);
+            console.error("✅ DEBUG: uploadBytes başarılı!");
 
-            uploadTask.on('state_changed',
-                (snapshot) => {
-                    const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                    if (loadingPct) {
-                        loadingPct.innerText = progress + '%';
-                    }
-                },
-                (error) => {
-                    console.error("❌ DEBUG: Yükleme Hatası Detaylı:", {
-                        code: error.code,
-                        message: error.message,
-                        serverResponse: error.serverResponse,
-                        name: error.name
-                    });
-                    
-                    let errorMsg = "Fotoğraf yüklenemedi.";
-                    if (error.code === 'storage/unknown') {
-                        errorMsg += " (Sunucu yanıtı alınamadı, lütfen internet bağlantınızı veya Storage kurallarını kontrol edin)";
-                    } else if (error.code === 'storage/unauthorized') {
-                        errorMsg += " (Erişim yetkiniz yok, lütfen giriş yaptığınızdan emin olun)";
-                    } else {
-                        errorMsg += " (" + error.message + ")";
-                    }
-                    
-                    alert(errorMsg);
-                    loadingMask.style.display = 'none';
-                    if (editBtn) editBtn.style.display = 'flex';
-                },
-                async () => {
-                    try {
-                        console.error("🚀 DEBUG: Storage yüklemesi bitti. URL alınıyor...");
-                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                        const cacheURL = `${downloadURL}&cb=${Date.now()}`;
-                        console.error("🔗 DEBUG: Yeni URL (Zırhlı):", cacheURL);
+            const downloadURL = await getDownloadURL(storageRef);
+            const cacheURL = `${downloadURL}&cb=${Date.now()}`;
+            console.error("🔗 DEBUG: Yeni URL (Stabil):", cacheURL);
 
-                        // Auth Güncelle
-                        await updateProfile(auth.currentUser, { photoURL: cacheURL });
+            // Auth Güncelle
+            await updateProfile(auth.currentUser, { photoURL: cacheURL });
 
-                        // Firestore Güncelle
-                        try {
-                            await updateDoc(doc(db, "users_public", user.uid), { photoURL: cacheURL });
-                        } catch (e) { console.error("⚠️ Firestore güncelleme atlandı:", e); }
+            // Firestore Güncelle
+            try {
+                await updateDoc(doc(db, "users_public", user.uid), { photoURL: cacheURL });
+            } catch (e) { console.error("⚠️ Firestore güncelleme atlandı:", e); }
 
-                        // DOM Güncelle (Ana Profil Resmi)
-                        if (mainAvatar) {
-                            mainAvatar.style.backgroundImage = `url('${cacheURL}')`;
-                            mainAvatar.style.backgroundSize = 'cover';
-                            mainAvatar.style.backgroundPosition = 'center';
-                            mainAvatar.style.color = 'transparent';
-                            mainAvatar.innerHTML = '';
-                            console.error("🎨 DOM: Main avatar güncellendi.");
-                        }
+            // DOM Güncelle (Ana Profil Resmi)
+            if (mainAvatar) {
+                mainAvatar.style.backgroundImage = `url('${cacheURL}')`;
+                mainAvatar.style.backgroundSize = 'cover';
+                mainAvatar.style.backgroundPosition = 'center';
+                mainAvatar.style.color = 'transparent';
+                mainAvatar.innerHTML = '';
+            }
 
-                        // Header Avatar Güncelle
-                        const headerAvatar = document.getElementById('header-profile-avatar');
-                        if (headerAvatar) {
-                            headerAvatar.style.backgroundImage = `url('${cacheURL}')`;
-                            headerAvatar.style.backgroundSize = 'cover';
-                            headerAvatar.style.backgroundPosition = 'center';
-                            headerAvatar.innerHTML = '';
-                            console.error("🎨 DOM: Header avatar güncellendi.");
-                        }
+            // Header Avatar Güncelle
+            if (headerAvatar) {
+                headerAvatar.style.backgroundImage = `url('${cacheURL}')`;
+                headerAvatar.style.backgroundSize = 'cover';
+                headerAvatar.style.backgroundPosition = 'center';
+                headerAvatar.innerHTML = '';
+            }
 
-                        loadingMask.style.display = 'none';
-                        editBtn.style.display = 'flex';
-                        fileInput.value = '';
+            alert("Profil fotoğrafınız başarıyla güncellendi!");
+            loadingMask.style.display = 'none';
+            if (editBtn) editBtn.style.display = 'flex';
+            fileInput.value = '';
 
-                        // AI MODERASYON
-                        const uploadTime = Date.now();
-                        setTimeout(() => {
-                            try {
-                                console.error("🕵️ DEBUG: AI Taraması başladı...");
-                                const storagePath = `gs://ingilizcekelime-cbeb6.firebasestorage.app/profile_pictures/${user.uid}`;
-                                const firestoreDB = window.firestore || db;
-                                const q = query(collection(firestoreDB, "detectedObjects"), where("file", "==", storagePath), limit(1));
+            // AI MODERASYON
+            const uploadTime = Date.now();
+            setTimeout(() => {
+                try {
+                    console.error("🕵️ DEBUG: AI Taraması başladı...");
+                    const storagePath = `gs://ingilizcekelime-cbeb6.firebasestorage.app/profile_pictures/${user.uid}`;
+                    const firestoreDB = window.firestore || db;
+                    const q = query(collection(firestoreDB, "detectedObjects"), where("file", "==", storagePath), limit(1));
 
-                                const unsubscribe = onSnapshot(q, async (snap) => {
-                                    if (!snap.empty) {
-                                        const dDoc = snap.docs[0];
-                                        const dData = dDoc.data();
-                                        console.error("📦 RAW AI DATA:", JSON.stringify(dData)); // Teşhis için kritik
+                    const unsubscribe = onSnapshot(q, async (snap) => {
+                        if (!snap.empty) {
+                            const dDoc = snap.docs[0];
+                            const dData = dDoc.data();
+                            const upd = dData.updated ? dData.updated.seconds * 1000 : (dDoc.updateTime ? dDoc.updateTime.seconds * 1000 : Date.now());
 
-                                        const upd = dData.updated ? dData.updated.seconds * 1000 : (dDoc.updateTime ? dDoc.updateTime.seconds * 1000 : Date.now());
+                            if (upd < (uploadTime - 5000)) return; // Eski veri
 
-                                        if (upd < (uploadTime - 5000)) return; // Eski veri
+                            const rawObjects = dData.objects || dData.labels || dData.localizedObjectAnnotations || [];
+                            if (Array.isArray(rawObjects)) {
+                                const processedItems = rawObjects.map(o => {
+                                    if (typeof o === 'string') return { name: o.toLowerCase(), score: 1.0 };
+                                    const name = (o.name || o.label || o.object || "").toString().toLowerCase();
+                                    const score = o.score !== undefined ? o.score : (o.confidence !== undefined ? o.confidence : 0.8);
+                                    return { name, score };
+                                });
 
-                                        // Nesneleri tespit et (String ve Object Desteği)
-                                        const rawObjects = dData.objects || dData.labels || dData.localizedObjectAnnotations || [];
-                                        if (Array.isArray(rawObjects)) {
-                                            const processedItems = rawObjects.map(o => {
-                                                if (typeof o === 'string') {
-                                                    return { name: o.toLowerCase(), score: 1.0 };
-                                                }
-                                                const name = (o.name || o.label || o.object || "").toString().toLowerCase();
-                                                const score = (o.score !== undefined) ? o.score :
-                                                    ((o.confidence !== undefined) ? o.confidence :
-                                                        ((o.score_ !== undefined) ? o.score_ : 0.8));
-                                                return { name, score };
-                                            });
+                                const bad = processedItems
+                                    .filter(o => o.score >= 0.65)
+                                    .map(o => o.name)
+                                    .filter(n => FORBIDDEN_OBJECTS.some(forbidden => n.includes(forbidden)));
 
-                                            const all = processedItems.map(o => `${o.name} (%${Math.round(o.score * 100)})`);
-                                            console.error("🔍 AI Gördü:", all.join(", "));
-
-                                            const bad = processedItems
-                                                .filter(o => o.score >= 0.65)
-                                                .map(o => o.name)
-                                                .filter(n => FORBIDDEN_OBJECTS.some(forbidden => n.includes(forbidden)));
-
-                                            if (bad.length > 0) {
-                                                console.error("⛔ YASAKLI:", bad);
-                                                unsubscribe();
-                                                const fallback = "https://ui-avatars.com/api/?name=" + (user.displayName || "A") + "&background=random";
-                                                await updateProfile(auth.currentUser, { photoURL: fallback });
-
-                                                [mainAvatar, headerAvatar].forEach(el => {
-                                                    if (el) {
-                                                        el.style.backgroundImage = 'none';
-                                                        el.innerHTML = (user.displayName || "A").charAt(0).toUpperCase();
-                                                    }
-                                                });
-
-                                                Swal.fire({ icon: 'error', title: 'Yasaklı İçerik!', text: `Yapay zeka şunları tespit etti: ${bad.join(", ")}`, footer: `Rapor: ${all.join(", ")}` });
-                                            } else {
-                                                console.error("✅ TEMİZ");
-                                                unsubscribe();
-                                                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'AI: Profil Temiz', showConfirmButton: false, timer: 2000 });
-                                            }
+                                if (bad.length > 0) {
+                                    unsubscribe();
+                                    const fallback = "https://ui-avatars.com/api/?name=" + (user.displayName || "A") + "&background=random";
+                                    await updateProfile(auth.currentUser, { photoURL: fallback });
+                                    [mainAvatar, headerAvatar].forEach(el => {
+                                        if (el) {
+                                            el.style.backgroundImage = 'none';
+                                            el.innerHTML = (user.displayName || "A").charAt(0).toUpperCase();
                                         }
-                                    }
-                                }, (err) => console.error("🚨 Snapshot hatası:", err));
-
-                                setTimeout(() => unsubscribe(), 30000);
-                            } catch (e) { console.error("🚨 AI başlatma hatası:", e); }
-                        }, 1500);
-
-                    } catch (err) {
-                        console.error("🚨 Başarı callback hatası:", err);
-                        loadingMask.style.display = 'none';
-                        editBtn.style.display = 'flex';
-                    }
-                }
-            );
+                                    });
+                                    Swal.fire({ icon: 'error', title: 'Yasaklı İçerik!', text: `Yapay zeka şunları tespit etti: ${bad.join(", ")}` });
+                                } else {
+                                    unsubscribe();
+                                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'AI: Profil Temiz', showConfirmButton: false, timer: 2000 });
+                                }
+                            }
+                        }
+                    }, (err) => console.error("🚨 Snapshot hatası:", err));
+                    setTimeout(() => unsubscribe(), 30000);
+                } catch (e) { console.error("🚨 AI başlatma hatası:", e); }
+            }, 1500);
 
         } catch (error) {
-            console.error("Beklenmeyen yükleme hatası:", error);
-            alert("Beklenmeyen bir hata oluştu.");
+            console.error("❌ DEBUG: Yükleme Hatası:", error);
+            let errorMsg = "Fotoğraf yüklenemedi.";
+            if (error.code === 'storage/unknown' || error.message.includes('412')) {
+                errorMsg += "\n\n⚠️ ÖNEMLİ: Hata hala devam ediyor. Lütfen Google Cloud Shell'deki CORS komutunu .firebasestorage.app olan adrese göre çalıştırdığınızdan emin olun.";
+            } else {
+                errorMsg += " (" + error.message + ")";
+            }
+            alert(errorMsg);
             loadingMask.style.display = 'none';
-            editBtn.style.display = 'flex';
+            if (editBtn) editBtn.style.display = 'flex';
         }
     });
 }

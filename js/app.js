@@ -3578,13 +3578,17 @@ async function loadLeaderboard(container) {
                     <span class="lb-rank">${medal}</span>
                     <span class="lb-name">${displayName}${isMe ? ' (Sen)' : ''}</span>
                     <div class="lb-stats" style="display: flex; gap: 10px; align-items: center;">
-                        <span class="lb-xp ${leaderboardSortBy === 'total_xp' ? 'active-sort' : ''}" title="Toplam XP">${xp} XP</span>
+                    <div class="lb-stats" style="display: flex; gap: 10px; align-items: center;">
+                        <span class="lb-xp ${leaderboardSortBy === 'total_xp' ? 'active-sort' : ''}" title="Toplam XP">
+                             <i class="fa-solid fa-star lb-xp-icon"></i> ${xp} XP
+                        </span>
                         <span class="lb-scramble ${leaderboardSortBy === 'scramble_score' ? 'active-sort' : ''}" title="Scramble Skoru" style="font-size: 13px; font-weight: bold;">
-                            <i class="fa-solid fa-puzzle-piece"></i> ${sScore}
+                            <i class="fa-solid fa-puzzle-piece lb-puzzle-icon"></i> ${sScore}
                         </span>
                         <span class="lb-doodle ${leaderboardSortBy === 'doodle_score' ? 'active-sort' : ''}" title="Zıplama Skoru" style="font-size: 13px; font-weight: bold;">
-                            <i class="fa-solid fa-rocket"></i> ${dScore}
+                            <i class="fa-solid fa-rocket lb-rocket-icon"></i> ${dScore}
                         </span>
+                    </div>
                     </div>
                 </div>`;
         }).join('');
@@ -3594,7 +3598,7 @@ async function loadLeaderboard(container) {
                 <h2>🏆 Liderlik Tablosu</h2>
                 <p>En başarılı öğrenciler</p>
                 
-                <div class="lb-sort-controls" style="display: flex; justify-content: center; gap: 15px; margin: 20px 0; background: var(--card-bg); padding: 10px; border-radius: 15px; border: 1px solid var(--border-color);">
+                <div class="lb-sort-controls">
                     <button onclick="window.changeLeaderboardSort('total_xp')" class="lb-sort-btn ${leaderboardSortBy === 'total_xp' ? 'active' : ''}" title="XP'ye Göre Sırala">
                         <i class="fa-solid fa-star"></i> XP
                     </button>

@@ -12,10 +12,13 @@ let particles = [];
 let keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false };
 let touchX = null; // For mobile controls
 
+let lastTouchTime = 0; // For double tap detection
+
 // Player Physics
-const GRAVITY = 0.4;
-const JUMP_FORCE = -10;
-const MAX_FALL_SPEED = 12;
+const GRAVITY = 0.25; // Daha yumuşak yerçekimi
+const JUMP_FORCE = -8; // Daha kontrollü zıplama
+const EXTRA_JUMP_FORCE = -11; // Çift zıplama gücü
+const MAX_FALL_SPEED = 10;
 
 // Player Object
 const player = {
@@ -25,9 +28,10 @@ const player = {
     height: 48,
     vx: 0,
     vy: 0,
-    speed: 6.5,
+    speed: 7, // Biraz daha hızlı yatay hareket
     scaleX: 1,
     scaleY: 1,
+    canDoubleJump: false, // Çift zıplama hakkı
     img: new Image()
 };
 
@@ -121,18 +125,43 @@ function handleKeyUp(e) {
 function handleTouchStart(e) {
     if(!isPlaying) return;
     e.preventDefault();
-    touchX = e.touches[0].clientX;
+    
+    // Mobil için ekranın sağına/soluna dokunma kontrolü
+    const rect = canvas.getBoundingClientRect();
+    const touchXPos = e.touches[0].clientX - rect.left;
+    const isRightSide = touchXPos > rect.width / 2;
+    
+    if (isRightSide) {
+        keys.ArrowRight = true;
+        keys.ArrowLeft = false;
+    } else {
+        keys.ArrowLeft = true;
+        keys.ArrowRight = false;
+    }
+    
+    // Double tap detection for Extra Jump
+    const now = Date.now();
+    if (now - lastTouchTime < 300) {
+        // Çift tıklandı
+        if (player.canDoubleJump) {
+            player.vy = EXTRA_JUMP_FORCE;
+            player.canDoubleJump = false; // Bir kez kullanılabilir
+            createParticles(player.x + player.width/2, player.y + player.height);
+        }
+    }
+    lastTouchTime = now;
 }
 
 function handleTouchMove(e) {
     if(!isPlaying) return;
     e.preventDefault();
-    touchX = e.touches[0].clientX;
+    // Hareket ettirirken parmağın konumuna göre yönü değiştirme de yapılabilir ama tap mantığı daha iyi olur.
+    // İsteğe bağlı eklenebilir. Şu an dokunma yönüne sadık kalıyoruz.
 }
 
 function handleTouchEnd(e) {
-    touchX = null;
-    player.vx = 0;
+    keys.ArrowLeft = false;
+    keys.ArrowRight = false;
 }
 
 // --- Game Control ---
@@ -182,7 +211,18 @@ function generateInitialPlatforms() {
 }
 
 function addPlatform(yPos) {
-    const xPos = Math.random() * (canvas.width - PLATFORM_WIDTH);
+    // Platformların çok uzağa spawn olmasını önle (önceki platformun X pozisyonuna göre limit koy)
+    let xPos;
+    if (platforms.length > 0) {
+        const lastP = platforms[platforms.length - 1];
+        const maxDist = 180; // Maksimum yatay mesafe
+        const minX = Math.max(0, lastP.x - maxDist);
+        const maxX = Math.min(canvas.width - PLATFORM_WIDTH, lastP.x + maxDist);
+        xPos = minX + Math.random() * (maxX - minX);
+    } else {
+        xPos = Math.random() * (canvas.width - PLATFORM_WIDTH);
+    }
+
     // 10% chance for a moving platform, 10% chance for broken (one-time jump)
     let pType = 'normal';
     const rand = Math.random();
@@ -203,23 +243,20 @@ function updatePhysics() {
     player.scaleX += (1 - player.scaleX) * 0.15;
     player.scaleY += (1 - player.scaleY) * 0.15;
 
-    // Horizontal Movement (PC)
+    // Extra Jump Trigger (PC Klavye Boşluk/Üst Yön Tuşu)
+    if ((keys.ArrowUp || keys.w || keys[' ']) && player.canDoubleJump) {
+         player.vy = EXTRA_JUMP_FORCE;
+         player.canDoubleJump = false;
+         keys.ArrowUp = false; // Bir defa saysın diye
+         keys.w = false;
+         keys[' '] = false;
+         createParticles(player.x + player.width/2, player.y + player.height);
+    }
+
+    // Horizontal Movement
     if (keys.ArrowLeft || keys.a) player.vx = -player.speed;
     else if (keys.ArrowRight || keys.d) player.vx = player.speed;
-    else if (touchX === null) player.vx = 0; // Friction
-
-    // Horizontal Movement (Mobile)
-    if (touchX !== null) {
-        const rect = canvas.getBoundingClientRect();
-        const screenX = touchX - rect.left;
-        const middleOffset = screenX - (rect.width / 2); // - to left, + to right
-        
-        // Analog feeling based on distance from center
-        player.vx = (middleOffset / (rect.width / 2)) * (player.speed * 1.5);
-        // Clamp speed
-        if(player.vx > player.speed) player.vx = player.speed;
-        if(player.vx < -player.speed) player.vx = -player.speed;
-    }
+    else player.vx -= player.vx * 0.2; // Sürtünmeyle yavaşlama (Friction)
 
     // Apply X Velocity
     player.x += player.vx;
@@ -244,8 +281,9 @@ function updatePhysics() {
                 player.y + player.height > p.y &&
                 player.y + player.height < p.y + PLATFORM_HEIGHT + player.vy) {
                 
-                // BOING!
+                // BOING! Yere çarpma
                 player.vy = JUMP_FORCE;
+                player.canDoubleJump = true; // Zıplama hakkı yenilendi
                 player.scaleX = 0.7; // Squash (Yatay basık)
                 player.scaleY = 1.4; // Stretch (Dikey uzun)
                 createParticles(player.x + player.width/2, p.y);
@@ -282,8 +320,8 @@ function updatePhysics() {
             platforms.splice(i, 1);
             // Generate a new platform above the screen
             const highestY = Math.min(...platforms.map(p => p.y));
-            // Adaptive spacing based on score
-            const spacing = 70 + Math.min(score / 50, 40); 
+            // Adaptive spacing based on score, but keep it reachable
+            const spacing = 50 + Math.min(score / 50, 30); // Daha güvenli platform aralığı
             addPlatform(highestY - spacing);
         }
     }

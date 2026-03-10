@@ -49,16 +49,19 @@ window.openDoodleJump = function() {
     modal.classList.remove('hide');
     
     // Hide UI overlays
-    document.getElementById('doodle-start-overlay').classList.remove('hide');
-    document.getElementById('doodle-gameover-overlay').classList.add('hide');
+    document.getElementById('doodle-start-overlay').style.display = 'flex';
+    document.getElementById('doodle-gameover-overlay').style.display = 'none';
     
-    initCanvas();
-    loadAssets();
-    
-    // Auto start menu rendering (not active game yet)
-    isPlaying = false;
-    isGameOver = false;
-    renderMenuState();
+    // Wait for DOM layout to update before fetching dimensions
+    setTimeout(() => {
+        initCanvas();
+        loadAssets();
+        
+        // Auto start menu rendering (not active game yet)
+        isPlaying = false;
+        isGameOver = false;
+        renderMenuState();
+    }, 50);
 };
 
 window.closeDoodleJump = function() {
@@ -137,8 +140,8 @@ function handleTouchEnd(e) {
 
 // --- Game Control ---
 window.startDoodleGame = function() {
-    document.getElementById('doodle-start-overlay').classList.add('hide');
-    document.getElementById('doodle-gameover-overlay').classList.add('hide');
+    document.getElementById('doodle-start-overlay').style.display = 'none';
+    document.getElementById('doodle-gameover-overlay').style.display = 'none';
     
     // Reset Game State
     score = 0;
@@ -435,7 +438,7 @@ async function gameOver() {
     isGameOver = true;
     if (gameLoopId) cancelAnimationFrame(gameLoopId);
     
-    document.getElementById('doodle-gameover-overlay').classList.remove('hide');
+    document.getElementById('doodle-gameover-overlay').style.display = 'flex';
     document.getElementById('doodle-final-score').textContent = score;
     
     // Reward XP based on score (e.g. 1 XP per 100 points)

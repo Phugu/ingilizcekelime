@@ -2649,7 +2649,7 @@ class Dashboard {
                         </div>
 
                         <!-- Doodle Jump Kartı (Dashboard) -->
-                        <div class="game-card" style="position: relative; height: 320px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);" onclick="window.openDoodleJump()">
+                        <div class="game-card" style="position: relative; height: 320px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: #35a2ff;" onclick="window.openDoodleJump()">
                             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; display: flex; align-items: center; justify-content: center; z-index: 1;">
                                 <img src="img/panlingo-cover.jpg" alt="Doodle Jump" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.1) translateY(5%);">
                             </div>
@@ -2746,7 +2746,7 @@ class Games {
                     </div>
 
                     <!-- Doodle Jump Kartı (Oyunlar Sayfası) -->
-                    <div class="game-card" style="position: relative; height: 380px; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);" onclick="window.openDoodleJump()">
+                    <div class="game-card" style="position: relative; height: 380px; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: #35a2ff;" onclick="window.openDoodleJump()">
                         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; display: flex; align-items: center; justify-content: center; z-index: 1;">
                             <img src="img/panlingo-cover.jpg" alt="Doodle Jump" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.1) translateY(5%);">
                         </div>

@@ -2633,10 +2633,10 @@ class Dashboard {
                         <a href="javascript:void(0)" onclick="document.getElementById('nav-games').click()" style="color: var(--primary-color); font-size: 13px; font-weight: bold; text-decoration: none;">Tümünü Gör →</a>
                     </div>
                     <div class="games-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 320px)); gap: 20px; justify-content: flex-start;">
-                        <div class="game-card" style="background: var(--card-bg); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.08); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.3s ease; position: relative;" onclick="window.openWordScramble()">
-                            <div style="position: absolute; top: 130px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; backdrop-filter: blur(4px); z-index: 5;">A1 - C2</div>
-                            <div style="width: 100%; height: 165px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-color); padding: 12px; box-sizing: border-box;">
-                                <img src="assets/images/word-scramble.jpg" alt="Word Scramble" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        <div class="game-card" style="background: #1a73e8; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.1); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.3s ease; position: relative;" onclick="window.openWordScramble()">
+                            <div style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; backdrop-filter: blur(4px); z-index: 5; border: 1px solid rgba(255,255,255,0.2);">A1 - C2</div>
+                            <div style="width: 100%; height: 170px; background: #004aad; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                <img src="assets/images/word-scramble.jpg" alt="Word Scramble" style="width: 105%; height: 105%; object-fit: contain; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));">
                             </div>
                             <div style="padding: 15px; text-align: center;">
                                 <h4 style="margin: 0 0 5px 0; font-size: 18px; color: var(--text-main);">Word Scramble</h4>
@@ -2707,10 +2707,10 @@ class Games {
                 </div>
 
                 <div class="games-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
-                    <div class="game-card" style="background: var(--card-bg); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.08); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.3s ease; position: relative;" onclick="window.openWordScramble()">
-                        <div style="position: absolute; top: 170px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; backdrop-filter: blur(4px); z-index: 5;">A1 - C2</div>
-                        <div style="width: 100%; height: 210px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-color); padding: 15px; box-sizing: border-box;">
-                            <img src="assets/images/word-scramble.jpg" alt="Word Scramble" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    <div class="game-card" style="background: #1a73e8; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.1); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.3s ease; position: relative;" onclick="window.openWordScramble()">
+                        <div style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; backdrop-filter: blur(4px); z-index: 5; border: 1px solid rgba(255,255,255,0.2);">A1 - C2</div>
+                        <div style="width: 100%; height: 210px; background: #004aad; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                            <img src="assets/images/word-scramble.jpg" alt="Word Scramble" style="width: 105%; height: 105%; object-fit: contain; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));">
                         </div>
                         <div style="padding: 20px; text-align: center;">
                             <h4 style="margin: 0 0 10px 0; font-size: 20px; color: var(--text-main);">Word Scramble</h4>

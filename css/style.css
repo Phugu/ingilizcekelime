@@ -5106,4 +5106,53 @@ body.dark-theme .pool-card.locked-chain .chain-overlay {
          t r a n s f o r m :   s c a l e ( 1 . 0 5 ) ; 
  } 
   
+ .  
  
+/* Leaderboard Sorting UI */
+.lb-sort-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lb-sort-btn:hover {
+    background: rgba(52, 152, 219, 0.1);
+    color: var(--primary-color);
+}
+
+.lb-sort-btn.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+}
+
+/* Highlight Active Sort in Row */
+.lb-stats span.active-sort {
+    transform: scale(1.1);
+    color: var(--primary-color) !important;
+    text-shadow: 0 0 8px rgba(52, 152, 219, 0.2);
+}
+
+.dark-theme .lb-stats span.active-sort {
+    color: #f1c40f !important; /* Gold on dark mode for visibility */
+}
+
+@media (max-width: 480px) {
+    .lb-sort-controls {
+        flex-wrap: wrap;
+        gap: 8px !important;
+    }
+    .lb-sort-btn {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+}

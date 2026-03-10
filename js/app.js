@@ -56,6 +56,7 @@ import { WordLearning } from './learning.js';
 let currentUser = null;
 let wordLearningInstance = null;
 const db = window.firestore; // firebase-init.js tarafından initialize edilen global örnek
+let leaderboardSortBy = 'total_xp'; // Global leaderboard sort state
 const auth = window.firebaseAuth; // Already initialized in index.html
 
 // --- AVATAR FALLBACK SİSTEMİ (Yeni) ---
@@ -3556,8 +3557,8 @@ async function loadLeaderboard(container) {
 
     try {
         const q = query(
-            collection(db, 'users_public'), // Artık public DB'yi görüyoruz, e-postalar güvende
-            orderBy('total_xp', 'desc'),
+            collection(db, 'users_public'), 
+            orderBy(leaderboardSortBy, 'desc'),
             limit(10)
         );
         const snapshot = await getDocs(q);
@@ -3565,7 +3566,6 @@ async function loadLeaderboard(container) {
         const medals = ['🥇', '🥈', '🥉'];
         const rows = snapshot.docs.map((docSnap, i) => {
             const d = docSnap.data();
-            // GÜVENLİK: E-posta adresi ASLA gösterilmez, sadece isim kullanılır
             const rawName = d.displayName || d.name || 'Anonim';
             const isMe = docSnap.id === currentUser?.uid;
             const displayName = escapeHTML(rawName);
@@ -3578,11 +3578,11 @@ async function loadLeaderboard(container) {
                     <span class="lb-rank">${medal}</span>
                     <span class="lb-name">${displayName}${isMe ? ' (Sen)' : ''}</span>
                     <div class="lb-stats" style="display: flex; gap: 10px; align-items: center;">
-                        <span class="lb-xp" title="Toplam XP">${xp} XP</span>
-                        <span class="lb-scramble" title="Scramble Skoru" style="font-size: 13px; color: var(--secondary-color); font-weight: bold;">
+                        <span class="lb-xp ${leaderboardSortBy === 'total_xp' ? 'active-sort' : ''}" title="Toplam XP">${xp} XP</span>
+                        <span class="lb-scramble ${leaderboardSortBy === 'scramble_score' ? 'active-sort' : ''}" title="Scramble Skoru" style="font-size: 13px; font-weight: bold;">
                             <i class="fa-solid fa-puzzle-piece"></i> ${sScore}
                         </span>
-                        <span class="lb-doodle" title="Zıplama Skoru" style="font-size: 13px; color: #f1c40f; font-weight: bold;">
+                        <span class="lb-doodle ${leaderboardSortBy === 'doodle_score' ? 'active-sort' : ''}" title="Zıplama Skoru" style="font-size: 13px; font-weight: bold;">
                             <i class="fa-solid fa-rocket"></i> ${dScore}
                         </span>
                     </div>
@@ -3593,6 +3593,19 @@ async function loadLeaderboard(container) {
             <div class="leaderboard-container">
                 <h2>🏆 Liderlik Tablosu</h2>
                 <p>En başarılı öğrenciler</p>
+                
+                <div class="lb-sort-controls" style="display: flex; justify-content: center; gap: 15px; margin: 20px 0; background: var(--card-bg); padding: 10px; border-radius: 15px; border: 1px solid var(--border-color);">
+                    <button onclick="window.changeLeaderboardSort('total_xp')" class="lb-sort-btn ${leaderboardSortBy === 'total_xp' ? 'active' : ''}" title="XP'ye Göre Sırala">
+                        <i class="fa-solid fa-star"></i> XP
+                    </button>
+                    <button onclick="window.changeLeaderboardSort('scramble_score')" class="lb-sort-btn ${leaderboardSortBy === 'scramble_score' ? 'active' : ''}" title="Scramble Puanına Göre Sırala">
+                        <i class="fa-solid fa-puzzle-piece"></i> Scramble
+                    </button>
+                    <button onclick="window.changeLeaderboardSort('doodle_score')" class="lb-sort-btn ${leaderboardSortBy === 'doodle_score' ? 'active' : ''}" title="Zıplama Skoruna Göre Sırala">
+                        <i class="fa-solid fa-rocket"></i> Zıplama
+                    </button>
+                </div>
+
                 <div class="leaderboard-list">
                     ${rows || '<p>Henüz veri yok.</p>'}
                 </div>
@@ -3602,6 +3615,13 @@ async function loadLeaderboard(container) {
         container.innerHTML = `<div style="text-align:center;padding:40px;color:red;">Liderlik tablosu yüklenemedi.</div>`;
     }
 }
+
+// Sıralama Değiştirme
+window.changeLeaderboardSort = function(field) {
+    leaderboardSortBy = field;
+    const lbContent = document.getElementById('leaderboard-content');
+    if (lbContent) loadLeaderboard(lbContent);
+};
 
 // Liderlik Tablosundan Herkese Açık Profil (Public Profile) Gösterme
 window.showPublicProfile = async function (uid) {

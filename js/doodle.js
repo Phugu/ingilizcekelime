@@ -34,8 +34,12 @@ const player = {
     scaleX: 1,
     scaleY: 1,
     canDoubleJump: false, // Çift zıplama hakkı
+    hasJetpack: false,
+    jetpackTimer: 0,
     img: new Image()
 };
+
+let jetpackImg = new Image();
 
 // Layout Constants
 const PLATFORM_WIDTH = 75; // Platformlar biraz daha geniş yapıldı (daha kolay)
@@ -95,6 +99,7 @@ function initCanvas() {
 function loadAssets() {
     // Profil resmini değil, GÖNDERİLEN ORİJİNAL KARAKTERİ kullan (Kullanıcı talebi)
     player.img.src = 'img/doodle-char.png'; 
+    jetpackImg.src = 'img/jetpack.png';
 }
 
 // --- Input Handling (PC & Mobile) ---
@@ -186,6 +191,8 @@ window.startDoodleGame = function() {
     player.vx = 0;
     player.scaleX = 1;
     player.scaleY = 1;
+    player.hasJetpack = false;
+    player.jetpackTimer = 0;
 
     // Initial Platforms
     generateInitialPlatforms();
@@ -236,11 +243,14 @@ function addPlatform(yPos) {
     if(rand > 0.9) pType = 'moving';
     else if(rand > 0.75) pType = 'broken';
 
+    let hasJp = (pType === 'normal' && Math.random() > 0.92); // ~%8 ihtimalle normal platformlarda çıkar
+
     platforms.push({
         x: xPos,
         y: yPos,
         width: PLATFORM_WIDTH,
         type: pType,
+        hasJetpack: hasJp,
         direction: Math.random() > 0.5 ? 1 : -1 // For moving platforms
     });
 }
@@ -281,13 +291,60 @@ function updatePhysics() {
     if (player.x + player.width < 0) player.x = canvas.width;
     else if (player.x > canvas.width) player.x = -player.width;
 
-    // Apply Gravity
-    player.vy += GRAVITY;
-    if (player.vy > MAX_FALL_SPEED) player.vy = MAX_FALL_SPEED;
+    // Handle Jetpack Logic / Gravity
+    if (player.hasJetpack) {
+        player.vy = -18; // Çok hızlı uçuş
+        player.jetpackTimer--; // Süreyi azalt
+        
+        // Ateş efekti partikülleri üret
+        if (Math.random() > 0.3) {
+            particles.push({
+                x: player.x + player.width/2 + (Math.random() - 0.5)*20,
+                y: player.y + player.height,
+                vx: (Math.random() - 0.5) * 2,
+                vy: Math.random() * 6 + 2, // Aşağı doğru
+                life: 1,
+                color: ['#ff9f43', '#ee5253', '#feca57'][Math.floor(Math.random()*3)],
+                size: Math.random() * 6 + 4
+            });
+        }
+        
+        if (player.jetpackTimer <= 0) {
+            player.hasJetpack = false; // Bitti
+            player.vy = JUMP_FORCE; // Bittiğinde tatlı bir zıplama kalır
+            player.canDoubleJump = true;
+        }
+    } else {
+        // Apply Gravity
+        player.vy += GRAVITY;
+        if (player.vy > MAX_FALL_SPEED) player.vy = MAX_FALL_SPEED;
+    }
+
     player.y += player.vy;
 
-    // Collision Detection (Only when falling)
-    if (player.vy > 0) {
+    // Jetpack Collection
+    for (let i = 0; i < platforms.length; i++) {
+        let p = platforms[i];
+        if (p.hasJetpack &&
+            player.x < p.x + p.width &&
+            player.x + player.width > p.x &&
+            player.y < p.y && // Yanından geçerken de alabilir
+            player.y + player.height > p.y - 45) {
+            
+            p.hasJetpack = false; // Platformdan sil
+            player.hasJetpack = true; // Oyuncuya ver
+            player.jetpackTimer = 180; // Yaklaşık 3 saniye süre
+            
+            // Patlama efekti
+            createParticles(player.x + player.width/2, player.y);
+            
+            // Eğer normal düşerken alırsak ve zıplarsak, ekstra çift zıplama hakkı gelsin
+            player.canDoubleJump = true; 
+        }
+    }
+
+    // Collision Detection (Only when falling AND not wearing jetpack)
+    if (player.vy > 0 && !player.hasJetpack) {
         for (let i = 0; i < platforms.length; i++) {
             let p = platforms[i];
             
@@ -371,6 +428,11 @@ function drawPlayer() {
     // Scale and Translate from center for squash/stretch effect
     ctx.translate(player.x + player.width/2, player.y + player.height/2);
     ctx.scale(player.scaleX, player.scaleY);
+    
+    // Draw Jetpack behind player if active
+    if (player.hasJetpack && jetpackImg.complete && jetpackImg.naturalHeight !== 0) {
+        ctx.drawImage(jetpackImg, -player.width/1.3, -player.height/2 - 5, player.width * 1.6, player.height * 1.3);
+    }
     
     // Drop shadow
     ctx.shadowColor = 'rgba(0,0,0,0.4)';
@@ -461,6 +523,11 @@ function drawPlatforms() {
             ctx.strokeStyle = 'rgba(0,0,0,0.5)';
             ctx.lineWidth = 2;
             ctx.stroke();
+        }
+        
+        if (p.hasJetpack && jetpackImg.complete && jetpackImg.naturalHeight !== 0) {
+            // Platform üzerinde jetpack çizimi
+            ctx.drawImage(jetpackImg, p.x + p.width/2 - 18, p.y - 40, 36, 40);
         }
     });
 }

@@ -15,9 +15,9 @@ let touchX = null; // For mobile controls
 let lastTouchTime = 0; // For double tap detection
 
 // Player Physics
-const GRAVITY = 0.18; // Çok daha yumuşak yerçekimi (süzülme hissi)
-const JUMP_FORCE = -8.5; // Zıplama gücü
-const EXTRA_JUMP_FORCE = -11; // Çift zıplama gücü
+const GRAVITY = 0.15; // Biraz daha ince ayar
+const JUMP_FORCE = -8.5; 
+const EXTRA_JUMP_FORCE = -11; 
 const MAX_FALL_SPEED = 10;
 
 // Player Object
@@ -207,11 +207,21 @@ function generateInitialPlatforms() {
     // İlk başlangıç platformu (tam karakterin altına)
     platforms.push({ x: player.x - 10, y: player.y + player.height + 10, width: PLATFORM_WIDTH, type: 'normal' });
     
-    // Ekranı dolduracak kadar sık platform üret (Başlangıç kolay olsun diye boşluklar çok az)
-    let currentY = player.y + player.height - 40;
-    while(currentY > -300) { // Ekranın üstüne kadar doldur
-        addPlatform(currentY);
-        currentY -= (30 + Math.random() * 30); // 30-60 piksel boşluk (çok sık)
+    // Güvenli merdiven şeklinde başlangıç üretimi
+    let currentY = player.y + player.height - 30;
+    while(currentY > -canvas.height) { // Ekranın baya bir üstüne kadar doldur
+        // X pozisyonunu yılan gibi kıvrılacak şekilde ama çok uçmadan ayarla
+        let xPos = Math.random() * (canvas.width - PLATFORM_WIDTH);
+        
+        platforms.push({
+            x: xPos,
+            y: currentY,
+            width: PLATFORM_WIDTH,
+            type: 'normal', // Başlangıçta hepsi normal olsun
+            direction: 1
+        });
+        
+        currentY -= Math.random() * 40 + 40; // 40-80px arası çok garantili zıplama mesafesi
     }
 }
 
@@ -303,9 +313,10 @@ function updatePhysics() {
         }
     }
 
-    // Camera follow (Scroll up)
-    if (player.y < canvas.height / 2) {
-        const diff = (canvas.height / 2) - player.y;
+    // Camera follow (Scroll up) - Kamera eşiğini ekranın %60'ına çektik (daha erken kaydırır)
+    const cameraThreshold = canvas.height * 0.6;
+    if (player.y < cameraThreshold) {
+        const diff = cameraThreshold - player.y;
         player.y += diff;
         cameraY += diff;
         
@@ -327,10 +338,12 @@ function updatePhysics() {
             // Generate a new platform above the screen
             const highestY = Math.min(...platforms.map(p => p.y));
             
-            // Adaptive spacing based on score, but keep it reachable
-            // Maksimum zıplama yüksekliği (v^2/2g) ~200 piksel. 
-            // 40 ile 85 piksel arası gap bırakmak çok rahat zıplanabilir yapar.
-            const spacing = 40 + Math.min(score / 30, 45); 
+            // Adaptive spacing based on score, but keep it strictly reachable
+            // Fizik formülü: Max Height = v^2 / 2g = (8.5 * 8.5) / (2 * 0.15) ≈ 240px
+            // Bizim gap'imiz bu 240'ın çok altında olmalı. Max 120-130 yapalım.
+            const minGap = 50;
+            const maxGap = Math.min(130, 60 + score / 20); // Skor arttıkça zorlaşır ama 130'u geçmez
+            const spacing = minGap + Math.random() * (maxGap - minGap); 
             addPlatform(highestY - spacing);
         }
     }

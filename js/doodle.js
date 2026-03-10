@@ -15,8 +15,8 @@ let touchX = null; // For mobile controls
 let lastTouchTime = 0; // For double tap detection
 
 // Player Physics
-const GRAVITY = 0.25; // Daha yumuşak yerçekimi
-const JUMP_FORCE = -8; // Daha kontrollü zıplama
+const GRAVITY = 0.18; // Çok daha yumuşak yerçekimi (süzülme hissi)
+const JUMP_FORCE = -8.5; // Zıplama gücü
 const EXTRA_JUMP_FORCE = -11; // Çift zıplama gücü
 const MAX_FALL_SPEED = 10;
 
@@ -38,8 +38,8 @@ const player = {
 };
 
 // Layout Constants
-const PLATFORM_WIDTH = 60;
-const PLATFORM_HEIGHT = 10;
+const PLATFORM_WIDTH = 75; // Platformlar biraz daha geniş yapıldı (daha kolay)
+const PLATFORM_HEIGHT = 12; // Biraz daha kalın
 const CANVAS_ASPECT = 3/4; // Responsive aspect ratio
 
 // Initialize Game (Called from app.js / index.html)
@@ -204,32 +204,27 @@ function stopGame() {
 
 // --- Generation & Physics ---
 function generateInitialPlatforms() {
-    // Generate platforms up to canvas height
-    platforms.push({ x: player.x, y: player.y + player.height, width: PLATFORM_WIDTH, type: 'normal' });
+    // İlk başlangıç platformu (tam karakterin altına)
+    platforms.push({ x: player.x - 10, y: player.y + player.height + 10, width: PLATFORM_WIDTH, type: 'normal' });
     
-    for (let i = 1; i < 7; i++) {
-        addPlatform(canvas.height - i * 80);
+    // Ekranı dolduracak kadar sık platform üret (Başlangıç kolay olsun diye boşluklar çok az)
+    let currentY = player.y + player.height - 40;
+    while(currentY > -300) { // Ekranın üstüne kadar doldur
+        addPlatform(currentY);
+        currentY -= (30 + Math.random() * 30); // 30-60 piksel boşluk (çok sık)
     }
 }
 
 function addPlatform(yPos) {
-    // Platformların çok uzağa spawn olmasını önle (önceki platformun X pozisyonuna göre limit koy)
-    let xPos;
-    if (platforms.length > 0) {
-        const lastP = platforms[platforms.length - 1];
-        const maxDist = 180; // Maksimum yatay mesafe
-        const minX = Math.max(0, lastP.x - maxDist);
-        const maxX = Math.min(canvas.width - PLATFORM_WIDTH, lastP.x + maxDist);
-        xPos = minX + Math.random() * (maxX - minX);
-    } else {
-        xPos = Math.random() * (canvas.width - PLATFORM_WIDTH);
-    }
+    // Doodle Jump'da karakter ekranın dışına çıkıp diğer taraftan girebildiği için yatay rastgelelik özgür olmalı
+    const xPos = Math.random() * (canvas.width - PLATFORM_WIDTH);
 
-    // 10% chance for a moving platform, 10% chance for broken (one-time jump)
+    // Başlangıçta daha kolay olması için skor veya yüksekliğe göre zorluk ayarlanabilir 
+    // Şimdilik moving: %10, broken: %15 ihtimal
     let pType = 'normal';
     const rand = Math.random();
     if(rand > 0.9) pType = 'moving';
-    else if(rand > 0.8) pType = 'broken';
+    else if(rand > 0.75) pType = 'broken';
 
     platforms.push({
         x: xPos,
@@ -331,8 +326,11 @@ function updatePhysics() {
             platforms.splice(i, 1);
             // Generate a new platform above the screen
             const highestY = Math.min(...platforms.map(p => p.y));
+            
             // Adaptive spacing based on score, but keep it reachable
-            const spacing = 50 + Math.min(score / 50, 30); // Daha güvenli platform aralığı
+            // Maksimum zıplama yüksekliği (v^2/2g) ~200 piksel. 
+            // 40 ile 85 piksel arası gap bırakmak çok rahat zıplanabilir yapar.
+            const spacing = 40 + Math.min(score / 30, 45); 
             addPlatform(highestY - spacing);
         }
     }

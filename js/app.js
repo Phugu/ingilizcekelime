@@ -3641,6 +3641,7 @@ async function loadLeaderboard(container) {
 
 // Kayan göstergeyi güncelle
 function updateSortIndicator(container) {
+    if (!container) return;
     const activeBtn = container.querySelector('.lb-sort-btn.active');
     const indicator = container.querySelector('.lb-sort-indicator');
     if (activeBtn && indicator) {
@@ -3649,19 +3650,35 @@ function updateSortIndicator(container) {
     }
 }
 
+// Pencere boyutu değişince göstergeyi düzelt
+window.addEventListener('resize', () => {
+    const lbContent = document.getElementById('leaderboard-content');
+    if (lbContent && !lbContent.classList.contains('hide')) {
+        updateSortIndicator(lbContent);
+    }
+});
+
 // Sıralama Değiştirme
 window.changeLeaderboardSort = function(field, btn) {
     if (leaderboardSortBy === field) return;
     
     leaderboardSortBy = field;
     
-    // Buton sınıflarını anında güncelle (Hızlı tepki için)
+    // 1. Görsel Geri Bildirimi Anında Ver (Butonlar & İndikatör)
     const controls = btn.closest('.lb-sort-controls');
-    controls.querySelectorAll('.lb-sort-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
-    updateSortIndicator(btn.closest('.leaderboard-container'));
+    if (controls) {
+        controls.querySelectorAll('.lb-sort-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateSortIndicator(btn.closest('.leaderboard-container'));
+    }
 
+    // 2. Liste İçindeki Eski Vurguları Temizle (Böylece hemen değişmiş gibi hissettirir)
+    const list = document.querySelector('.leaderboard-list');
+    if (list) {
+        list.querySelectorAll('.active-sort').forEach(el => el.classList.remove('active-sort'));
+    }
+
+    // 3. Veriyi Arka Planda Yükle
     const lbContent = document.getElementById('leaderboard-content');
     if (lbContent) loadLeaderboard(lbContent);
 };

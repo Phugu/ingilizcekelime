@@ -2650,10 +2650,10 @@ class Dashboard {
 
                         <!-- Doodle Jump Kartı (Dashboard) -->
                         <div class="game-card" style="position: relative; height: 320px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);" onclick="window.openDoodleJump()">
-                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #61b3f9; display: flex; align-items: center; justify-content: center; z-index: 1;">
-                                <img src="img/panlingo-cover.jpg" alt="Doodle Jump" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.25);">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; display: flex; align-items: center; justify-content: center; z-index: 1;">
+                                <img src="img/panlingo-cover.jpg" alt="Doodle Jump" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.1) translateY(5%);">
                             </div>
-                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(52, 152, 219, 0.2) 0%, rgba(9, 132, 227, 0.9) 100%); z-index: 2;"></div>
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent 40%, rgba(9, 132, 227, 0.9) 100%); z-index: 2;"></div>
                             
                             <div style="position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.9); color: #e67e22; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; z-index: 3; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">YENİ</div>
                             
@@ -2747,10 +2747,10 @@ class Games {
 
                     <!-- Doodle Jump Kartı (Oyunlar Sayfası) -->
                     <div class="game-card" style="position: relative; height: 380px; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);" onclick="window.openDoodleJump()">
-                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #61b3f9; display: flex; align-items: center; justify-content: center; z-index: 1;">
-                            <img src="img/panlingo-cover.jpg" alt="Doodle Jump" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.25);">
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; display: flex; align-items: center; justify-content: center; z-index: 1;">
+                            <img src="img/panlingo-cover.jpg" alt="Doodle Jump" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.1) translateY(5%);">
                         </div>
-                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(52, 152, 219, 0.2) 0%, rgba(9, 132, 227, 0.9) 100%); z-index: 2;"></div>
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent 40%, rgba(9, 132, 227, 0.9) 100%); z-index: 2;"></div>
                         
                         <div style="position: absolute; top: 20px; right: 20px; background: #ffffff; color: #e67e22; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: 900; z-index: 3; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">YENİ</div>
                         

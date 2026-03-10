@@ -1,4 +1,4 @@
-import { doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // --- State Variables ---
 let canvas, ctx;
@@ -13,6 +13,20 @@ let keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false };
 let touchX = null; // For mobile controls
 
 let lastTouchTime = 0; // For double tap detection
+let leaderboardScores = []; // Global high scores to show on lines
+let currentTheme = {
+    bgStart: '#a29bfe',
+    bgEnd: '#74b9ff',
+    pStart: '#55efc4',
+    pEnd: '#00b894'
+};
+
+const THEMES = [
+    { score: 0, bg: ['#74b9ff', '#a29bfe'], p: ['#55efc4', '#00b894'] }, // Day
+    { score: 2000, bg: ['#fdcb6e', '#e17055'], p: ['#fab1a0', '#e17055'] }, // Sunset
+    { score: 5000, bg: ['#2d3436', '#636e72'], p: ['#81ecec', '#00cec9'] }, // Night
+    { score: 10000, bg: ['#000000', '#2d3436'], p: ['#a29bfe', '#6c5ce7'] } // Space
+];
 
 // Player Physics
 const GRAVITY = 0.15; // Biraz daha ince ayar
@@ -119,6 +133,24 @@ function setupInputHandlers() {
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd);
+
+    // Fetch Leaderboard for lines
+    fetchLeaderboardScores();
+}
+
+async function fetchLeaderboardScores() {
+    try {
+        const db = window.firestore;
+        if(!db) return;
+        const q = query(collection(db, 'users_public'), orderBy('doodle_score', 'desc'), limit(10));
+        const snap = await getDocs(q);
+        leaderboardScores = snap.docs.map(doc => ({
+            name: doc.data().displayName || doc.data().name || 'Anonim',
+            score: doc.data().doodle_score || 0
+        })).filter(s => s.score > 0);
+    } catch(e) {
+        console.error("Leaderboard scores fetch error:", e);
+    }
 }
 
 function handleKeyDown(e) {
@@ -244,6 +276,7 @@ function addPlatform(yPos) {
     else if(rand > 0.75) pType = 'broken';
 
     let hasJp = (pType === 'normal' && Math.random() > 0.97); // ~%3 ihtimalle normal platformlarda çıkar
+    let hasStar = (!hasJp && pType === 'normal' && Math.random() > 0.85); // %15 ihtimalle yıldız
 
     platforms.push({
         x: xPos,
@@ -251,6 +284,8 @@ function addPlatform(yPos) {
         width: PLATFORM_WIDTH,
         type: pType,
         hasJetpack: hasJp,
+        hasStar: hasStar,
+        starAngle: Math.random() * Math.PI * 2,
         direction: Math.random() > 0.5 ? 1 : -1 // For moving platforms
     });
 }
@@ -290,6 +325,9 @@ function updatePhysics() {
     // Screen wrap
     if (player.x + player.width < 0) player.x = canvas.width;
     else if (player.x > canvas.width) player.x = -player.width;
+
+    // --- Dynamic Theme Calculation ---
+    calculateCurrentTheme();
 
     // Handle Jetpack Logic / Gravity
     if (player.hasJetpack) {
@@ -340,6 +378,35 @@ function updatePhysics() {
             
             // Eğer normal düşerken alırsak ve zıplarsak, ekstra çift zıplama hakkı gelsin
             player.canDoubleJump = true; 
+        }
+
+        if (p.hasStar &&
+            player.x < p.x + p.width &&
+            player.x + player.width > p.x &&
+            player.y < p.y &&
+            player.y + player.height > p.y - 30) {
+            
+            p.hasStar = false;
+            cameraY += 500; // Altitudu artır (50 score)
+            // Score UI hemen güncellensin
+            const newScore = Math.floor(cameraY / 10);
+            if(newScore > score) {
+                score = newScore;
+                document.getElementById('doodle-score').textContent = score;
+            }
+            
+            // Parıltı efekti
+            for(let k=0; k<10; k++) {
+                particles.push({
+                    x: player.x + player.width/2,
+                    y: player.y + player.height/2,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 1,
+                    color: '#feca57',
+                    size: Math.random() * 5 + 2
+                });
+            }
         }
     }
 
@@ -421,6 +488,39 @@ function updatePhysics() {
     }
 }
 
+function calculateCurrentTheme() {
+    let t1 = THEMES[0];
+    let t2 = THEMES[0];
+    
+    for (let i = 0; i < THEMES.length; i++) {
+        if (score >= THEMES[i].score) {
+            t1 = THEMES[i];
+            t2 = THEMES[i + 1] || THEMES[i];
+        }
+    }
+    
+    const range = (t2.score - t1.score) || 1;
+    const ratio = Math.min(1, Math.max(0, (score - t1.score) / range));
+    
+    const interpolate = (c1, c2, r) => {
+        const r1 = parseInt(c1.substring(1, 3), 16);
+        const g1 = parseInt(c1.substring(3, 5), 16);
+        const b1 = parseInt(c1.substring(5, 7), 16);
+        const r2 = parseInt(c2.substring(1, 3), 16);
+        const g2 = parseInt(c2.substring(3, 5), 16);
+        const b2 = parseInt(c2.substring(5, 7), 16);
+        const rF = Math.round(r1 + (r2 - r1) * r);
+        const gF = Math.round(g1 + (g2 - g1) * r);
+        const bF = Math.round(b1 + (b2 - b1) * r);
+        return `#${rF.toString(16).padStart(2, '0')}${gF.toString(16).padStart(2, '0')}${bF.toString(16).padStart(2, '0')}`;
+    };
+
+    currentTheme.bgStart = interpolate(t1.bg[0], t2.bg[0], ratio);
+    currentTheme.bgEnd = interpolate(t1.bg[1], t2.bg[1], ratio);
+    currentTheme.pStart = interpolate(t1.p[0], t2.p[0], ratio);
+    currentTheme.pEnd = interpolate(t1.p[1], t2.p[1], ratio);
+}
+
 // --- Rendering ---
 function drawPlayer() {
     ctx.save();
@@ -494,8 +594,8 @@ function drawPlatforms() {
         
         let grad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + PLATFORM_HEIGHT);
         if (p.type === 'normal') {
-            grad.addColorStop(0, '#55efc4');
-            grad.addColorStop(1, '#00b894');
+            grad.addColorStop(0, currentTheme.pStart);
+            grad.addColorStop(1, currentTheme.pEnd);
         } else if (p.type === 'moving') {
             grad.addColorStop(0, '#74b9ff');
             grad.addColorStop(1, '#0984e3');
@@ -528,6 +628,70 @@ function drawPlatforms() {
         if (p.hasJetpack && jetpackImg.complete && jetpackImg.naturalHeight !== 0) {
             // Platform üzerinde jetpack çizimi
             ctx.drawImage(jetpackImg, p.x + p.width/2 - 18, p.y - 40, 36, 40);
+        }
+
+        if (p.hasStar) {
+            drawStar(p.x + p.width/2, p.y - 20, p);
+        }
+    });
+
+    drawLeaderboardLines();
+}
+
+function drawStar(x, y, p) {
+    ctx.save();
+    p.starAngle += 0.05;
+    ctx.translate(x, y);
+    ctx.scale(Math.sin(p.starAngle) * 0.2 + 0.8, 1);
+    
+    ctx.beginPath();
+    ctx.fillStyle = '#feca57';
+    ctx.shadowColor = '#f39c12';
+    ctx.shadowBlur = 10;
+    
+    // Draw simple 5-pointed star
+    const spikes = 5;
+    const outerRadius = 12;
+    const innerRadius = 6;
+    let rot = Math.PI / 2 * 3;
+    let xS, yS;
+    const step = Math.PI / spikes;
+
+    ctx.moveTo(0, -outerRadius);
+    for (let i = 0; i < spikes; i++) {
+        xS = Math.cos(rot) * outerRadius;
+        yS = Math.sin(rot) * outerRadius;
+        ctx.lineTo(xS, yS);
+        rot += step;
+
+        xS = Math.cos(rot) * innerRadius;
+        yS = Math.sin(rot) * innerRadius;
+        ctx.lineTo(xS, yS);
+        rot += step;
+    }
+    ctx.lineTo(0, -outerRadius);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawLeaderboardLines() {
+    leaderboardScores.forEach(entry => {
+        const lineY = canvas.height - (entry.score * 10 - cameraY);
+        // Sadece ekrandaysa çiz
+        if (lineY > 0 && lineY < canvas.height) {
+            ctx.beginPath();
+            ctx.setLineDash([5, 5]);
+            ctx.moveTo(0, lineY);
+            ctx.lineTo(canvas.width, lineY);
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset dash
+            
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.font = 'bold 12px Montserrat, sans-serif';
+            ctx.fillText(`${entry.name}: ${entry.score}`, 10, lineY - 5);
         }
     });
 }
@@ -568,42 +732,23 @@ function updateAndDrawParticles() {
     ctx.globalAlpha = 1; // reset
 }
 
-function renderMapBackground() {
-    // Premium Space / Night Sky gradient
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, '#1B1464'); // Deep purple/blue target high
-    gradient.addColorStop(0.5, '#0652DD');
-    gradient.addColorStop(1, '#12CBC4'); // Cyan at bottom
-    ctx.fillStyle = gradient;
+function renderThemedBackground() {
+    let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, currentTheme.bgStart);
+    grad.addColorStop(1, currentTheme.bgEnd);
+    ctx.fillStyle = grad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Initialize background stars once
-    if (!window.doodleStars) {
-        window.doodleStars = Array.from({length: 40}, () => ({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            size: Math.random() * 2.5 + 0.5,
-            alpha: Math.random()
-        }));
-    }
-    
     // Parallax Stars
-    ctx.fillStyle = '#ffffff';
-    window.doodleStars.forEach(s => {
-        // Move stars slightly when camera moves (parallax effect)
-        s.y += (cameraY % 50) * 0.015; 
-        
-        if (s.y > canvas.height) {
-            s.y = 0;
-            s.x = Math.random() * canvas.width;
-        }
-        
-        ctx.globalAlpha = s.alpha;
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    for(let i=0; i<30; i++) {
+        // Pseudo-random but consistent stars based on index
+        const x = (Math.abs(Math.sin(i * 1234.5)) * canvas.width);
+        const y = ((Math.abs(Math.cos(i * 567.8)) * canvas.height + (cameraY * 0.23)) % canvas.height);
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+        ctx.arc(x, y, (i % 3 === 0) ? 2 : 1, 0, Math.PI*2);
         ctx.fill();
-    });
-    ctx.globalAlpha = 1; // reset alpha
+    }
 }
 
 function gameLoop() {
@@ -613,54 +758,75 @@ function gameLoop() {
     updatePhysics();
     
     // 2. Clear Screen & Draw Back
-    renderMapBackground();
+    renderThemedBackground();
     
     // 3. Draw Game Objects
     drawPlatforms();
     updateAndDrawParticles();
     drawPlayer();
 
-    // Loop
     gameLoopId = requestAnimationFrame(gameLoop);
 }
 
 function renderMenuState() {
-    // Just draw a static background if not playing to avoid empty black modal
-    ctx.fillStyle = '#74b9ff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    renderThemedBackground();
 }
 
 // --- Game Over Logic ---
 async function gameOver() {
     isPlaying = false;
     isGameOver = true;
+    
     if (gameLoopId) cancelAnimationFrame(gameLoopId);
     
     document.getElementById('doodle-gameover-overlay').style.display = 'flex';
     document.getElementById('doodle-final-score').textContent = score;
-    
-    // Reward XP based on score (e.g. 1 XP per 100 points)
-    const earnedXp = Math.floor(score / 50); // Be a bit generous
-    const earnedXpEl = document.getElementById('doodle-earned-xp');
-    
-    if (earnedXp > 0) {
-        earnedXpEl.textContent = `+${earnedXp} XP Kazandın!`;
-        earnedXpEl.style.display = 'block';
+
+    // Firebase Persistent Score & XP
+    await updateHighScore();
+}
+
+async function updateHighScore() {
+    try {
+        const db = window.firestore;
+        const auth = window.firebaseAuth;
+        if (!auth || !auth.currentUser || localStorage.getItem('isGuest') === 'true') return;
         
-        // Distribute to Firebase
-        try {
-            const db = window.firestore;
-            const auth = window.firebaseAuth;
-            if (auth.currentUser && localStorage.getItem('isGuest') !== 'true') {
-                 const publicRef = doc(db, "users_public", auth.currentUser.uid);
-                 await updateDoc(publicRef, {
-                     xp: increment(earnedXp),
-                     total_xp: increment(earnedXp)
-                 });
-                 if (window.updateDashboard) window.updateDashboard();
+        const publicRef = doc(db, "users_public", auth.currentUser.uid);
+        const snap = await getDoc(publicRef);
+        
+        // Reward based on current score (always give some XP, but persist high score if new)
+        const earnedXp = Math.floor(score / 50); 
+        const earnedXpEl = document.getElementById('doodle-earned-xp');
+        
+        if (earnedXp > 0) {
+            earnedXpEl.textContent = `+${earnedXp} XP Kazandın!`;
+            earnedXpEl.style.display = 'block';
+        } else {
+            earnedXpEl.style.display = 'none';
+        }
+
+        let updates = {
+            xp: increment(earnedXp),
+            total_xp: increment(earnedXp)
+        };
+
+        if (snap.exists()) {
+            const currentBest = snap.data().doodle_score || 0;
+            if (score > currentBest) {
+                updates.doodle_score = score;
+                if (typeof showXPNotification === 'function') {
+                    showXPNotification(`Yeni Rekor! ${score} Puan!`, true);
+                }
             }
-        } catch(e) { console.error("Doodle XP error:", e); }
-    } else {
-        earnedXpEl.style.display = 'none';
+        } else {
+            updates.doodle_score = score;
+        }
+
+        await updateDoc(publicRef, updates);
+        if (window.updateDashboard) window.updateDashboard();
+        
+    } catch(e) {
+        console.error("Skor kaydedilirken hata:", e);
     }
 }

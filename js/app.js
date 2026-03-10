@@ -3571,6 +3571,7 @@ async function loadLeaderboard(container) {
             const displayName = escapeHTML(rawName);
             const xp = d.total_xp || d.xp || 0;
             const sScore = d.scramble_score || 0;
+            const dScore = d.doodle_score || 0;
             const medal = medals[i] || `${i + 1}.`;
             return `
                 <div class="leaderboard-row ${isMe ? 'leaderboard-me' : ''}" onclick="window.showPublicProfile('${docSnap.id}')">
@@ -3580,6 +3581,9 @@ async function loadLeaderboard(container) {
                         <span class="lb-xp" title="Toplam XP">${xp} XP</span>
                         <span class="lb-scramble" title="Scramble Skoru" style="font-size: 13px; color: var(--secondary-color); font-weight: bold;">
                             <i class="fa-solid fa-puzzle-piece"></i> ${sScore}
+                        </span>
+                        <span class="lb-doodle" title="Zıplama Skoru" style="font-size: 13px; color: #f1c40f; font-weight: bold;">
+                            <i class="fa-solid fa-rocket"></i> ${dScore}
                         </span>
                     </div>
                 </div>`;

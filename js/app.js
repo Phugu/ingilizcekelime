@@ -2643,7 +2643,25 @@ class Dashboard {
                 </div>
                 ` : ''}
 
-                <div class="games-section" style="margin-top: 30px; margin-bottom: 25px;">
+                <div class="action-buttons" style="margin-top: 20px; margin-bottom: 30px;">
+                    <button onclick="document.getElementById('nav-learn').click()" class="action-btn">
+                        Kelime Öğrenmeye Başla
+                    </button>
+                    <button onclick="window.startDailyReview()" class="action-btn" style="background: linear-gradient(135deg, #27ae60, #2ecc71);">
+                        📅 Günlük Tekrar
+                    </button>
+                    <button onclick="document.getElementById('nav-quiz').click()" class="action-btn">
+                        Quiz Çöz
+                    </button>
+                    <button onclick="document.getElementById('nav-games').click()" class="action-btn" style="background: linear-gradient(135deg, #8e44ad, #9b59b6);">
+                        🧩 Oyunlar
+                    </button>
+                    <button onclick="window.startSmartReview()" class="action-btn" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                        🧠 Eksiklerini Gider
+                    </button>
+                </div>
+
+                <div class="games-section" style="margin-top: 20px; margin-bottom: 25px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h3 class="section-title" style="margin: 0; font-size: 1.2rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-gamepad" style="color: #9b59b6;"></i> Eğlenceli Oyunlar
@@ -2688,24 +2706,6 @@ class Dashboard {
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="action-buttons">
-                    <button onclick="document.getElementById('nav-learn').click()" class="action-btn">
-                        Kelime Öğrenmeye Başla
-                    </button>
-                    <button onclick="window.startDailyReview()" class="action-btn" style="background: linear-gradient(135deg, #27ae60, #2ecc71);">
-                        📅 Günlük Tekrar
-                    </button>
-                    <button onclick="document.getElementById('nav-quiz').click()" class="action-btn">
-                        Quiz Çöz
-                    </button>
-                    <button onclick="document.getElementById('nav-games').click()" class="action-btn" style="background: linear-gradient(135deg, #8e44ad, #9b59b6);">
-                        🧩 Oyunlar
-                    </button>
-                    <button onclick="window.startSmartReview()" class="action-btn" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
-                        🧠 Eksiklerini Gider
-                    </button>
                 </div>
             </div>
         `;

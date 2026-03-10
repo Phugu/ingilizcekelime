@@ -783,10 +783,10 @@ async function gameOver() {
     document.getElementById('doodle-final-score').textContent = score;
 
     // Firebase Persistent Score & XP
-    await updateHighScore();
+    await updateHighScore(score);
 }
 
-async function updateHighScore() {
+async function updateHighScore(finalScore) {
     try {
         const db = window.firestore;
         const auth = window.firebaseAuth;
@@ -796,7 +796,7 @@ async function updateHighScore() {
         const snap = await getDoc(publicRef);
         
         // Reward based on current score (always give some XP, but persist high score if new)
-        const earnedXp = Math.floor(score / 50); 
+        const earnedXp = Math.floor(finalScore / 20); // 20 puanda 1 XP (Daha tatmin edici) 
         const earnedXpEl = document.getElementById('doodle-earned-xp');
         
         if (earnedXp > 0) {
@@ -813,14 +813,14 @@ async function updateHighScore() {
 
         if (snap.exists()) {
             const currentBest = snap.data().doodle_score || 0;
-            if (score > currentBest) {
-                updates.doodle_score = score;
+            if (finalScore > currentBest) {
+                updates.doodle_score = finalScore;
                 if (typeof showXPNotification === 'function') {
-                    showXPNotification(`Yeni Rekor! ${score} Puan!`, true);
+                    showXPNotification(`Yeni Rekor! ${finalScore} Puan!`, true);
                 }
             }
         } else {
-            updates.doodle_score = score;
+            updates.doodle_score = finalScore;
         }
 
         await updateDoc(publicRef, updates);

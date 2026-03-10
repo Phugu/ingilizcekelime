@@ -1764,10 +1764,25 @@ function setupAvatarUploadEvents(user) {
                     }
                 },
                 (error) => {
-                    console.error("❌ DEBUG: Yükleme Hatası:", error);
-                    alert("Fotoğraf yüklenemedi: " + error.message);
+                    console.error("❌ DEBUG: Yükleme Hatası Detaylı:", {
+                        code: error.code,
+                        message: error.message,
+                        serverResponse: error.serverResponse,
+                        name: error.name
+                    });
+                    
+                    let errorMsg = "Fotoğraf yüklenemedi.";
+                    if (error.code === 'storage/unknown') {
+                        errorMsg += " (Sunucu yanıtı alınamadı, lütfen internet bağlantınızı veya Storage kurallarını kontrol edin)";
+                    } else if (error.code === 'storage/unauthorized') {
+                        errorMsg += " (Erişim yetkiniz yok, lütfen giriş yaptığınızdan emin olun)";
+                    } else {
+                        errorMsg += " (" + error.message + ")";
+                    }
+                    
+                    alert(errorMsg);
                     loadingMask.style.display = 'none';
-                    editBtn.style.display = 'flex';
+                    if (editBtn) editBtn.style.display = 'flex';
                 },
                 async () => {
                     try {

@@ -21,11 +21,13 @@ const MAX_FALL_SPEED = 12;
 const player = {
     x: 0,
     y: 0,
-    width: 40,
-    height: 40,
+    width: 48, // Daha büyük ve belirgin
+    height: 48,
     vx: 0,
     vy: 0,
-    speed: 5,
+    speed: 6.5,
+    scaleX: 1,
+    scaleY: 1,
     img: new Image()
 };
 
@@ -85,13 +87,8 @@ function initCanvas() {
 }
 
 function loadAssets() {
-    // Profil resmini veya varsayılan doodle karakterini yükle
-    const auth = window.firebaseAuth;
-    if (auth && auth.currentUser && auth.currentUser.photoURL) {
-         player.img.src = auth.currentUser.photoURL;
-    } else {
-         player.img.src = 'img/doodle-char.png'; 
-    }
+    // Profil resmini değil, GÖNDERİLEN ORİJİNAL KARAKTERİ kullan (Kullanıcı talebi)
+    player.img.src = 'img/doodle-char.png'; 
 }
 
 // --- Input Handling (PC & Mobile) ---
@@ -156,6 +153,8 @@ window.startDoodleGame = function() {
     player.y = canvas.height - 100;
     player.vy = JUMP_FORCE; // Initial jump
     player.vx = 0;
+    player.scaleX = 1;
+    player.scaleY = 1;
 
     // Initial Platforms
     generateInitialPlatforms();
@@ -200,6 +199,10 @@ function addPlatform(yPos) {
 }
 
 function updatePhysics() {
+    // Squash & Stretch decay (Esneme efekti azalarak bitmeli)
+    player.scaleX += (1 - player.scaleX) * 0.15;
+    player.scaleY += (1 - player.scaleY) * 0.15;
+
     // Horizontal Movement (PC)
     if (keys.ArrowLeft || keys.a) player.vx = -player.speed;
     else if (keys.ArrowRight || keys.d) player.vx = player.speed;
@@ -243,6 +246,8 @@ function updatePhysics() {
                 
                 // BOING!
                 player.vy = JUMP_FORCE;
+                player.scaleX = 0.7; // Squash (Yatay basık)
+                player.scaleY = 1.4; // Stretch (Dikey uzun)
                 createParticles(player.x + player.width/2, p.y);
                 
                 if (p.type === 'broken') {
@@ -303,67 +308,113 @@ function updatePhysics() {
 function drawPlayer() {
     ctx.save();
     
-    // Draw Photo/Character
+    // Scale and Translate from center for squash/stretch effect
+    ctx.translate(player.x + player.width/2, player.y + player.height/2);
+    ctx.scale(player.scaleX, player.scaleY);
+    
+    // Drop shadow
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetY = 6;
+    
+    // Circle Path for clipping
     ctx.beginPath();
-    ctx.arc(player.x + player.width/2, player.y + player.height/2, player.width/2, 0, Math.PI * 2);
+    ctx.arc(0, 0, player.width/2, 0, Math.PI * 2);
     ctx.closePath();
-    ctx.clip();
+    
+    // Fill white background in case transparent
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.clip(); // Clip everything inside
+    ctx.shadowColor = 'transparent'; // Turn off shadow for image drawing
     
     if (player.img.complete && player.img.naturalHeight !== 0) {
-        ctx.drawImage(player.img, player.x, player.y, player.width, player.height);
+        ctx.drawImage(player.img, -player.width/2, -player.height/2, player.width, player.height);
     } else {
         // Fallback drawing if image not loaded
-        ctx.fillStyle = 'var(--primary-color)';
-        ctx.fillRect(player.x, player.y, player.width, player.height);
+        ctx.fillStyle = '#fdcb6e';
+        ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
     }
     
     ctx.restore();
     
-    // Add border ring for aesthetics
+    // Draw the aesthetic Border ring and shine overlay (unclipped)
+    ctx.save();
+    ctx.translate(player.x + player.width/2, player.y + player.height/2);
+    ctx.scale(player.scaleX, player.scaleY);
+    
     ctx.beginPath();
-    ctx.arc(player.x + player.width/2, player.y + player.height/2, player.width/2, 0, Math.PI * 2);
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 3;
+    ctx.arc(0, 0, player.width/2, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ffeaa7';
+    ctx.lineWidth = 4;
     ctx.stroke();
     
+    // Cute top-left shine reflection
+    ctx.beginPath();
+    ctx.arc(-player.width/4, -player.height/4, player.width/5, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fill();
+    
+    ctx.restore();
 }
 
 function drawPlatforms() {
     platforms.forEach(p => {
+        // Drop Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
         ctx.beginPath();
+        ctx.roundRect(p.x + 4, p.y + 6, p.width, PLATFORM_HEIGHT, 7);
+        ctx.fill();
         
-        // Rounded corners
-        ctx.roundRect(p.x, p.y, p.width, PLATFORM_HEIGHT, 5);
+        // Base Platform
+        ctx.beginPath();
+        ctx.roundRect(p.x, p.y, p.width, PLATFORM_HEIGHT, 7);
         
+        let grad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + PLATFORM_HEIGHT);
         if (p.type === 'normal') {
-            ctx.fillStyle = '#2ecc71'; // Green
+            grad.addColorStop(0, '#55efc4');
+            grad.addColorStop(1, '#00b894');
         } else if (p.type === 'moving') {
-            ctx.fillStyle = '#3498db'; // Blue
+            grad.addColorStop(0, '#74b9ff');
+            grad.addColorStop(1, '#0984e3');
         } else if (p.type === 'broken') {
-            ctx.fillStyle = '#e74c3c'; // Red
-            // Draw a crack
+            grad.addColorStop(0, '#ff7675');
+            grad.addColorStop(1, '#d63031');
+        }
+        
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.closePath();
+        
+        // Top Highlight for a 3D Glossy look
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.beginPath();
+        ctx.roundRect(p.x + 2, p.y + 2, p.width - 4, PLATFORM_HEIGHT / 2.5, 4);
+        ctx.fill();
+        
+        if (p.type === 'broken') {
+            // Draw a crack pattern
+            ctx.beginPath();
             ctx.moveTo(p.x + p.width/2, p.y);
             ctx.lineTo(p.x + p.width/2 + 5, p.y + 5);
             ctx.lineTo(p.x + p.width/2 - 2, p.y + PLATFORM_HEIGHT);
-            ctx.strokeStyle = '#c0392b';
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+            ctx.lineWidth = 2;
             ctx.stroke();
         }
-        
-        ctx.fill();
-        ctx.closePath();
     });
 }
 
 function createParticles(x, y) {
-    for(let i=0; i<5; i++) {
+    for(let i=0; i<8; i++) {
         particles.push({
             x: x,
             y: y,
-            vx: (Math.random() - 0.5) * 4,
-            vy: Math.random() * -2,
+            vx: (Math.random() - 0.5) * 8,
+            vy: Math.random() * -5 - 1,
             life: 1,
-            color: '#fff'
+            color: ['#ffeaa7', '#55efc4', '#74b9ff', '#ffffff'][Math.floor(Math.random()*4)],
+            size: Math.random() * 4 + 2
         });
     }
 }
@@ -373,39 +424,59 @@ function updateAndDrawParticles() {
         let p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.life -= 0.05;
+        p.vy += 0.2; // Add gravity to particles
+        p.life -= 0.03;
         
         if(p.life <= 0) {
             particles.splice(i, 1);
             continue;
         }
         
-        ctx.fillStyle = `rgba(255,255,255,${p.life})`;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
     }
+    ctx.globalAlpha = 1; // reset
 }
 
 function renderMapBackground() {
-    // Gradient Background
+    // Premium Space / Night Sky gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, '#74b9ff');
-    gradient.addColorStop(1, '#0984e3');
+    gradient.addColorStop(0, '#1B1464'); // Deep purple/blue target high
+    gradient.addColorStop(0.5, '#0652DD');
+    gradient.addColorStop(1, '#12CBC4'); // Cyan at bottom
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Draw some grid lines for speed context
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-    ctx.lineWidth = 1;
-    const scrollOffset = cameraY % 50;
+    // Initialize background stars once
+    if (!window.doodleStars) {
+        window.doodleStars = Array.from({length: 40}, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 2.5 + 0.5,
+            alpha: Math.random()
+        }));
+    }
     
-    for(let i=0; i<canvas.width; i+=50) {
-        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
-    }
-    for(let i=-scrollOffset; i<canvas.height; i+=50) {
-        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
-    }
+    // Parallax Stars
+    ctx.fillStyle = '#ffffff';
+    window.doodleStars.forEach(s => {
+        // Move stars slightly when camera moves (parallax effect)
+        s.y += (cameraY % 50) * 0.015; 
+        
+        if (s.y > canvas.height) {
+            s.y = 0;
+            s.x = Math.random() * canvas.width;
+        }
+        
+        ctx.globalAlpha = s.alpha;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1; // reset alpha
 }
 
 function gameLoop() {

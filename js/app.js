@@ -498,6 +498,8 @@ function setupForms() {
                 xp: 0,
                 level: 1,
                 total_xp: 0,
+                scramble_score: 0,
+                doodle_score: 0,
                 streak: 0,
                 createdAt: Timestamp.now()
             };
@@ -847,6 +849,8 @@ async function loadUserStats(userId) {
                         xp: oldData.xp || 0,
                         level: oldData.level || 1,
                         total_xp: oldData.total_xp || 0,
+                        scramble_score: oldData.scramble_score || 0,
+                        doodle_score: oldData.doodle_score || 0,
                         streak: oldData.streak || 0,
                         createdAt: oldData.createdAt || Timestamp.now()
                     };
@@ -872,6 +876,8 @@ async function loadUserStats(userId) {
                         xp: 0,
                         level: 1,
                         total_xp: 0,
+                        scramble_score: 0,
+                        doodle_score: 0,
                         streak: 0,
                         createdAt: Timestamp.now()
                     };
@@ -897,10 +903,18 @@ async function loadUserStats(userId) {
         const publicData = publicDoc.data();
         const privateData = privateDoc.data();
 
-        // GÜVENLİK: Eğer dökümanlar bir şekilde yüklenemediyse veya verisi boşsa çökme
-        if (!publicData || !privateData) {
-            console.warn("⚠️ Kullanıcı verileri eksik veya okunamadı, işlem durduruldu.");
-            return;
+        // 🟢 PROFİL TAMAMLAMA (Eksik alanları 0 ile doldur ki liderlik tablosunda çıksın)
+        if (publicData.scramble_score === undefined || publicData.doodle_score === undefined) {
+            console.log("🛠️ Eksik profil alanları tamamlanıyor (v2)...");
+            const updates = {};
+            if (publicData.scramble_score === undefined) updates.scramble_score = 0;
+            if (publicData.doodle_score === undefined) updates.doodle_score = 0;
+            
+            try {
+                await updateDoc(doc(db, "users_public", userId), updates);
+                publicData.scramble_score = publicData.scramble_score || 0;
+                publicData.doodle_score = publicData.doodle_score || 0;
+            } catch (e) { console.error("Profil yamalanamadı:", e); }
         }
 
         // 🟢 BAN KONTROLÜ (Şikayet Sayısı veya Manuel Ban)

@@ -93,6 +93,12 @@ window.openDoodleJump = function() {
 window.closeDoodleJump = function() {
     const modal = document.getElementById('doodle-modal');
     if (modal) modal.classList.add('hide');
+    
+    // Eğer oyun o an oynanıyorsa ve kapatılıyorsa skoru/XP'yi kaydet (Kaybolmasın)
+    if (isPlaying && score > 0) {
+        updateHighScore(score);
+    }
+    
     stopGame();
 };
 

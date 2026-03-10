@@ -2633,16 +2633,21 @@ class Dashboard {
                         <a href="javascript:void(0)" onclick="document.getElementById('nav-games').click()" style="color: var(--primary-color); font-size: 13px; font-weight: bold; text-decoration: none;">Tümünü Gör →</a>
                     </div>
                     <div class="games-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 320px)); gap: 20px; justify-content: flex-start;">
-                        <div class="game-card" style="background: #1a73e8; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.1); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.3s ease; position: relative;" onclick="window.openWordScramble()">
-                            <div style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; backdrop-filter: blur(4px); z-index: 5; border: 1px solid rgba(255,255,255,0.2);">A1 - C2</div>
-                            <div style="width: 100%; height: 170px; background: #004aad; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                                <img src="assets/images/word-scramble.jpg" alt="Word Scramble" style="width: 105%; height: 105%; object-fit: contain; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));">
-                            </div>
-                            <div style="padding: 15px; text-align: center;">
-                                <h4 style="margin: 0 0 5px 0; font-size: 18px; color: var(--text-main);">Word Scramble</h4>
-                                <p style="margin: 0 0 15px 0; font-size: 13px; color: var(--text-muted); line-height: 1.4;">Harfleri karışmış İngilizce kelimeleri doğru tahmin et, puanları topla!</p>
-                                <button class="action-btn" style="width: 100%; border-radius: 10px; font-weight: bold; background: linear-gradient(135deg, #f39c12, #e67e22); color: white; border: none; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3); transition: transform 0.2s;">
-                                    <i class="fa-solid fa-play"></i> OYNA
+                        <div class="game-card" style="position: relative; height: 320px; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);" onclick="window.openWordScramble()">
+                            <!-- Arkaplan Görseli -->
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('assets/images/word-scramble.jpg') no-repeat center center; background-size: cover; z-index: 1; transition: transform 0.5s ease;"></div>
+                            
+                            <!-- Üst Karartma ve Bilgi -->
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%); z-index: 2;"></div>
+                            
+                            <div style="position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.9); color: #2c3e50; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; z-index: 3; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">A1 - C2</div>
+                            
+                            <!-- İçerik -->
+                            <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px; box-sizing: border-box; z-index: 3; text-align: left;">
+                                <h4 style="margin: 0 0 5px 0; font-size: 22px; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5); font-weight: 800;">Word Scramble</h4>
+                                <p style="margin: 0 0 15px 0; font-size: 13px; color: rgba(255,255,255,0.9); line-height: 1.4; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">Harfleri karışmış kelimeleri bul, puan kazan!</p>
+                                <button class="action-btn" style="width: 100%; border-radius: 12px; font-weight: 800; background: #ffffff; color: #1a73e8; border: none; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease;">
+                                    <i class="fa-solid fa-play"></i> HEMEN OYNA
                                 </button>
                             </div>
                         </div>
@@ -2707,16 +2712,21 @@ class Games {
                 </div>
 
                 <div class="games-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
-                    <div class="game-card" style="background: #1a73e8; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.1); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.3s ease; position: relative;" onclick="window.openWordScramble()">
-                        <div style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.5); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; backdrop-filter: blur(4px); z-index: 5; border: 1px solid rgba(255,255,255,0.2);">A1 - C2</div>
-                        <div style="width: 100%; height: 210px; background: #004aad; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                            <img src="assets/images/word-scramble.jpg" alt="Word Scramble" style="width: 105%; height: 105%; object-fit: contain; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));">
-                        </div>
-                        <div style="padding: 20px; text-align: center;">
-                            <h4 style="margin: 0 0 10px 0; font-size: 20px; color: var(--text-main);">Word Scramble</h4>
-                            <p style="margin: 0 0 20px 0; font-size: 14px; color: var(--text-muted); line-height: 1.5;">Harfleri karışmış İngilizce kelimeleri doğru tahmin et, puanları topla!</p>
-                            <button class="action-btn" style="width: 100%; border-radius: 10px; font-weight: bold; background: linear-gradient(135deg, #f39c12, #e67e22); color: white; border: none; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);">
-                                <i class="fa-solid fa-play"></i> OYNA
+                    <div class="game-card" style="position: relative; height: 380px; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);" onclick="window.openWordScramble()">
+                        <!-- Arkaplan Görseli -->
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('assets/images/word-scramble.jpg') no-repeat center center; background-size: cover; z-index: 1;"></div>
+                        
+                        <!-- Karartma Katmanı -->
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%); z-index: 2;"></div>
+                        
+                        <div style="position: absolute; top: 20px; right: 20px; background: #ffffff; color: #1a73e8; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: 900; z-index: 3; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">A1 - C2</div>
+                        
+                        <!-- İçerik Bölümü -->
+                        <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px; box-sizing: border-box; z-index: 3; text-align: left;">
+                            <h4 style="margin: 0 0 10px 0; font-size: 28px; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.5); font-weight: 900; letter-spacing: -0.5px;">Word Scramble</h4>
+                            <p style="margin: 0 0 25px 0; font-size: 15px; color: rgba(255,255,255,0.95); line-height: 1.6; text-shadow: 0 1px 5px rgba(0,0,0,0.5);">Harfleri karışmış İngilizce kelimeleri en hızlı sen bul, zirveye yerleş!</p>
+                            <button class="action-btn" style="width: 100%; border-radius: 15px; font-weight: 900; background: #ffffff; color: #1a73e8; border: none; padding: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); font-size: 16px;">
+                                <i class="fa-solid fa-play"></i> OYUNA BAŞLA
                             </button>
                         </div>
                     </div>

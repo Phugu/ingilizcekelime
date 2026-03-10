@@ -28,7 +28,9 @@ const player = {
     height: 48,
     vx: 0,
     vy: 0,
-    speed: 7, // Biraz daha hızlı yatay hareket
+    speed: 0.5, // Hızlanma miktarı (Acceleration)
+    maxSpeed: 6, // Maksimum yatay hız
+    friction: 0.85, // Sürtünme (1 = kaygan, 0 = anında durur - orijinal gibi hafif kaygan)
     scaleX: 1,
     scaleY: 1,
     canDoubleJump: false, // Çift zıplama hakkı
@@ -253,10 +255,19 @@ function updatePhysics() {
          createParticles(player.x + player.width/2, player.y + player.height);
     }
 
-    // Horizontal Movement
-    if (keys.ArrowLeft || keys.a) player.vx = -player.speed;
-    else if (keys.ArrowRight || keys.d) player.vx = player.speed;
-    else player.vx -= player.vx * 0.2; // Sürtünmeyle yavaşlama (Friction)
+    // Horizontal Movement (Acceleration tabanlı)
+    if (keys.ArrowLeft || keys.a) {
+        player.vx -= player.speed; // Sola ivmelenme
+    } else if (keys.ArrowRight || keys.d) {
+        player.vx += player.speed; // Sağa ivmelenme
+    }
+
+    // Sürtünme - tuşa basılmasa da yavaş yavaş kayarak durmasını sağlar
+    player.vx *= player.friction; 
+
+    // Maksimum hızı sınırla
+    if (player.vx > player.maxSpeed) player.vx = player.maxSpeed;
+    if (player.vx < -player.maxSpeed) player.vx = -player.maxSpeed;
 
     // Apply X Velocity
     player.x += player.vx;

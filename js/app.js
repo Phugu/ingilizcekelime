@@ -2616,15 +2616,31 @@ class Dashboard {
                 </div>
                 ` : ''}
 
+                <div class="games-section" style="margin-top: 30px; margin-bottom: 25px;">
+                    <h3 class="section-title" style="margin-bottom: 15px; font-size: 1.2rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-gamepad" style="color: #9b59b6;"></i> Eğlenceli Oyunlar
+                    </h3>
+                    <div class="games-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 320px)); gap: 20px; justify-content: flex-start;">
+                        <div class="game-card" style="background: var(--card-bg); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.08); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.3s ease; position: relative;" onclick="window.openWordScramble()">
+                            <div style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; backdrop-filter: blur(4px);">A1 - C2</div>
+                            <img src="assets/images/word-scramble.jpg" alt="Word Scramble" style="width: 100%; height: 160px; object-fit: cover; border-bottom: 1px solid var(--border-color);">
+                            <div style="padding: 15px; text-align: center;">
+                                <h4 style="margin: 0 0 5px 0; font-size: 18px; color: var(--text-main);">Word Scramble</h4>
+                                <p style="margin: 0 0 15px 0; font-size: 13px; color: var(--text-muted); line-height: 1.4;">Harfleri karışmış İngilizce kelimeleri doğru tahmin et, puanları topla!</p>
+                                <button class="action-btn" style="width: 100%; border-radius: 10px; font-weight: bold; background: linear-gradient(135deg, #f39c12, #e67e22); color: white; border: none; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3); transition: transform 0.2s;">
+                                    <i class="fa-solid fa-play"></i> OYNA
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="action-buttons">
                     <button onclick="document.getElementById('nav-learn').click()" class="action-btn">
                         Kelime Öğrenmeye Başla
                     </button>
                     <button onclick="window.startDailyReview()" class="action-btn" style="background: linear-gradient(135deg, #27ae60, #2ecc71);">
                         📅 Günlük Tekrar
-                    </button>
-                    <button onclick="window.openWordScramble()" class="action-btn" style="background: linear-gradient(135deg, #8e44ad, #9b59b6);">
-                        🧩 Word Scramble Oyna
                     </button>
                     <button onclick="document.getElementById('nav-quiz').click()" class="action-btn">
                         Quiz Çöz

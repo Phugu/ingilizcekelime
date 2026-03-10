@@ -258,17 +258,25 @@ export class WordLearning {
         };
     }
 
-    // Tüm A1 kelimelerini bir dizide getir
-    get allA1Words() {
-        // Tüm kategorilerdeki kelimeleri bir dizide birleştir
-        const allWords = [
-            ...this.a1WordPools.learning1,
-            ...this.a1WordPools.learning2,
-            ...this.a1WordPools.learning3,
-            // Diğer kategorileri ekle
-        ];
+    // Tüm kelimeleri bir dizide getir (Seviye bazlı)
+    getAllWordsByLevel(level) {
+        const levelKey = level.toLowerCase();
+        const poolMap = {
+            'a1': this.a1WordPools,
+            'a2': this.a2WordPools,
+            'b1': this.b1WordPools,
+            'b2': this.b2WordPools,
+            'c1': this.c1WordPools,
+        };
+        const pools = poolMap[levelKey] || this.a1WordPools;
+        
+        // Tüm havuzlardaki kelimeleri birleştir
+        let allWords = [];
+        Object.values(pools).forEach(pool => {
+            allWords = [...allWords, ...pool];
+        });
 
-        // Tekrarlanan kelimeleri kaldır (büyük/küçük harf duyarsız kontrol ile)
+        // Tekrarlanan kelimeleri kaldır
         const uniqueWords = [];
         const uniqueEnglishWords = new Set();
 
@@ -281,6 +289,11 @@ export class WordLearning {
         }
 
         return uniqueWords;
+    }
+
+    // Geri uyumluluk için allA1Words
+    get allA1Words() {
+        return this.getAllWordsByLevel('A1');
     }
 
     // Eskiden a1Words olarak kullanılan genel havuz için geri uyumluluk
@@ -919,8 +932,10 @@ export class WordLearning {
         if (xpEarned > 0) {
             try {
                 giveXP(xpEarned, `Mini Quiz: ${correct}/${total} Doğru`);
+                // Günlük görev ilerlemesini güncelle
+                updateQuestProgress('take_quiz', 1);
             } catch (e) {
-                console.error("XP verilemedi:", e);
+                console.error("XP veya görev güncellenemedi:", e);
             }
         }
 
@@ -2043,26 +2058,47 @@ export class WordLearning {
         }
     }
 
-    // Seçenekler oluştur
+    // Seçenekler oluştur (Akıllı Şık Seçimi)
     generateOptions(currentWord) {
         // Doğru cevap
         const correctAnswer = currentWord.turkish;
+        const currentCategory = currentWord.category;
+        const currentLevel = currentWord.level;
 
-        // Kelime havuzundan 3 rastgele yanlış kelime seç
-        const wrongOptions = [];
-        const allWords = this.getAllWords();
+        // Tüm kelimeleri al (mevcut seviyeden)
+        const allAvailableWords = this.getAllWords();
 
-        while (wrongOptions.length < 3) {
-            const randomIndex = Math.floor(Math.random() * allWords.length);
-            const randomWord = allWords[randomIndex];
+        // 1. Önce aynı kategorideki yanlış şıkları bul
+        let potentialDistractors = allAvailableWords.filter(w => 
+            w.turkish !== correctAnswer && 
+            w.category === currentCategory
+        );
 
-            if (randomWord.turkish !== correctAnswer && !wrongOptions.includes(randomWord.turkish)) {
-                wrongOptions.push(randomWord.turkish);
-            }
+        // 2. Eğer aynı kategoride yeterli yoksa, aynı seviyedeki diğer kelimeleri ekle
+        if (potentialDistractors.length < 3) {
+            const otherLevelWords = allAvailableWords.filter(w => 
+                w.turkish !== correctAnswer && 
+                w.category !== currentCategory &&
+                !potentialDistractors.some(pd => pd.turkish === w.turkish)
+            );
+            potentialDistractors = [...potentialDistractors, ...otherLevelWords];
         }
 
-        // Tüm seçenekleri birleştir
-        return [correctAnswer, ...wrongOptions];
+        // 3. Hala yetersizse (garantici yaklaşım), A1 havuzundan rastgele ekle
+        if (potentialDistractors.length < 3) {
+             const fallbackWords = this.getAllWordsByLevel('A1').filter(w => 
+                w.turkish !== correctAnswer &&
+                !potentialDistractors.some(pd => pd.turkish === w.turkish)
+            );
+            potentialDistractors = [...potentialDistractors, ...fallbackWords];
+        }
+
+        // Karıştır ve 3 tane seç
+        const shuffledDistractors = this.shuffleArray(potentialDistractors);
+        const selectedDistractors = shuffledDistractors.slice(0, 3).map(w => w.turkish);
+
+        // Doğru cevabı ekle ve hepsini karıştırıp döndür
+        return this.shuffleArray([correctAnswer, ...selectedDistractors]);
     }
 
     // Diziyi karıştır (Fisher-Yates algoritması)
@@ -2077,26 +2113,8 @@ export class WordLearning {
 
     // Tüm kelimeleri getir (seçenekler için) — mevcut seviyeden
     getAllWords() {
-        const levelKey = (this.currentLevel || 'A1').toLowerCase();
-        const poolMap = {
-            'a1': this.a1WordPools,
-            'a2': this.a2WordPools,
-            'b1': this.b1WordPools,
-            'b2': this.b2WordPools,
-            'c1': this.c1WordPools,
-        };
-        const pools = poolMap[levelKey] || this.a1WordPools;
-        let allWords = [];
-        Object.values(pools).forEach(pool => {
-            allWords = [...allWords, ...pool];
-        });
-        // En az 4 kelime garantile (yanlış seçenekler için)
-        if (allWords.length < 4) {
-            Object.values(this.a1WordPools).forEach(pool => {
-                allWords = [...allWords, ...pool];
-            });
-        }
-        return allWords;
+        const levelKey = (this.currentLevel || 'A1').toString().toUpperCase();
+        return this.getAllWordsByLevel(levelKey);
     }
 
     // Sonraki soruya geç
@@ -2436,36 +2454,52 @@ export class WordLearning {
         this.startLearningA1Pool('general');
     }
 
-    // Show available tests
+    // Quiz Seçeneklerini Göster (Seviye Seçimi ile)
     showTestOptions() {
         const container = document.getElementById(this.containerId);
         if (!container) return;
 
-        // Test seçeneklerini sıfırla
-        this.testIndex = 0;
-        this.usedTestWords = [];
-
         let html = `
-            <div class="word-learning-container">
-                <h2>A1 Kelime Testleri</h2>
+            <div class="level-selection-container">
+                <div class="header-with-action">
+                    <h2>Quiz Seviyenizi Seçin</h2>
+                    <button id="back-to-dashboard-btn-top" class="btn btn-secondary btn-sm" style="margin-bottom: 1rem;"><i class="fas fa-arrow-left"></i> Ana Sayfaya Dön</button>
+                </div>
                 
-                <div class="word-pools">
-                    <div class="pool-card" data-test="1">
-                        <h3>Test 1</h3>
-                        <p>İlk 10 kelimelik test</p>
-                        <span class="word-count">10 soru</span>
+                <div class="level-cards">
+                    <div class="level-card quiz-level-card" data-level="A1">
+                        <h3>A1 Quizi</h3>
+                        <div class="level-badge" style="background: #27ae60;">Başlangıç</div>
+                        <p>Temel kelime bilgini test et.</p>
+                        <button class="btn level-btn">A1 Testlerine Git</button>
                     </div>
                     
-                    <div class="pool-card" data-test="2">
-                        <h3>Test 2</h3>
-                        <p>İkinci 10 kelimelik test</p>
-                        <span class="word-count">10 soru</span>
+                    <div class="level-card quiz-level-card" data-level="A2">
+                        <h3>A2 Quizi</h3>
+                        <div class="level-badge" style="background: #2980b9;">Temel</div>
+                        <p>Günlük hayat kelimelerini test et.</p>
+                        <button class="btn level-btn">A2 Testlerine Git</button>
                     </div>
                     
-                    <div class="pool-card" data-test="3">
-                        <h3>Test 3</h3>
-                        <p>Üçüncü 10 kelimelik test</p>
-                        <span class="word-count">10 soru</span>
+                    <div class="level-card quiz-level-card" data-level="B1">
+                        <h3>B1 Quizi</h3>
+                        <div class="level-badge" style="background: #f39c12;">Orta</div>
+                        <p>Daha karmaşık kelimeleri test et.</p>
+                        <button class="btn level-btn">B1 Testlerine Git</button>
+                    </div>
+                    
+                    <div class="level-card quiz-level-card" data-level="B2">
+                        <h3>B2 Quizi</h3>
+                        <div class="level-badge" style="background: #d35400;">Orta-Üstü</div>
+                        <p>Akademik ve profesyonel kelimeler.</p>
+                        <button class="btn level-btn">B2 Testlerine Git</button>
+                    </div>
+                    
+                    <div class="level-card quiz-level-card" data-level="C1">
+                        <h3>C1 Quizi</h3>
+                        <div class="level-badge" style="background: #8e44ad;">İleri</div>
+                        <p>En üst düzey Oxford kelimeleri.</p>
+                        <button class="btn level-btn">C1 Testlerine Git</button>
                     </div>
                 </div>
                 
@@ -2477,32 +2511,134 @@ export class WordLearning {
 
         container.innerHTML = html;
 
-        // Event listeners for test selection
-        container.querySelectorAll('.pool-card[data-test]').forEach(card => {
-            card.addEventListener('click', (e) => {
-                const testNumber = parseInt(e.currentTarget.getAttribute('data-test'));
-                this.startSpecificTest(testNumber);
+        // Seviye kartlarına tıklama event'i
+        container.querySelectorAll('.quiz-level-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const level = card.dataset.level;
+                this.showLevelTestOptions(level);
             });
         });
 
-        const dashboardBtn = container.querySelector('#back-to-dashboard-btn');
-        if (dashboardBtn) dashboardBtn.addEventListener('click', () => this.backToDashboard());
+        // Dashboard butonları
+        container.querySelector('#back-to-dashboard-btn-top').addEventListener('click', () => this.backToDashboard());
+        container.querySelector('#back-to-dashboard-btn').addEventListener('click', () => this.backToDashboard());
+    }
+
+    // Seçilen seviye için özel testleri göster
+    showLevelTestOptions(level) {
+        const container = document.getElementById(this.containerId);
+        if (!container) return;
+
+        // Seviyedeki toplam kelime sayısını bul
+        const allWords = this.getAllWordsByLevel(level);
+        
+        let html = `
+            <div class="word-learning-container">
+                <div class="header-with-action">
+                    <h2>${level} Seviyesi Quizleri</h2>
+                    <button id="back-to-quiz-levels-btn" class="btn btn-secondary btn-sm" style="margin-bottom: 1rem;"><i class="fas fa-arrow-left"></i> Seviye Seçimine Dön</button>
+                </div>
+                
+                <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">
+                    Bu seviyede öğrenilecek toplam <strong>${allWords.length}</strong> kelime bulunuyor.
+                </p>
+
+                <div class="word-pools">
+                    <div class="pool-card mixed-quiz-card" data-test-type="mixed" style="border-left: 5px solid #e74c3c;">
+                        <h3>Karışık Seviye Testi</h3>
+                        <p>${level} seviyesinden rastgele 20 soru.</p>
+                        <span class="word-count">20 Soru</span>
+                    </div>
+
+                    <div class="pool-card mixed-quiz-card" data-test-type="set1">
+                        <h3>Set Bazlı Quiz 1</h3>
+                        <p>İlk 15 kelimelik kelime seti.</p>
+                        <span class="word-count">15 Soru</span>
+                    </div>
+                    
+                    <div class="pool-card mixed-quiz-card" data-test-type="set2">
+                        <h3>Set Bazlı Quiz 2</h3>
+                        <p>İkinci 15 kelimelik kelime seti.</p>
+                        <span class="word-count">15 Soru</span>
+                    </div>
+
+                    <div class="pool-card mixed-quiz-card" data-test-type="set3">
+                        <h3>Set Bazlı Quiz 3</h3>
+                        <p>Üçüncü 15 kelimelik kelime seti.</p>
+                        <span class="word-count">15 Soru</span>
+                    </div>
+                    
+                    <div class="pool-card mixed-quiz-card" data-test-type="marathon" style="border-left: 5px solid #f1c40f;">
+                        <h3>Kelime Maratonu</h3>
+                        <p>${level} seviyesinden 50 soruluk büyük test.</p>
+                        <span class="word-count">50 Soru</span>
+                    </div>
+                </div>
+                
+                <div class="navigation-controls">
+                    <button id="back-to-dashboard-pool-btn" class="btn">Ana Sayfaya Dön</button>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        // Test kartlarına tıklama
+        container.querySelectorAll('.pool-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const type = card.dataset.testType;
+                this.startSpecificTest(level, type);
+            });
+        });
+
+        container.querySelector('#back-to-quiz-levels-btn').addEventListener('click', () => this.showTestOptions());
+        container.querySelector('#back-to-dashboard-pool-btn').addEventListener('click', () => this.backToDashboard());
     }
 
     // Belirli bir testi başlat
-    startSpecificTest(level) {
+    startSpecificTest(level, type) {
         try {
-            // Test seviyesini ayarla
+            // Test bilgilerini ayarla
             this.currentLevel = level;
+            this.currentTestType = type;
 
             // Tüm kelimeleri al
-            const allAvailableWords = this.allA1Words;
+            const allAvailableWords = this.getAllWordsByLevel(level);
 
-            // Test için 10 kelime seç
-            let selectedWords = this.shuffleArray([...allAvailableWords]).slice(0, 10);
+            if (allAvailableWords.length === 0) {
+                alert('Bu seviye için henüz kelime yüklenmemiş.');
+                return;
+            }
 
-            // Test için kelimeleri ayarla
-            this.words = selectedWords;
+            // Test tipine göre kelime sayısını ve seçimi belirle
+            let questionCount = 10;
+            let startIndex = 0;
+
+            if (type === 'mixed') {
+                questionCount = 20;
+                this.words = this.shuffleArray([...allAvailableWords]).slice(0, questionCount);
+            } else if (type === 'marathon') {
+                questionCount = 50;
+                this.words = this.shuffleArray([...allAvailableWords]).slice(0, questionCount);
+            } else if (type.startsWith('set')) {
+                const setNum = parseInt(type.replace('set', ''));
+                questionCount = 15;
+                startIndex = (setNum - 1) * questionCount;
+                this.words = allAvailableWords.slice(startIndex, startIndex + questionCount);
+                
+                // Eğer set eksikse rastgele tamamla
+                if (this.words.length < questionCount) {
+                    const remaining = questionCount - this.words.length;
+                    const others = allAvailableWords.filter(w => !this.words.includes(w));
+                    const extra = this.shuffleArray(others).slice(0, remaining);
+                    this.words = [...this.words, ...extra];
+                }
+            } else {
+                // Varsayılan 10 soru
+                this.words = this.shuffleArray([...allAvailableWords]).slice(0, 10);
+            }
+
+            // Değişkenleri sıfırla
             this.currentWordIndex = 0;
             this.correctAnswers = 0;
             this.userAnswers = [];
@@ -2511,12 +2647,7 @@ export class WordLearning {
             this.renderWordTest();
         } catch (error) {
             console.error('Error starting specific test:', error);
-            // Hata durumunda yedek çözüm
-            this.words = this.a1WordPools.learning1;
-            this.currentWordIndex = 0;
-            this.correctAnswers = 0;
-            this.userAnswers = [];
-            this.renderWordTest();
+            alert('Test başlatılırken bir hata oluştu.');
         }
     }
 

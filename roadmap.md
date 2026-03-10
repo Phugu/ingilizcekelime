@@ -51,17 +51,20 @@ Bu dosya, platformun eğitim ve oyunlaştırma (gamification) özelliklerinin ge
 - [x] **Görsel Tasarım:** Premium avatar ve rütbe ikonları ile şık bir tablo görünümü.
 - [x] **Misafir Modu Uyumu:** Misafir kullanıcılarda tablonun yüklenmesini engelleyip giriş yapmaya teşvik eden uyarı mekanizması eklendi.
 
-### 🎯 Günlük Görevler (Daily Quests) - 🚧 (Şu an Üzerinde Çalışılıyor)
-- [ ] **Görev Havuzu:** "Bugün 20 kelime öğren", "A1 Quizinden %100 başarı sağla", "Toplam 100 XP kazan" gibi rastgele günlük görevlerin oluşturulması.
-- [ ] **Arayüz (UI)::** Dashboard (Ana Sayfa) üzerinde görevlerin durumunu ve ilerlemesini gösteren bir "Günlük Görevler" kartı tasarımı.
-- [ ] **Ödül Sistemi:** Görevler tamamlandığında otomatik ekstra XP kazandırma ve seriyi artırma yeteneği.
-- [ ] **Veritabanı (Firestore):** Kullanıcıların o anki günlük görev ilerlemelerinin `users_private` veya yeni bir alana saatlik/günlük olarak kaydedilip gece 00:00'da sıfırlanması.
+### 🎯 Günlük Görevler (Daily Quests) - (Tamamlandı ✅)
+- [x] **Görev Havuzu:** "Bugün 20 kelime öğren", "A1 Quizinden %100 başarı sağla", "Toplam 100 XP kazan" gibi rastgele günlük görevlerin oluşturulması.
+- [x] **Arayüz (UI):** Dashboard (Ana Sayfa) üzerinde görevlerin durumunu ve ilerlemesini gösteren bir "Günlük Görevler" kartı tasarımı.
+- [x] **Ödül Sistemi:** Görevler tamamlandığında otomatik ekstra XP kazandırma ve seriyi artırma yeteneği.
+- [x] **Veritabanı (Firestore):** Kullanıcıların o anki günlük görev ilerlemelerinin `users_private` veya yeni bir alana saatlik/günlük olarak kaydedilip gece 00:00'da sıfırlanması.
+- [x] **Dinamik Quiz Sistemi:** Tüm seviyeler (A1-C1) için binlerce kelimelik devasa havuzdan beslenen dinamik quiz yapısı kuruldu.
+- [x] **Akıllı Çeldiriciler:** Şıkların sorulan kelimeyle aynı kategoriden seçilerek zorlaştırılması sağlandı.
 
 ### 🎖️ Başarı Rozetleri (Badges)
 - [ ] "100 Kelime Öğrendin", "7 Günlük Seri", "İlk Mükemmel Quiz" gibi özel rozetlerin tasarımı ve kazanım mantığı.
 
 ### 🧩 Mini Kelime Oyunları - (Tamamlandı ✅)
 - [x] **Word Scramble:** Türkçe anlamı verilen karıştırılmış İngilizce kelimeyi bulma oyunu.
+- [x] **Zorluk Seviyeleri:** Word Scramble için A1-C2 seviye seçim ekranı ve seviye bazlı kelime havuzu entegrasyonu.
 - [ ] **Hangman:** Klasik adam asmaca oyunu eklentisi.
 
 > **Eklenebilecek Onlarca Yeni Fikir** için proje kök dizinine `future_features.md` adlı özel doküman yaratılmış ve saklanmıştır.

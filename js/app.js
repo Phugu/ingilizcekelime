@@ -58,6 +58,41 @@ let wordLearningInstance = null;
 const db = window.firestore; // firebase-init.js tarafından initialize edilen global örnek
 const auth = window.firebaseAuth; // Already initialized in index.html
 
+// --- AVATAR FALLBACK SİSTEMİ (Yeni) ---
+// Resim yüklenemezse veya yoksa harf gösterir
+window.setAvatarWithFallback = function(element, url, name) {
+    if (!element) return;
+    
+    const initial = (name || "?").charAt(0).toUpperCase();
+    
+    if (url) {
+        // Bir Image nesnesi ile yüklemeyi dene (error yakalamak için en güvenli yol)
+        const img = new Image();
+        img.onload = () => {
+            element.style.backgroundImage = `url('${url}')`;
+            element.style.backgroundSize = 'cover';
+            element.style.backgroundPosition = 'center';
+            element.style.color = 'transparent';
+            element.textContent = '';
+        };
+        img.onerror = () => {
+            // Yükleme hatası (CORS, 404, Billing vb.)
+            element.style.backgroundImage = 'none';
+            element.style.backgroundColor = 'var(--primary-color)';
+            element.style.color = 'white';
+            element.textContent = initial;
+            console.warn(`Avatar yüklenemedi, harf moduna geçildi: ${url}`);
+        };
+        img.src = url;
+    } else {
+        // URL zaten yoksa direkt harf
+        element.style.backgroundImage = 'none';
+        element.style.backgroundColor = 'var(--primary-color)';
+        element.style.color = 'white';
+        element.textContent = initial;
+    }
+};
+
 // GÜVENLİK: XSS koruması için HTML escape fonksiyonu
 function escapeHTML(str) {
     if (!str) return '';
@@ -1776,24 +1811,13 @@ function setupAvatarUploadEvents(user) {
             } catch (e) { console.error("⚠️ Firestore güncelleme atlandı:", e); }
 
             // DOM Güncelle (Ana Profil Resmi)
-            if (mainAvatar) {
-                mainAvatar.style.backgroundImage = `url('${cacheURL}')`;
-                mainAvatar.style.backgroundSize = 'cover';
-                mainAvatar.style.backgroundPosition = 'center';
-                mainAvatar.style.color = 'transparent';
-                mainAvatar.innerHTML = '';
-            }
-
-            // Header Avatar Güncelle
-            if (headerAvatar) {
-                headerAvatar.style.backgroundImage = `url('${cacheURL}')`;
-                headerAvatar.style.backgroundSize = 'cover';
-                headerAvatar.style.backgroundPosition = 'center';
-                headerAvatar.innerHTML = '';
-            }
+            if (mainAvatar) window.setAvatarWithFallback(mainAvatar, cacheURL, user.displayName);
+            if (headerAvatar) window.setAvatarWithFallback(headerAvatar, cacheURL, user.displayName);
 
             alert("Profil fotoğrafınız başarıyla güncellendi!");
             loadingMask.style.display = 'none';
+            if (editBtn) editBtn.style.display = 'flex';
+            fileInput.value = '';
             if (editBtn) editBtn.style.display = 'flex';
             fileInput.value = '';
 
@@ -3587,14 +3611,8 @@ window.showPublicProfile = async function (uid) {
                 document.getElementById('public-profile-words').textContent = "-";
             }
 
-            // Avatar kontrolü ve yerleşimi
-            if (data.photoURL) {
-                avatarEl.innerHTML = '';
-                avatarEl.style.backgroundImage = `url('${data.photoURL}')`;
-            } else {
-                avatarEl.style.backgroundImage = 'none';
-                avatarEl.innerHTML = escapeHTML(rawName.charAt(0).toUpperCase());
-            }
+            // Avatar kontrolü ve yerleşimi (Fallback Sistemi)
+            window.setAvatarWithFallback(avatarEl, data.photoURL, rawName);
 
             // Şikayet Et Butonu Mantığı
             const reportBtn = document.getElementById('report-user-btn');

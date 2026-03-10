@@ -108,9 +108,13 @@ async function handleFriendSearch() {
                 border: 1px solid var(--border-color); margin-top: 10px;
             `;
 
-            const avatarHtml = userData.photoURL
-                ? `<div style="width: 40px; height: 40px; border-radius: 50%; background-image: url('${userData.photoURL}'); background-size: cover; background-position: center;"></div>`
-                : `<div style="width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px;">${userData.name.charAt(0).toUpperCase()}</div>`;
+            const avatarId = `search-avatar-${targetUserId}`;
+            const avatarHtml = `<div id="${avatarId}" style="width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px;">
+                ${userData.name.charAt(0).toUpperCase()}
+                <img src="${userData.photoURL || ''}" style="display:none" 
+                     onload="const el=document.getElementById('${avatarId}'); el.style.backgroundImage='url(\\''+this.src+'\\')'; el.style.backgroundSize='cover'; el.style.color='transparent'; el.textContent='';"
+                     onerror="console.warn('Search avatar failed')">
+            </div>`;
 
             userCard.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 12px;">
@@ -227,16 +231,18 @@ function refreshFriendsData() {
 
                 if (!friendName) friendName = 'Kullanıcı';
 
-                const avatarStyle = photoURL
-                    ? `background-image: url('${photoURL}'); background-size: cover; background-position: center;`
-                    : '';
+                const avatarId = `friend-avatar-${friendUid}`;
+                const friendsAvatarHtml = `<div id="${avatarId}" style="width: 45px; height: 45px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;">
+                    ${friendName.charAt(0).toUpperCase()}
+                    <img src="${photoURL || ''}" style="display:none" 
+                         onload="const el=document.getElementById('${avatarId}'); el.style.backgroundImage='url(\\''+this.src+'\\')'; el.style.backgroundSize='cover'; el.style.color='transparent'; el.textContent='';"
+                         onerror="console.warn('Friend avatar failed')">
+                </div>`;
 
                 friendsHtml += `
                     <div class="friend-card" data-friend-id="${friendUid}" style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                         <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="if(window.showPublicProfile) window.showPublicProfile('${friendUid}')">
-                            <div style="width: 45px; height: 45px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; ${avatarStyle}">
-                                ${!photoURL ? friendName.charAt(0).toUpperCase() : ''}
-                            </div>
+                            ${friendsAvatarHtml}
                             <div>
                                 <div class="friend-name-text" style="color: var(--text-main); font-weight: bold; font-size: 16px;">${friendName}</div>
                                 <div style="display: flex; align-items: center; gap: 5px;">
@@ -360,9 +366,8 @@ function setupFriendsStatusListeners() {
                     const qName = qchatRow.querySelector('.qchat-name');
                     const qAvatar = qchatRow.querySelector('.qchat-avatar');
                     if (qName && latestName) qName.textContent = latestName;
-                    if (qAvatar && userData.photoURL) {
-                        qAvatar.style.backgroundImage = `url('${userData.photoURL}')`;
-                        qAvatar.textContent = '';
+                    if (qAvatar) {
+                        window.setAvatarWithFallback(qAvatar, userData.photoURL, latestName);
                     }
                 }
 
@@ -450,18 +455,8 @@ window.openChatWindow = function (friendId, friendName) {
             // İsmi güncelle
             nameEl.textContent = latestName;
 
-            // Profil resmini güncelle
-            if (userData.photoURL) {
-                avatarEl.textContent = '';
-                avatarEl.style.backgroundImage = `url('${userData.photoURL}')`;
-                avatarEl.style.backgroundSize = 'cover';
-                avatarEl.style.backgroundPosition = 'center';
-                avatarEl.style.color = 'transparent';
-            } else {
-                avatarEl.textContent = latestName.charAt(0).toUpperCase();
-                avatarEl.style.backgroundImage = 'none';
-                avatarEl.style.color = 'white';
-            }
+            // Profil resmini güncelle (Fallback sistemi)
+            window.setAvatarWithFallback(avatarEl, userData.photoURL, latestName);
 
             if (statusEl) {
                 const isOnline = userData.onlineStatus === 'online';

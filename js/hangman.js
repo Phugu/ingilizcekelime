@@ -273,18 +273,20 @@ function drawHangman() {
     const { drawingEl } = getElements();
     if (!drawingEl) return;
 
+    const strokeProps = 'stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"';
+    
     // Use SVG for drawing
     const parts = [
-        '<line x1="10" y1="190" x2="190" y2="190" stroke="currentColor" stroke-width="4" />', // Base
-        '<line x1="50" y1="190" x2="50" y2="10" stroke="currentColor" stroke-width="4" />',  // Post
-        '<line x1="50" y1="10" x2="120" y2="10" stroke="currentColor" stroke-width="4" />',  // Beam
-        '<line x1="120" y1="10" x2="120" y2="30" stroke="currentColor" stroke-width="2" />', // Rope
-        '<circle cx="120" cy="50" r="20" stroke="currentColor" stroke-width="4" fill="none" />', // Head
-        '<line x1="120" y1="70" x2="120" y2="130" stroke="currentColor" stroke-width="4" />', // Body
-        '<line x1="120" y1="80" x2="90" y2="110" stroke="currentColor" stroke-width="4" />',  // Left Arm
-        '<line x1="120" y1="80" x2="150" y2="110" stroke="currentColor" stroke-width="4" />', // Right Arm
-        '<line x1="120" y1="130" x2="90" y2="170" stroke="currentColor" stroke-width="4" />', // Left Leg
-        '<line x1="120" y1="130" x2="150" y2="170" stroke="currentColor" stroke-width="4" />' // Right Leg
+        `<line x1="20" y1="220" x2="220" y2="220" ${strokeProps} />`, // Base
+        `<line x1="60" y1="220" x2="60" y2="20" ${strokeProps} />`,  // Post
+        `<line x1="60" y1="20" x2="160" y2="20" ${strokeProps} />`,   // Beam
+        `<line x1="160" y1="20" x2="160" y2="50" stroke="currentColor" stroke-width="3" stroke-linecap="round" />`, // Rope
+        '<circle cx="160" cy="80" r="25" stroke="currentColor" stroke-width="5" fill="none" />', // Head
+        `<line x1="160" y1="105" x2="160" y2="170" ${strokeProps} />`, // Body
+        `<line x1="160" y1="120" x2="120" y2="150" ${strokeProps} />`,  // Left Arm
+        `<line x1="160" y1="120" x2="200" y2="150" ${strokeProps} />`, // Right Arm
+        `<line x1="160" y1="170" x2="130" y2="210" ${strokeProps} />`, // Left Leg
+        `<line x1="160" y1="170" x2="190" y2="210" ${strokeProps} />` // Right Leg
     ];
 
     // Show parts based on remaining lives
@@ -304,7 +306,7 @@ function drawHangman() {
     if (remainingLives <= 1) visibleParts.push(parts[8]);
     if (remainingLives <= 0) visibleParts.push(parts[9]);
 
-    drawingEl.innerHTML = `<svg width="200" height="200">${visibleParts.join('')}</svg>`;
+    drawingEl.innerHTML = `<svg width="240" height="240" viewBox="0 0 240 240">${visibleParts.join('')}</svg>`;
 }
 
 window.skipHangman = function() {

@@ -5189,150 +5189,326 @@ body.dark-theme .pool-card.locked-chain .chain-overlay {
     }
     .lb-sort-btn {
         padding: 8px 10px;
-        font-size: 11px;
-        gap: 4px;
-        white-space: nowrap;
-    }
-    .lb-sort-btn i {
-        font-size: 13px;
-    }
+        font-siz/* --- Hangman Game Styles (Premium v2) --- */
+.hangman-modal-content {
+    max-width: 700px !important;
+    padding: 40px !important;
+    background: rgba(var(--card-bg-rgb), 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 32px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: hangmanFadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* --- Hangman Game Styles --- */
-.hangman-modal-content {
-    max-width: 600px !important;
-    padding: 30px !important;
-    background: var(--card-bg);
-    border-radius: 24px;
+@keyframes hangmanFadeInScale {
+    from { opacity: 0; transform: scale(0.95) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .hangman-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hangman-header h2 {
+    font-size: 24px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
 }
 
 .hangman-stats {
     display: flex;
-    gap: 15px;
+    gap: 12px;
 }
 
 .hangman-stat {
-    font-weight: bold;
-    color: var(--primary-color);
-    background: var(--bg-color);
-    padding: 5px 15px;
-    border-radius: 20px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.2), rgba(162, 155, 254, 0.2));
+    padding: 8px 18px;
+    border-radius: 12px;
     font-size: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.hangman-level-selection {
-    text-align: center;
+.hangman-intro-text {
+    font-size: 16px;
+    color: var(--text-muted);
+    margin-bottom: 25px;
 }
 
 .hangman-level-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
+    gap: 16px;
     margin-top: 20px;
+}
+
+.hangman-level-grid .level-btn {
+    height: auto;
+    padding: 20px 10px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: var(--bg-color);
+    border: 2px solid transparent;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hangman-level-grid .level-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px -8px rgba(108, 92, 231, 0.4);
+    border-color: #6c5ce7;
+}
+
+.hangman-level-grid .level-btn span {
+    font-size: 12px;
+    opacity: 0.7;
+    font-weight: normal;
 }
 
 .hangman-game-area {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 30px;
+    animation: hangmanFadeIn 0.5s ease-out;
+}
+
+@keyframes hangmanFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.hangman-upper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
 }
 
 .hangman-drawing {
-    width: 200px;
-    height: 200px;
-    color: var(--text-main);
+    width: 240px;
+    height: 240px;
+    color: #6c5ce7;
     display: flex;
     justify-content: center;
     align-items: center;
-    background: var(--bg-color);
-    border-radius: 15px;
-    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 24px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hangman-drawing svg {
+    filter: drop-shadow(0 0 8px rgba(108, 92, 231, 0.3));
+}
+
+.hangman-hint-container {
+    background: rgba(108, 92, 231, 0.1);
+    padding: 12px 24px;
+    border-radius: 12px;
+    border-left: 4px solid #6c5ce7;
+    margin-bottom: 10px;
+    width: 100%;
+    text-align: center;
+}
+
+#hangman-hint {
+    margin: 0;
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 16px;
 }
 
 .hangman-word-display {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
     justify-content: center;
-    margin: 20px 0;
+    margin: 10px 0;
 }
 
 .hangman-char {
-    width: 35px;
-    height: 45px;
-    border-bottom: 3px solid var(--primary-color);
+    width: 44px;
+    height: 56px;
+    background: var(--bg-color);
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
-    font-weight: bold;
+    font-size: 28px;
+    font-weight: 800;
     color: var(--text-main);
     text-transform: uppercase;
+    box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s;
+    border: 1px solid var(--border-color);
 }
 
 .hangman-char.revealed {
-    color: #e74c3c;
+    color: #ff7675;
+    background: rgba(255, 118, 117, 0.1);
+}
+
+.hangman-char.animate-pop {
+    animation: hangmanPop 0.3s cubic-bezier(0.17, 0.89, 0.32, 1.28);
+}
+
+@keyframes hangmanPop {
+    0% { transform: scale(0.8); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }
 
 .hangman-keyboard {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 10px;
     width: 100%;
-    margin-bottom: 20px;
+    margin: 10px 0;
 }
 
 .hangman-key {
-    height: 40px;
-    border-radius: 8px;
+    height: 50px;
+    border-radius: 12px;
     border: 1px solid var(--border-color);
-    background: var(--bg-color);
+    background: var(--card-bg);
     color: var(--text-main);
-    font-weight: bold;
+    font-weight: 700;
+    font-size: 18px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 2px 0 rgba(255, 255, 255, 0.05);
 }
 
 .hangman-key:hover:not(:disabled) {
-    background: var(--primary-color);
+    transform: translateY(-3px);
+    border-color: #6c5ce7;
+    background: #6c5ce7;
     color: white;
-    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(108, 92, 231, 0.4);
+}
+
+.hangman-key:active:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.hangman-key:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    filter: grayscale(0.8);
 }
 
 .hangman-key.correct {
-    background: #2ecc71;
+    background: linear-gradient(135deg, #55efc4, #00b894);
     color: white;
-    border-color: #27ae60;
+    border-color: #00b894;
+    opacity: 1;
 }
 
 .hangman-key.wrong {
-    background: #e74c3c;
+    background: linear-gradient(135deg, #ff7675, #d63031);
     color: white;
-    border-color: #c0392b;
-    opacity: 0.7;
+    border-color: #d63031;
+    opacity: 0.8;
+}
+
+.hangman-actions {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+}
+
+.hangman-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.hangman-btn.secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+.hangman-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .hangman-feedback {
     text-align: center;
-    height: 30px;
-    font-weight: bold;
+    height: 40px;
+    font-weight: 800;
+    font-size: 18px;
     margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.hangman-feedback.success { color: #2ecc71; }
-.hangman-feedback.error { color: #e74c3c; }
+.hangman-feedback.success { 
+    color: #55efc4; 
+    text-shadow: 0 0 15px rgba(85, 239, 196, 0.4);
+}
+
+.hangman-feedback.error { 
+    color: #ff7675; 
+    text-shadow: 0 0 15px rgba(255, 118, 117, 0.4);
+    animation: hangmanShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes hangmanShake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+@media (max-width: 600px) {
+    .hangman-keyboard {
+        grid-template-columns: repeat(7, 1fr);
+    }
+    .hangman-modal-content {
+        padding: 25px 15px !important;
+    }
+}
 
 @media (max-width: 480px) {
     .hangman-level-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+    .hangman-char {
+        width: 32px;
+        height: 44px;
+        font-size: 20px;
+    }
+    .hangman-keyboard {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+    }
+    .hangman-key {
+        height: 40px;
+        font-size: 14px;
+    }
+}
+       grid-template-columns: repeat(2, 1fr);
     }
     .hangman-char {
         width: 25px;

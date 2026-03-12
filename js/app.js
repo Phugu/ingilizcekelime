@@ -2785,18 +2785,22 @@ class Games {
                         </div>
                     </div>
 
-                    <div class="game-card" style="background: var(--card-bg); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.08); border: 1px solid var(--border-color); opacity: 0.7; position: relative;">
-                         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: center; z-index: 2;">
-                            <span style="background: #34495e; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 14px;">Yakında!</span>
-                         </div>
-                         <div style="width: 100%; height: 180px; background: #ecf0f1; display: flex; align-items: center; justify-content: center; font-size: 60px;">🔤</div>
-                            <div style="padding: 20px; text-align: center;">
-                                <h4 style="margin: 0 0 10px 0; font-size: 20px; color: var(--text-main);">Adam Asmaca</h4>
-                                <p style="margin: 0 0 20px 0; font-size: 14px; color: var(--text-muted); line-height: 1.5;">Kelimeleri harf harf tahmin et, adamı kurtar!</p>
-                                <button class="action-btn" disabled style="width: 100%; border-radius: 10px; font-weight: bold; background: #95a5a6; color: white; border: none; padding: 12px;">
-                                    Çok Yakında
-                                </button>
-                            </div>
+                    <div class="game-card" style="position: relative; height: 380px; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: #6c5ce7;" onclick="window.openHangman()">
+                        <!-- Arkaplan Görseli (Eğer varsa) -->
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #2d3436; display: flex; align-items: center; justify-content: center; z-index: 1;">
+                            <span style="font-size: 80px;">💀</span>
+                        </div>
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent 40%, rgba(108, 92, 231, 0.9) 100%); z-index: 2;"></div>
+                        
+                        <div style="position: absolute; top: 20px; right: 20px; background: #ffffff; color: #6c5ce7; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: 900; z-index: 3; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">YENİ</div>
+                        
+                        <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px; box-sizing: border-box; z-index: 3; text-align: left;">
+                            <h4 style="margin: 0 0 10px 0; font-size: 28px; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.5); font-weight: 900; letter-spacing: -0.5px;">Adam Asmaca</h4>
+                            <p style="margin: 0 0 25px 0; font-size: 15px; color: rgba(255,255,255,0.95); line-height: 1.6; text-shadow: 0 1px 5px rgba(0,0,0,0.5);">Kelimeleri harf harf tahmin et, adamı ipten kurtar ve XP kazan!</p>
+                            <button class="action-btn" style="width: 100%; border-radius: 15px; font-weight: 900; background: #ffffff; color: #6c5ce7; border: none; padding: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); font-size: 16px;">
+                                <i class="fa-solid fa-play"></i> OYUNA BAŞLA
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

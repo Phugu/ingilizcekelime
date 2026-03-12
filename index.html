@@ -1344,7 +1344,10 @@
             </div>
             
             <div id="hangman-level-selection" class="hangman-level-selection">
-                <p class="hangman-intro-text">Zorluk seviyesini seçerek adamı kurtarmaya başlayın:</p>
+                <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 25px; flex-wrap: wrap;">
+                    <img src="assets/images/handman.png" alt="Hangman" style="width: 80px; height: 80px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <p class="hangman-intro-text" style="flex: 1; margin-bottom: 0;">Zorluk seviyesini seçerek adamı kurtarmaya başlayın:</p>
+                </div>
                 <div class="hangman-level-grid">
                     <button class="level-btn a1" onclick="window.selectHangmanLevel('A1')">A1 <span>Temel</span></button>
                     <button class="level-btn a2" onclick="window.selectHangmanLevel('A2')">A2 <span>Başlangıç</span></button>

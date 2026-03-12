@@ -92,18 +92,13 @@ ingilizcekelime/
 
 - [x] XP ve Seviye Sistemi
 - [x] Günlük Seri (Streak) Sistemi
-- [x] Liderlik Tablosu (top 10, altın/gümüş/bronz sıralama)
+- [x] Liderlik Tablosu
 - [x] Profil yönetimi
-- [x] Modern navigasyon (pill butonlar, emoji ikonlar)
-- [x] Quiz seviye filtreleme (A1-C1 her seviye kendi soruları)
-- [x] Dinamik ve Akıllı Quiz Sistemi (Samrt Distractors)
-- [x] Kelime seslendirme (telaffuz)
-- [x] Aralıklı Tekrar Sistemi (SRS / Leitner)
-- [x] Hata Havuzu (yanlış kelimelere özel pratik)
-- [x] Word Scramble Oyunu (A1-C2 Zorluk Seçimli)
 - [ ] Başarı Rozetleri (🎖️ 100 Kelime, 7 Günlük Seri vb.)
+- [ ] Aralıklı Tekrar Sistemi (SRS / Leitner)
+- [ ] Hata Havuzu (yanlış kelimelere özel pratik)
+- [ ] Kelime seslendirme (telaffuz)
 - [ ] Haftalık ilerleme grafikleri
-- [ ] Adam Asmaca (Hangman) Oyunu
 
 ---
 

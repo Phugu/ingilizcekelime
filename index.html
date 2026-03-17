@@ -329,6 +329,62 @@
             <div id="profile-content" class="hide"></div>
             <div id="friends-content" class="hide"></div>
             <div id="settings-content" class="hide"></div>
+            <div id="hangman-content" class="hide">
+                <div class="hangman-container">
+                    <div class="hangman-header">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <button class="btn btn-secondary btn-sm" onclick="window.closeHangman()" style="padding: 10px; border-radius: 12px;">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <h2 style="margin: 0;">💀 Adam Asmaca</h2>
+                        </div>
+                        <div class="hangman-stats">
+                            <div class="hangman-stat">Skor: <span id="hangman-score-val">0</span></div>
+                            <div class="hangman-stat">Can: <span id="hangman-lives-val">6</span></div>
+                        </div>
+                    </div>
+                    
+                    <div id="hangman-level-selection" class="hangman-level-selection">
+                        <p class="hangman-intro-text">Zorluk seviyesini seçerek adamı kurtarmaya başlayın:</p>
+                        <div class="hangman-level-grid">
+                            <button class="level-btn a1" onclick="window.selectHangmanLevel('A1')">A1 <span>Temel</span></button>
+                            <button class="level-btn a2" onclick="window.selectHangmanLevel('A2')">A2 <span>Başlangıç</span></button>
+                            <button class="level-btn b1" onclick="window.selectHangmanLevel('B1')">B1 <span>Orta</span></button>
+                            <button class="level-btn b2" onclick="window.selectHangmanLevel('B2')">B2 <span>Üst Orta</span></button>
+                            <button class="level-btn c1" onclick="window.selectHangmanLevel('C1')">C1 <span>İleri</span></button>
+                            <button class="level-btn c2" onclick="window.selectHangmanLevel('C2')">C2 <span>Uzman</span></button>
+                        </div>
+                    </div>
+                    
+                    <div id="hangman-game-area" class="hangman-game-area hide">
+                        <div class="hangman-upper">
+                            <div id="hangman-drawing" class="hangman-drawing">
+                                <!-- SVG drawing goes here -->
+                            </div>
+                        </div>
+
+                        <div class="hangman-lower">
+                            <div class="hangman-hint-container">
+                                <p id="hangman-hint">Anlam: Bekleniyor...</p>
+                            </div>
+                            
+                            <div id="hangman-word-display" class="hangman-word-display">
+                                <!-- _ _ _ _ -->
+                            </div>
+                            
+                            <div id="hangman-keyboard" class="hangman-keyboard">
+                                <!-- A B C D ... -->
+                            </div>
+
+                            <div class="hangman-actions">
+                                <button id="hangman-skip-btn" class="hangman-btn secondary" onclick="window.skipHangman()">Geç</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="hangman-feedback" class="hangman-feedback"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -469,8 +525,8 @@
     <script type="module" src="js/learning.js?v=20260308_v4"></script>
     <script type="module" src="js/friends.js?v=20260308_v4"></script>
     <script type="module" src="js/scramble.js?v=20260309_v1"></script>
-    <script type="module" src="js/hangman.js"></script>
-    <script type="module" src="js/doodle.js"></script>
+    <script type="module" src="js/hangman.js?v=20260317_v1"></script>
+    <script type="module" src="js/doodle.js?v=20260317_v1"></script>
 
     <!-- Çerez Bildirimi -->
     <!-- Herkese Açık Profil Modalı (Liderlik) -->
@@ -1327,63 +1383,7 @@
         </div>
     </div>
 
-    <!-- Adam Asmaca Modalı -->
-    <div id="hangman-modal" class="modal hide" style="z-index: 10002; backdrop-filter: blur(8px);">
-        <div class="modal-content hangman-modal-content">
-            <button class="modal-close-icon" onclick="window.closeHangman()" title="Kapat">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none">
-                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-            </button>
-            <div class="hangman-header">
-                <h2>💀 Adam Asmaca</h2>
-                <div class="hangman-stats">
-                    <div class="hangman-stat">Skor: <span id="hangman-score-val">0</span></div>
-                    <div class="hangman-stat">Can: <span id="hangman-lives-val">6</span></div>
-                </div>
-            </div>
-            
-            <div id="hangman-level-selection" class="hangman-level-selection">
-                <p class="hangman-intro-text">Zorluk seviyesini seçerek adamı kurtarmaya başlayın:</p>
-                <div class="hangman-level-grid">
-                    <button class="level-btn a1" onclick="window.selectHangmanLevel('A1')">A1 <span>Temel</span></button>
-                    <button class="level-btn a2" onclick="window.selectHangmanLevel('A2')">A2 <span>Başlangıç</span></button>
-                    <button class="level-btn b1" onclick="window.selectHangmanLevel('B1')">B1 <span>Orta</span></button>
-                    <button class="level-btn b2" onclick="window.selectHangmanLevel('B2')">B2 <span>Üst Orta</span></button>
-                    <button class="level-btn c1" onclick="window.selectHangmanLevel('C1')">C1 <span>İleri</span></button>
-                    <button class="level-btn c2" onclick="window.selectHangmanLevel('C2')">C2 <span>Uzman</span></button>
-                </div>
-            </div>
-            
-            <div id="hangman-game-area" class="hangman-game-area hide">
-                <div class="hangman-upper">
-                    <div id="hangman-drawing" class="hangman-drawing">
-                        <!-- SVG drawing goes here -->
-                    </div>
-                </div>
-
-                <div class="hangman-lower">
-                    <div class="hangman-hint-container">
-                        <p id="hangman-hint">Anlam: Bekleniyor...</p>
-                    </div>
-                    
-                    <div id="hangman-word-display" class="hangman-word-display">
-                        <!-- _ _ _ _ -->
-                    </div>
-                    
-                    <div id="hangman-keyboard" class="hangman-keyboard">
-                        <!-- A B C D ... -->
-                    </div>
-
-                    <div class="hangman-actions">
-                        <button id="hangman-skip-btn" class="hangman-btn secondary" onclick="window.skipHangman()">Geç</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="hangman-feedback" class="hangman-feedback"></div>
-        </div>
-    </div>
+    <!-- Adam Asmaca Modalı Kaldırıldı (Artık sayfa olarak açılıyor) -->
 
     <!-- Word Scramble Modalı -->
 

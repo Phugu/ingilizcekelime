@@ -5202,16 +5202,16 @@ body.dark-theme .pool-card.locked-chain .chain-overlay {
 }
 
 /* --- Hangman Game Styles (Premium v2) --- */
-.hangman-modal-content {
-    max-width: 620px !important;
-    padding: 25px !important;
-    background: var(--card-bg) !important;
-    border: 1px solid rgba(108, 92, 231, 0.4) !important;
+.hangman-container {
+    max-width: 800px;
+    padding: 25px;
+    background: var(--card-bg);
+    border: 1px solid rgba(108, 92, 231, 0.4);
     border-radius: 24px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow);
     animation: hangmanFadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    overflow: hidden;
+    margin: 30px auto;
+
 }
 
 @keyframes hangmanFadeInScale {
@@ -5501,7 +5501,7 @@ body.dark-theme .pool-card.locked-chain .chain-overlay {
     .hangman-keyboard {
         grid-template-columns: repeat(7, 1fr) !important;
     }
-    .hangman-modal-content {
+    .hangman-container {
         padding: 25px 15px !important;
     }
 }

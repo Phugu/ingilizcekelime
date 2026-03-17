@@ -10,7 +10,7 @@ function getFirebase() {
 
 function getElements() {
     return {
-        modal: document.getElementById('hangman-modal'),
+        contentEl: document.getElementById('hangman-content'),
         levelSelectionEl: document.getElementById('hangman-level-selection'),
         gameAreaEl: document.getElementById('hangman-game-area'),
         hintEl: document.getElementById('hangman-hint'),
@@ -36,14 +36,19 @@ let isProcessing = false;
 // Main Window API Export
 window.openHangman = async function() {
     const { auth } = getFirebase();
-    const { modal, levelSelectionEl, gameAreaEl } = getElements();
+    const { contentEl, levelSelectionEl, gameAreaEl } = getElements();
 
     if (!auth || (!auth.currentUser && localStorage.getItem('isGuest') !== 'true')) {
         console.warn("Auth not ready or user not logged in");
         return;
     }
     
-    if(modal) modal.classList.remove('hide');
+    // Hide other sections and show hangman
+    if (window.hideAllContentSections) {
+        window.hideAllContentSections();
+    }
+    
+    if(contentEl) contentEl.classList.remove('hide');
     
     // Reset to Level Selection View
     if(levelSelectionEl) levelSelectionEl.classList.remove('hide');
@@ -84,8 +89,10 @@ window.selectHangmanLevel = function(level) {
 };
 
 window.closeHangman = function() {
-    const { modal } = getElements();
-    if(modal) modal.classList.add('hide');
+    if (window.hideAllContentSections) {
+        window.hideAllContentSections();
+    }
+    document.getElementById('games-content')?.classList.remove('hide');
 };
 
 async function loadWords() {
@@ -186,8 +193,8 @@ async function makeGuess(char) {
     if (!isCorrect) {
         remainingLives--;
         drawHangman();
-    }
 
+    }
     renderGame();
     renderStats();
 
@@ -318,8 +325,8 @@ window.skipHangman = function() {
 
 // Keyboard support
 document.addEventListener('keydown', (e) => {
-    const modal = document.getElementById('hangman-modal');
-    if (modal && !modal.classList.contains('hide') && !isProcessing && currentWord) {
+    const hangmanContent = document.getElementById('hangman-content');
+    if (hangmanContent && !hangmanContent.classList.contains('hide') && !isProcessing && currentWord) {
         const key = e.key.toLowerCase();
         if (/^[a-z]$/.test(key)) {
             makeGuess(key);

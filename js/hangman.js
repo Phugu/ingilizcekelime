@@ -273,15 +273,17 @@ function drawHangman() {
     const { drawingEl } = getElements();
     if (!drawingEl) return;
 
-    const strokeProps = 'stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"';
+    const isDark = document.body.classList.contains('dark-theme');
+    const color = isDark ? '#ffffff' : '#2d3436';
+    const strokeProps = `stroke="${color}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"`;
     
     // Use SVG for drawing
     const parts = [
         `<line x1="20" y1="220" x2="220" y2="220" ${strokeProps} />`, // Base
         `<line x1="60" y1="220" x2="60" y2="20" ${strokeProps} />`,  // Post
         `<line x1="60" y1="20" x2="160" y2="20" ${strokeProps} />`,   // Beam
-        `<line x1="160" y1="20" x2="160" y2="50" stroke="currentColor" stroke-width="3" stroke-linecap="round" />`, // Rope
-        '<circle cx="160" cy="80" r="25" stroke="currentColor" stroke-width="5" fill="none" />', // Head
+        `<line x1="160" y1="20" x2="160" y2="50" stroke="${color}" stroke-width="3" stroke-linecap="round" />`, // Rope
+        `<circle cx="160" cy="80" r="25" stroke="${color}" stroke-width="5" fill="none" />`, // Head
         `<line x1="160" y1="105" x2="160" y2="170" ${strokeProps} />`, // Body
         `<line x1="160" y1="120" x2="120" y2="150" ${strokeProps} />`,  // Left Arm
         `<line x1="160" y1="120" x2="200" y2="150" ${strokeProps} />`, // Right Arm

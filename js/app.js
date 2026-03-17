@@ -2786,9 +2786,9 @@ class Games {
                     </div>
 
                     <div class="game-card" style="position: relative; height: 380px; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: #6c5ce7;" onclick="window.openHangman()">
-                        <!-- Arkaplan Görseli (Eğer varsa) -->
-                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #2d3436; display: flex; align-items: center; justify-content: center; z-index: 1;">
-                            <span style="font-size: 80px;">💀</span>
+                        <!-- Arkaplan Görseli -->
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; display: flex; align-items: center; justify-content: center; z-index: 1;">
+                            <img src="assets/images/handman.png" alt="Adam Asmaca" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.1);">
                         </div>
                         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent 40%, rgba(108, 92, 231, 0.9) 100%); z-index: 2;"></div>
                         

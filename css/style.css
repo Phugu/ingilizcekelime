@@ -5505,6 +5505,7 @@ body.dark-theme .pool-card.locked-chain .chain-overlay {
     }
 }
 
+
 @media (max-width: 480px) {
     .hangman-level-grid {
         grid-template-columns: repeat(2, 1fr) !important;
@@ -5523,10 +5524,7 @@ body.dark-theme .pool-card.locked-chain .chain-overlay {
         font-size: 14px;
     }
 }
-       grid-template-columns: repeat(2, 1fr);
-    }
-    .hangman-char {
-        width: 25px;
-        font-size: 18px;
-    }
+
+.hide {
+    display: none !important;
 }

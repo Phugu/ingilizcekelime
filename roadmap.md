@@ -65,7 +65,7 @@ Bu dosya, platformun eğitim ve oyunlaştırma (gamification) özelliklerinin ge
 ### 🧩 Mini Kelime Oyunları - (Tamamlandı ✅)
 - [x] **Word Scramble:** Türkçe anlamı verilen karıştırılmış İngilizce kelimeyi bulma oyunu.
 - [x] **Zorluk Seviyeleri:** Word Scramble için A1-C2 seviye seçim ekranı ve seviye bazlı kelime havuzu entegrasyonu.
-- [ ] **Hangman:** Klasik adam asmaca oyunu eklentisi.
+- [ ] **Kelime Kurtarma:** Klasik kelime kurtarma oyunu eklentisi.
 
 > **Eklenebilecek Onlarca Yeni Fikir** için proje kök dizinine `future_features.md` adlı özel doküman yaratılmış ve saklanmıştır.
 

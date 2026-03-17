@@ -238,7 +238,7 @@ function handleLoss() {
     isProcessing = true;
     const { feedbackEl, wordDisplayEl } = getElements();
     if(feedbackEl) {
-        feedbackEl.textContent = "Adam asıldı! Kelime: " + currentWord.english;
+        feedbackEl.textContent = "Karakter kurtarılamadı! Kelime: " + currentWord.english;
         feedbackEl.className = "hangman-feedback error";
     }
 

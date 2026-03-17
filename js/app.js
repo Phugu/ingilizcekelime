@@ -2719,8 +2719,8 @@ class Dashboard {
                             <div style="position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.9); color: #6c5ce7; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; z-index: 3; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">YENİ</div>
                             
                             <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px; box-sizing: border-box; z-index: 3; text-align: left;">
-                                <h4 style="margin: 0 0 5px 0; font-size: 22px; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5); font-weight: 800;">Adam Asmaca</h4>
-                                <p style="margin: 0 0 15px 0; font-size: 13px; color: rgba(255,255,255,0.9); line-height: 1.4; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">Adamı kurtarırken kelimeleri tahmin et!</p>
+                                <h4 style="margin: 0 0 5px 0; font-size: 22px; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5); font-weight: 800;">Kelime Kurtarma</h4>
+                                <p style="margin: 0 0 15px 0; font-size: 13px; color: rgba(255,255,255,0.9); line-height: 1.4; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">Resmedilen karakteri kurtarırken kelimeleri tahmin et!</p>
                                 <button class="action-btn" style="width: 100%; border-radius: 12px; font-weight: 800; background: #ffffff; color: #6c5ce7; border: none; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease;">
                                     <i class="fa-solid fa-play"></i> HEMEN OYNA
                                 </button>
@@ -2809,15 +2809,15 @@ class Games {
                     <div class="game-card" style="position: relative; height: 380px; border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: #6c5ce7;" onclick="window.openHangman()">
                         <!-- Arkaplan Görseli -->
                         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; display: flex; align-items: center; justify-content: center; z-index: 1;">
-                            <img src="assets/images/handman.png" alt="Adam Asmaca" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.1);">
+                            <img src="assets/images/handman.png" alt="Kelime Kurtarma" style="width: 100%; height: 100%; object-fit: cover; transform: scale(1.1);">
                         </div>
                         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent 40%, rgba(108, 92, 231, 0.9) 100%); z-index: 2;"></div>
                         
                         <div style="position: absolute; top: 20px; right: 20px; background: #ffffff; color: #6c5ce7; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: 900; z-index: 3; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">YENİ</div>
                         
                         <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px; box-sizing: border-box; z-index: 3; text-align: left;">
-                            <h4 style="margin: 0 0 10px 0; font-size: 28px; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.5); font-weight: 900; letter-spacing: -0.5px;">Adam Asmaca</h4>
-                            <p style="margin: 0 0 25px 0; font-size: 15px; color: rgba(255,255,255,0.95); line-height: 1.6; text-shadow: 0 1px 5px rgba(0,0,0,0.5);">Kelimeleri harf harf tahmin et, adamı ipten kurtar ve XP kazan!</p>
+                            <h4 style="margin: 0 0 10px 0; font-size: 28px; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.5); font-weight: 900; letter-spacing: -0.5px;">Kelime Kurtarma</h4>
+                            <p style="margin: 0 0 25px 0; font-size: 15px; color: rgba(255,255,255,0.95); line-height: 1.6; text-shadow: 0 1px 5px rgba(0,0,0,0.5);">Kelimeleri harf harf tahmin et, karakteri kurtar ve XP kazan!</p>
                             <button class="action-btn" style="width: 100%; border-radius: 15px; font-weight: 900; background: #ffffff; color: #6c5ce7; border: none; padding: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); font-size: 16px;">
                                 <i class="fa-solid fa-play"></i> OYUNA BAŞLA
                             </button>

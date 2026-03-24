@@ -4407,9 +4407,55 @@ body.dark-theme .pool-card.locked-chain .chain-overlay {
    YENİ PROFİL SAYFASI İÇİN ÖZEL STİLLER 
 ========================================= */
 
+.profile-page-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 30px;
+    padding: 10px;
+    margin: 0 auto;
+    max-width: 1400px;
+}
+
+.profile-side-ad {
+    width: 200px;
+    min-width: 160px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 100px;
+}
+
+.ad-placeholder-sidebar {
+    width: 100%;
+    min-height: 600px;
+    background: var(--input-bg);
+    border: 2px dashed var(--border-color);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    gap: 10px;
+    text-align: center;
+}
+
+.ad-placeholder-sidebar i {
+    font-size: 40px;
+    opacity: 0.5;
+}
+
+@media screen and (max-width: 1250px) {
+    .profile-side-ad {
+        display: none;
+    }
+}
+
 .user-profile-wrapper {
     max-width: 800px;
-    margin: 0 auto;
+    flex-grow: 1;
+    margin: 0;
     background: var(--card-bg);
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);

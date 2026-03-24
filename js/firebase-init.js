@@ -1,7 +1,7 @@
 /* Firebase Security Initializer v2 - Protected Build */
 import { initializeApp as _0xinit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth as _0xauth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore as _0xfs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore as _0xfs, enableIndexedDbPersistence as _0xpersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAnalytics as _0xan } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 import { getStorage as _0xst } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
@@ -30,11 +30,21 @@ const _0xfbConfig = {
 
 const _0xapp = _0xinit(_0xfbConfig);
 const _0xanalytics = _0xan(_0xapp);
+const _0xdb = _0xfs(_0xapp);
+
+// Enable Offline Persistence (Maliyet Koruması)
+_0xpersistence(_0xdb).catch((err) => {
+    if (err.code == 'failed-precondition') {
+        console.warn("Persistence failed: Multiple tabs open");
+    } else if (err.code == 'unimplemented') {
+        console.warn("Persistence not supported by browser");
+    }
+});
 
 // Expose internal logic masked 
 window[_0xdec(["ZmlyZWJhc2VBcHA="], 0)] = _0xapp;
 window[_0xdec(["ZmlyZWJhc2VBdXRo"], 0)] = _0xauth(_0xapp);
-window[_0xdec(["ZmlyZXN0b3Jl"], 0)] = _0xfs(_0xapp);
+window[_0xdec(["ZmlyZXN0b3Jl"], 0)] = _0xdb;
 window[_0xdec(["ZmlyZWJhc2VTdG9yYWdl"], 0)] = _0xst(_0xapp);
 
 document.addEventListener('DOMContentLoaded', () => {

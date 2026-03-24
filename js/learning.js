@@ -1564,6 +1564,17 @@ export class WordLearning {
                     srs_box: 1, // Kutu 1 (Yeni)
                     next_review_date: Timestamp.fromDate(tomorrow) // İlk tekrar yarın
                 });
+
+                // MALİYET KORUMASI: Sayaç artırımı
+                try {
+                    const publicUserRef = doc(db, "users_public", this.userId);
+                    await updateDoc(publicUserRef, {
+                        learned_words_count: increment(1)
+                    });
+                } catch (countErr) {
+                    console.warn("Sayaç güncellenemedi (normal olabilir):", countErr);
+                }
+                
                 console.log('Kelime kaydedildi:', word.english, 'Seviye:', (word.level || 'A1').toUpperCase());
             } else {
                 // Zaten varsa inceleme tarihini güncelle
@@ -2189,6 +2200,16 @@ export class WordLearning {
 
             await addDoc(collection(db, "quiz_results"), quizData);
 
+            // MALİYET KORUMASI: Sayaç artırımı
+            try {
+                const publicUserRef = doc(db, "users_public", this.userId);
+                await updateDoc(publicUserRef, {
+                    quiz_results_count: increment(1)
+                });
+            } catch (countErr) {
+                console.warn("Sayaç güncellenemedi:", countErr);
+            }
+
             console.log('Quiz sonuçları başarıyla kaydedildi');
             return true;
         } catch (error) {
@@ -2235,6 +2256,17 @@ export class WordLearning {
                         success_rate: percentage,
                         created_at: Timestamp.now()
                     });
+
+                    // MALİYET KORUMASI: Sayaç artırımı
+                    try {
+                        const publicUserRef = doc(db, "users_public", this.userId);
+                        await updateDoc(publicUserRef, {
+                            quiz_results_count: increment(1)
+                        });
+                    } catch (countErr) {
+                        console.warn("Sayaç güncellenemedi:", countErr);
+                    }
+
                     console.log('Quiz sonuçları kaydedildi');
                 } else {
                     console.log('Misafir oturumu veya kullanıcı ID yok: Quiz sonuçları kaydedilmedi.');

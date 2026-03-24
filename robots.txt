@@ -1,21 +1,9 @@
-# İngilizce Kelime - İngilizce Kelime Öğrenme Platformu robots.txt
-# https://ingilizcekelime.com/
-
 User-agent: *
 Allow: /
-Disallow: /js/config.js
-Disallow: /*.json$
 
-# Özel sayfa erişim izinleri
-Allow: /index.html
-Allow: /css/
-Allow: /images/
-Allow: /js/app.js
-Allow: /js/learning.js
-Allow: /components/
+# Sitemap lokasyonu (varsa)
+# Sitemap: https://ingilizcekelime.com/sitemap.xml
 
-# Yavaş tarama
-Crawl-delay: 10
-
-# Sitemap konumu (ileride eklenebilir)
-Sitemap: https://ingilizcekelime.com/sitemap.xml 
+# Gereksiz taramaları engelle ama içeriği açık tut
+Disallow: /tmp/
+Disallow: /.gemini/

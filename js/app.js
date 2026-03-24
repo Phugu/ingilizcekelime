@@ -179,6 +179,19 @@ function updateActiveNav(clickedNav) {
     clickedNav.classList.add('active');
 }
 
+// Google Analytics (GA4) SPA Takibi
+function trackPageView(sectionName) {
+    if (typeof gtag === 'function') {
+        gtag('event', 'page_view', {
+            page_title: sectionName,
+            page_location: window.location.href + '#' + sectionName.toLowerCase().replace(/\s+/g, '_'),
+            page_path: '/' + sectionName.toLowerCase().replace(/\s+/g, '_')
+        });
+        console.log(`📊 Analytics: ${sectionName} sayfası kaydedildi.`);
+    }
+}
+window.trackPageView = trackPageView;
+
 // Ana navigasyon ve sayfa yönetimi
 function setupMainNavigation(userId) {
     // Ana menü navigasyonu
@@ -186,6 +199,7 @@ function setupMainNavigation(userId) {
         hideAllContentSections();
         document.getElementById('dashboard-content').classList.remove('hide');
         updateActiveNav(this);
+        trackPageView('Ana Sayfa');
 
         // Dashboard'ı başlat
         const dashboard = new Dashboard('dashboard-content', userId);
@@ -197,6 +211,7 @@ function setupMainNavigation(userId) {
         const learnContent = document.getElementById('learn-content');
         learnContent.classList.remove('hide');
         updateActiveNav(this);
+        trackPageView('Kelime Öğren');
 
         if (!wordLearningInstance) {
             wordLearningInstance = new WordLearning('learn-content', userId);
@@ -213,6 +228,7 @@ function setupMainNavigation(userId) {
         const quizContent = document.getElementById('quiz-content');
         quizContent.classList.remove('hide');
         updateActiveNav(this);
+        trackPageView('Quiz');
 
         // Eğer içerik zaten varsa (yani bir quiz menüsü veya devam eden bir quiz varsa) tekrar render etme
         if (quizContent.innerHTML !== "") return;
@@ -269,6 +285,7 @@ function setupMainNavigation(userId) {
         hideAllContentSections();
         const wordsContent = document.getElementById('words-content');
         wordsContent.classList.remove('hide');
+        trackPageView('Kelime Listesi');
 
         if (wordsContent.innerHTML !== "") return;
 
@@ -284,6 +301,7 @@ function setupMainNavigation(userId) {
         hideAllContentSections();
         const recentContent = document.getElementById('recent-words-content');
         recentContent.classList.remove('hide');
+        trackPageView('Son Öğrenilen');
 
         // Eğer içerik boşsa yükle, doluysa beklet (veya arka planda güncelle)
         if (recentContent.innerHTML === "") {
@@ -299,6 +317,7 @@ function setupMainNavigation(userId) {
         const lbContent = document.getElementById('leaderboard-content');
         lbContent.classList.remove('hide');
         updateActiveNav(this);
+        trackPageView('Liderlik Tablosu');
         
         // Eğer içerik boşsa yükle, doluysa sadece listeyi tazele
         if (lbContent.innerHTML === "" || lbContent.querySelector('.leaderboard-list') === null) {
@@ -313,6 +332,7 @@ function setupMainNavigation(userId) {
         hideAllContentSections();
         document.getElementById('profile-content').classList.remove('hide');
         updateActiveNav(this);
+        trackPageView('Profilim');
         loadProfileContent();
     });
 
@@ -321,6 +341,7 @@ function setupMainNavigation(userId) {
         hideAllContentSections();
         document.getElementById('friends-content').classList.remove('hide');
         updateActiveNav(this);
+        trackPageView('Sosyal Hub');
 
         // friends.js'in global loadFriendsUI fonksiyonu çağrılır
         if (window.loadFriendsUI) {
@@ -332,6 +353,7 @@ function setupMainNavigation(userId) {
         hideAllContentSections();
         document.getElementById('games-content').classList.remove('hide');
         updateActiveNav(this);
+        trackPageView('Oyunlar');
         const games = new Games('games-content', userId);
         games.render();
     });
@@ -1629,8 +1651,16 @@ async function loadProfileContent() {
         const xpPercent = Math.min(100, Math.round((stats.xp / nextLevelXp) * 100));
 
         let html = `
-            <div class="user-profile-wrapper">
-                <div class="profile-header-banner">
+            <div class="profile-page-container">
+                <!-- Sol Reklam Alanı -->
+                <aside class="profile-side-ad side-left">
+                    <div class="ad-placeholder-sidebar">
+                        <i class="fa-solid fa-rectangle-ad"></i><br>REKLAM ALANI
+                    </div>
+                </aside>
+
+                <div class="user-profile-wrapper">
+                    <div class="profile-header-banner">
                     <button class="settings-btn" title="Ayarlar" onclick="window.loadSettingsContent()">⚙️ Ayarlar</button>
                     <div class="profile-avatar-container">
                         <div class="profile-avatar" id="main-profile-avatar" ${user.photoURL ? `style="background-image: url('${user.photoURL}'); color: transparent;"` : ''}>
@@ -1758,7 +1788,15 @@ async function loadProfileContent() {
                     <p class="info-message">Şu anda uygulamayı misafir olarak kullanıyorsunuz. İstatistikleriniz sadece bu oturum için geçerlidir ve veritabanına kaydedilmez. Kalıcı bir profil için hesap oluşturun.</p>
                 </div>
                 ` : ''}
-            </div>
+                </div> <!-- user-profile-wrapper ends -->
+
+                <!-- Sağ Reklam Alanı -->
+                <aside class="profile-side-ad side-right">
+                    <div class="ad-placeholder-sidebar">
+                        <i class="fa-solid fa-rectangle-ad"></i><br>REKLAM ALANI
+                    </div>
+                </aside>
+            </div> <!-- profile-page-container ends -->
         `;
 
         profileContent.innerHTML = html;
@@ -3764,23 +3802,33 @@ window.showPublicProfile = async function (uid) {
                 scrambleEl.textContent = data.scramble_score || 0;
             }
 
-            // Quiz ve Öğrenilen Kelimeleri Diğer Koleksiyonlardan Async Olarak Çek
-            try {
-                const quizQuery = query(collection(db, "quiz_results"), where("user_id", "==", uid));
-                const wordsQuery = query(collection(db, "learned_words"), where("user_id", "==", uid));
+            // MALİYET KORUMASI: Sayaçları kullan (Counter Strategy)
+            let quizCount = data.quiz_results_count;
+            let wordsCount = data.learned_words_count;
 
-                const [quizSnap, wordsSnap] = await Promise.all([
-                    getDocs(quizQuery),
-                    getDocs(wordsQuery)
-                ]);
+            // Eğer sayılar dökümanda yoksa (eski kullanıcılar), eski pahalı yöntemle bir kez çek
+            if (quizCount === undefined || wordsCount === undefined) {
+                try {
+                    console.log("Maliyet uyarısı: Eski kullanıcı verisi sorgulanıyor...");
+                    const quizQuery = query(collection(db, "quiz_results"), where("user_id", "==", uid));
+                    const wordsQuery = query(collection(db, "learned_words"), where("user_id", "==", uid));
 
-                document.getElementById('public-profile-quizzes').textContent = quizSnap.size || 0;
-                document.getElementById('public-profile-words').textContent = wordsSnap.size || 0;
-            } catch (err) {
-                console.error("Kullanıcının ekstara bilgileri okunamadı:", err);
-                document.getElementById('public-profile-quizzes').textContent = "-";
-                document.getElementById('public-profile-words').textContent = "-";
+                    const [quizSnap, wordsSnap] = await Promise.all([
+                        getDocs(quizQuery),
+                        getDocs(wordsQuery)
+                    ]);
+
+                    quizCount = quizSnap.size || 0;
+                    wordsCount = wordsSnap.size || 0;
+                } catch (err) {
+                    console.error("Kullanıcının ekstra bilgileri okunamadı:", err);
+                    quizCount = "-";
+                    wordsCount = "-";
+                }
             }
+
+            document.getElementById('public-profile-quizzes').textContent = quizCount;
+            document.getElementById('public-profile-words').textContent = wordsCount;
 
             // Avatar kontrolü ve yerleşimi (Fallback Sistemi)
             window.setAvatarWithFallback(avatarEl, data.photoURL, rawName);

@@ -570,7 +570,7 @@
 
     <!-- Çerez Bildirimi -->
     <!-- Herkese Açık Profil Modalı (Liderlik) -->
-    <div id="public-profile-modal" class="modal hide" style="z-index: 10000; backdrop-filter: blur(5px);">
+    <div id="public-profile-modal" class="modal hide" style="z-index: 10000; backdrop-filter: blur(2px);">
         <div class="modal-content"
             style="width: 95%; max-width: 450px; padding: 0; overflow: hidden; position: relative; border-radius: 24px;">
             <button class="modal-close-icon" id="close-public-profile-btn" title="Kapat">
@@ -645,7 +645,7 @@
     </div>
 
     <!-- Kullanıcı Şikayet Et Modalı -->
-    <div id="report-user-modal" class="modal hide" style="z-index: 10001; backdrop-filter: blur(5px);">
+    <div id="report-user-modal" class="modal hide" style="z-index: 10001; backdrop-filter: blur(2px);">
         <div class="modal-content" style="width: 95%; max-width: 400px; padding: 25px; border-radius: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3 style="margin: 0; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
@@ -697,7 +697,7 @@
     </div>
 
     <!-- Mağaza Modalı -->
-    <div id="shop-modal" class="modal hide" style="z-index: 10000; backdrop-filter: blur(5px);">
+    <div id="shop-modal" class="modal hide" style="z-index: 10000; backdrop-filter: blur(2px);">
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <button class="modal-close-icon" onclick="document.getElementById('shop-modal').classList.add('hide')"
                 title="Kapat">
@@ -732,7 +732,7 @@
     </div>
 
     <!-- Dondurucu Onay Modalı -->
-    <div id="freeze-confirm-modal" class="modal hide" style="z-index: 10000; backdrop-filter: blur(5px);">
+    <div id="freeze-confirm-modal" class="modal hide" style="z-index: 10000; backdrop-filter: blur(2px);">
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <button class="modal-close-icon"
                 onclick="document.getElementById('freeze-confirm-modal').classList.add('hide')" title="Kapat">
@@ -758,6 +758,64 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Word Scramble Modalı -->
+    <div id="word-scramble-modal" class="modal hide" style="z-index: 10001; backdrop-filter: blur(2px);">
+        <div class="modal-content scramble-modal-content" style="position: relative;">
+            <button class="modal-close-icon" onclick="window.closeWordScramble()" title="Kapat">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+            </button>
+            
+            <div class="scramble-header">
+                <h2 style="display: flex; align-items: center; gap: 10px; font-size: 24px;">
+                    <i class="fa-solid fa-puzzle-piece" style="color: var(--primary-color);"></i>
+                    Word Scramble
+                </h2>
+                <div style="background: var(--bg-color); padding: 5px 15px; border-radius: 20px; font-weight: bold; border: 1px solid var(--border-color); font-size: 14px;">
+                    Skor: <span id="scramble-score-val" style="color: var(--primary-color);">0</span>
+                </div>
+            </div>
+
+            <!-- Seviye Seçimi -->
+            <div id="scramble-level-selection" class="scramble-level-selection">
+                <p class="scramble-intro-text">Zorluk seviyesini seçerek oyuna başlayın:</p>
+                <div class="scramble-level-grid">
+                    <button class="level-btn a1" onclick="window.selectScrambleLevel('A1')">A1 <span>Temel</span></button>
+                    <button class="level-btn a2" onclick="window.selectScrambleLevel('A2')">A2 <span>Başlangıç</span></button>
+                    <button class="level-btn b1" onclick="window.selectScrambleLevel('B1')">B1 <span>Orta</span></button>
+                    <button class="level-btn b2" onclick="window.selectScrambleLevel('B2')">B2 <span>Üst Orta</span></button>
+                    <button class="level-btn c1" onclick="window.selectScrambleLevel('C1')">C1 <span>İleri</span></button>
+                    <button class="level-btn c2" onclick="window.selectScrambleLevel('C2')">C2 <span>Uzman</span></button>
+                </div>
+            </div>
+
+            <!-- Oyun Alanı -->
+            <div id="scramble-game-area" class="scramble-game-area hide">
+                <div class="scramble-hint-container">
+                    <p id="scramble-hint" class="scramble-hint-text">Anlam: Bekleniyor...</p>
+                </div>
+
+                <div id="scramble-answer-slots" class="scramble-answer-slots">
+                    <!-- _ _ _ _ -->
+                </div>
+
+                <div id="scramble-letters" class="scramble-letters">
+                    <!-- A B C D ... -->
+                </div>
+
+                <div class="scramble-actions">
+                    <button id="scramble-hint-btn" class="scramble-btn secondary" onclick="window.showScrambleHint()">İpucu (-5 Skor)</button>
+                    <button id="scramble-clear-btn" class="scramble-btn secondary" onclick="window.clearScramble()">Temizle</button>
+                    <button id="scramble-skip-btn" class="scramble-btn secondary" onclick="window.skipScramble()">Atla</button>
+                </div>
+            </div>
+
+            <div id="scramble-feedback" class="scramble-feedback"></div>
         </div>
     </div>
 
@@ -1392,7 +1450,7 @@
     </div>
 
     <!-- KVKK Zorunlu Onay Modalı (Eski Kullanıcılar İçin) -->
-    <div id="kvkk-update-modal" class="modal hide" style="z-index: 9999; backdrop-filter: blur(5px);">
+    <div id="kvkk-update-modal" class="modal hide" style="z-index: 9999; backdrop-filter: blur(2px);">
         <div class="modal-content" style="max-width: 500px; text-align: left; padding: 30px;">
             <h2 style="color: var(--primary-color); margin-bottom: 15px; text-align: center;">Yasal Güncelleme Beyanı
             </h2>
@@ -1428,7 +1486,7 @@
     <!-- Word Scramble Modalı -->
 
     <!-- Doodle Jump Modalı -->
-    <div id="doodle-modal" class="modal hide" style="z-index: 10003; backdrop-filter: blur(8px);">
+    <div id="doodle-modal" class="modal hide" style="z-index: 10003; backdrop-filter: blur(2px);">
         <div class="modal-content" style="padding: 0; width: 100%; max-width: 400px; height: 80vh; max-height: 700px; display: flex; flex-direction: column; position: relative; overflow: hidden; border-radius: 20px;">
             
             <button class="modal-close-icon" onclick="window.closeDoodleJump()" title="Kapat" style="z-index: 10004; color: white; background: rgba(0,0,0,0.3);">
